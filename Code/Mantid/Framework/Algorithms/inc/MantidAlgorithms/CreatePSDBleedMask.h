@@ -64,7 +64,7 @@ namespace Mantid
       bool performBleedTest(const std::vector<int> & tubeIndices,
 			    API::MatrixWorkspace_const_sptr inputWS);
       /// Mask a tube with the given workspace indices
-      void maskTube(const std::vector<int> & tubeIndices, API::MatrixWorkspace_sptr workspace);
+      void maskTube(const std::vector<int> & tubeIndices, DataObjects::MaskWorkspace_sptr workspace);
 
       /// Maximum allowed rate
       double m_maxRate;

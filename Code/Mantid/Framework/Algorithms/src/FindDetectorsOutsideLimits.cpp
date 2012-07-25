@@ -125,8 +125,6 @@ namespace Mantid
       // Create a new workspace for the results, copy from the input to ensure that we copy over the instrument and current masking
       MaskWorkspace_sptr outputWS = this->generateEmptyMask(inputWS);
 
-      const double deadValue(1.0); // delete the data
-
       const int diagLength = static_cast<int>(countsWS->getNumberHistograms());
       const int progStep = static_cast<int>(std::ceil(diagLength / 100.0));
 
@@ -136,6 +134,7 @@ namespace Mantid
       {
         checkForMask = ((instrument->getSource() != NULL) && (instrument->getSample() != NULL));
       }
+      std::cout << "CHECKFORMASK = " << checkForMask << std::endl;
 
       int numFailed(0);
       PARALLEL_FOR2(countsWS, outputWS)
@@ -148,9 +147,10 @@ namespace Mantid
           interruption_point();
         }
 
+        std::set<detid_t> detids;
         if (checkForMask)
         {
-          const std::set<detid_t>& detids = countsWS->getSpectrum(i)->getDetectorIDs();
+          detids = countsWS->getSpectrum(i)->getDetectorIDs();
           if (instrument->isMonitor(detids))
           {
             continue; // do include or exclude from mask
@@ -183,12 +183,21 @@ namespace Mantid
 
         if (!keepData)
         {
-          outputWS->dataY(i)[0] = deadValue;
+          if (checkForMask)
+          {
+            outputWS->setMasked(detids);
+//            std::cout << "isMasked(" << detids.size() << "): " << outputWS->isMasked(detids) << std::endl;
+          }
+          else
+            outputWS->setMaskedIndex(i);
           PARALLEL_ATOMIC
           ++numFailed;
         }
       }
-        
+      g_log.information() << outputWS->getNumberMasked() << " or " << outputWS->getMaskedDetectors().size() << " or " << outputWS->getMaskedWkspIndices().size() << " detectors were masked\n";
+      g_log.information() << "MaskedDetectors: " << Kernel::Strings::toString(outputWS->getMaskedDetectors()) << "\n";
+      g_log.information() << "MaskedWkspIndices: " << Kernel::Strings::toString(outputWS->getMaskedWkspIndices()) << "\n";
+
       g_log.information() << numFailed << " spectra fell outside the given limits.\n";
       setProperty("NumberOfFailures", numFailed);
       // Assign it to the output workspace property

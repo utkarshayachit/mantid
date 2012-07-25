@@ -269,7 +269,7 @@ namespace Mantid
      * @param workspace :: The workspace to accumulate the masking
      */
     void CreatePSDBleedMask::maskTube(const std::vector<int> & tubeIndices,
-                                      API::MatrixWorkspace_sptr workspace)
+                                      DataObjects::MaskWorkspace_sptr workspace)
     {
       const double deadValue(1.0); // delete the data
 
@@ -277,7 +277,7 @@ namespace Mantid
       for(std::vector<int>::const_iterator citr = tubeIndices.begin();
           citr != cend; ++citr)
       {
-        workspace->dataY(*citr)[0] = deadValue;
+        workspace->setMaskedIndex(*citr);
       }
     }
 

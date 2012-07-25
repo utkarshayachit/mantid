@@ -305,7 +305,7 @@ namespace Mantid
      * @return The number of detectors that failed the tests, not including those skipped
      */
     int MedianDetectorTest::doDetectorTests(const API::MatrixWorkspace_sptr countsWS, const std::vector<double> medianvec,
-                                            std::vector<std::vector<size_t> > indexmap, API::MatrixWorkspace_sptr maskWS)
+                                            std::vector<std::vector<size_t> > indexmap, DataObjects::MaskWorkspace_sptr maskWS)
     {
       g_log.debug("Applying the criteria to find failing detectors");
 
@@ -348,12 +348,14 @@ namespace Mantid
             progress(advanceProgress(progStep*static_cast<double>(RTMarkDetects)/numSpec));
           }
 
+          std::set<detid_t> detids;
+
           if (checkForMask)
           {
-            const std::set<detid_t>& detids = countsWS->getSpectrum(i)->getDetectorIDs();
+            detids = countsWS->getSpectrum(i)->getDetectorIDs();
             if (instrument->isDetectorMasked(detids))
             {
-              maskWS->dataY(hists.at(i))[0] = deadValue;
+              maskWS->setMasked(detids);
               continue;
             }
             if (instrument->isMonitor(detids))
@@ -368,7 +370,10 @@ namespace Mantid
           // Mask out NaN and infinite
           if( boost::math::isinf(signal) || boost::math::isnan(signal) )
           {
-            maskWS->dataY(hists.at(i))[0] = deadValue;
+            if (checkForMask)
+              maskWS->setMasked(detids);
+            else
+              maskWS->setMaskedIndex(hists.at(i));
             PARALLEL_ATOMIC
             ++numFailed;
             continue;
@@ -379,7 +384,10 @@ namespace Mantid
           if( (signal < median*m_loFrac && (signal-median < -error)) ||
               (signal > median*m_hiFrac && (signal-median > error)) )
           {
-            maskWS->dataY(hists.at(i))[0] = deadValue;
+            if (checkForMask)
+              maskWS->setMasked(detids);
+            else
+              maskWS->setMaskedIndex(hists.at(i));
             PARALLEL_ATOMIC
             ++numFailed;
           }

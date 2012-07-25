@@ -82,7 +82,7 @@ namespace Mantid
       /// Mask the outlier values to get a better median value
       int maskOutliers(const std::vector<double> median, API::MatrixWorkspace_sptr countsWS,std::vector<std::vector<size_t> >indexmap);
       /// Do the tests and mask those that fail
-      int doDetectorTests(const API::MatrixWorkspace_sptr countsWS, const std::vector<double> median,std::vector<std::vector<size_t> > indexmap, API::MatrixWorkspace_sptr maskWS);
+      int doDetectorTests(const API::MatrixWorkspace_sptr countsWS, const std::vector<double> median, std::vector<std::vector<size_t> > indexmap, DataObjects::MaskWorkspace_sptr maskWS);
 
 
       API::MatrixWorkspace_sptr m_inputWS;
