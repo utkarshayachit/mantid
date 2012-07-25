@@ -100,13 +100,8 @@ public:
     else
     {
       // In case of MaskWorkspace
-      MaskWorkspace_sptr specspace(new MaskWorkspace());
-      specspace->initialize(numspec, 1, 1);
-      for (size_t i = 0; i < specspace->getNumberHistograms(); i ++)
-      {
-        // default to use all the detectors
-        specspace->dataY(i)[0] = 0.0;
-      }
+      MaskWorkspace_sptr specspace(new MaskWorkspace(instr)); // instr is currently required
+      specspace->initialize(instr->getNumberDetectors(), 1, 1);
       space = boost::dynamic_pointer_cast<MatrixWorkspace>(specspace);
     }
 
@@ -374,16 +369,16 @@ public:
     setUpWS(false, inputWSName,false, numInputSpec);
     const int numMaskWSSpec(3);
     setUpWS(false, existingMaskName, true, numMaskWSSpec);
-    MatrixWorkspace_sptr existingMask =
-        AnalysisDataService::Instance().retrieveWS<MatrixWorkspace>(existingMaskName);
+    MaskWorkspace_sptr existingMask =
+        AnalysisDataService::Instance().retrieveWS<MaskWorkspace>(existingMaskName);
     MatrixWorkspace_sptr inputWS =
         AnalysisDataService::Instance().retrieveWS<MatrixWorkspace>(inputWSName);
     TS_ASSERT(existingMask);
     TS_ASSERT(inputWS);
 
     // Mask workspace index 0,2 in MaskWS. These will be maped to index 3,5 in the test input
-    existingMask->dataY(0)[0] = 1.0;
-    existingMask->dataY(2)[0] = 1.0;
+    existingMask->setMaskedIndex(3);
+    existingMask->setMaskedIndex(5);
 
     // Apply
     MaskDetectors masker;
@@ -395,7 +390,6 @@ public:
     masker.setRethrows(true);
     TS_ASSERT_THROWS_NOTHING(masker.execute());
     inputWS = AnalysisDataService::Instance().retrieveWS<MatrixWorkspace>(inputWSName);
-
     // Check masking
     for(int i = 0; i < numInputSpec; ++i)
     {

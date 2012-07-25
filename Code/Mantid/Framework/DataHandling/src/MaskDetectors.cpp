@@ -135,7 +135,7 @@ void MaskDetectors::exec()
       }
 
       g_log.debug() << "Extracting mask from MaskWorkspace (" << maskWS->name() << ")" << std::endl;
-      appendToIndexListFromMaskWS(indexList, maskWS);
+      appendToIndexListFromMaskWS(indexList, WS, maskWS);
     }
     else
     {
@@ -180,6 +180,7 @@ void MaskDetectors::exec()
       g_log.warning("No spectra affected.");
       return;
   }
+  g_log.information() << "Masking " << indexList.size() << " spectra\n";
   
   // Get a reference to the spectra-detector map to get hold of detector ID's
   double prog=0.0;
@@ -282,21 +283,40 @@ void MaskDetectors::appendToIndexListFromWS(std::vector<size_t>& indexList, cons
  * @param indexList :: An existing list of indices
  * @param maskedWorkspace :: An workspace with masked spectra
  */
-void MaskDetectors::appendToIndexListFromMaskWS(std::vector<size_t>& indexList, const DataObjects::MaskWorkspace_const_sptr maskedWorkspace)
+void MaskDetectors::appendToIndexListFromMaskWS(std::vector<size_t>& indexList, const MatrixWorkspace_sptr wksp, const DataObjects::MaskWorkspace_const_sptr maskedWorkspace)
 {
   // Convert the vector of properties into a set for easy searching
   std::set<int64_t> existingIndices(indexList.begin(), indexList.end());
   int endIndex = getProperty("EndWorkspaceIndex");
-  if (endIndex == EMPTY_INT() ) endIndex = static_cast<int>(maskedWorkspace->getNumberHistograms() - 1);
+  if (endIndex == EMPTY_INT() ) endIndex = static_cast<int>(wksp->getNumberHistograms() - 1);
+
   int startIndex = getProperty("StartWorkspaceIndex");
 
-  for (int64_t i = startIndex; i <= endIndex; ++i)
+  if (maskedWorkspace->getInstrument())
   {
-
-    if( maskedWorkspace->dataY(i-startIndex)[0] > 0.5 && existingIndices.count(i) == 0 )
+    std::cout << "***has instrument " << wksp->getNumberHistograms() << " "
+              << maskedWorkspace->getNumberHistograms() << " | " << startIndex
+              << "->" << endIndex << std::endl; // REMOVE
+    for (int64_t i = startIndex; i <= endIndex; ++i)
     {
-      g_log.debug() << "Adding WorkspaceIndex " << i << " to mask." << std::endl;
-      indexList.push_back(i);
+      if( maskedWorkspace->isMasked(wksp->getSpectrum(i)->getDetectorIDs())
+          && existingIndices.count(i) == 0 )
+      {
+        g_log.debug() << "Adding WorkspaceIndex " << i << " to mask." << std::endl;
+        indexList.push_back(i);
+      }
+    }
+  }
+  else
+  {
+    for (int64_t i = startIndex; i <= endIndex; ++i)
+    {
+
+      if( maskedWorkspace->isMaskedIndex(i-startIndex) && existingIndices.count(i) == 0 )
+      {
+        g_log.debug() << "Adding WorkspaceIndex " << i << " to mask." << std::endl;
+        indexList.push_back(i);
+      }
     }
   }
 
