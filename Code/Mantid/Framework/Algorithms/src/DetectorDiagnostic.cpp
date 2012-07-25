@@ -8,6 +8,7 @@
 #include "MantidKernel/Exception.h"
 #include "MantidKernel/VisibleWhenProperty.h"
 #include "MantidDataObjects/EventWorkspaceHelpers.h"
+#include "MantidGeometry/Instrument.h"
 #include "MantidDataObjects/MaskWorkspace.h"
 #include <boost/math/special_functions/fpclassify.hpp>
 #include <gsl/gsl_statistics.h>
@@ -363,10 +364,15 @@ namespace Mantid
     DataObjects::MaskWorkspace_sptr DetectorDiagnostic::generateEmptyMask(API::MatrixWorkspace_const_sptr inputWS)
     {
       // Create a new workspace for the results, copy from the input to ensure that we copy over the instrument and current masking
-      DataObjects::MaskWorkspace_sptr maskWS(new DataObjects::MaskWorkspace());
-      maskWS->initialize(inputWS->getNumberHistograms(), 1, 1);
-      WorkspaceFactory::Instance().initializeFromParent(inputWS, maskWS, false);
+      Geometry::Instrument_const_sptr instr = inputWS->getInstrument();
+      DataObjects::MaskWorkspace_sptr maskWS(new DataObjects::MaskWorkspace(instr, false)); // don't include monitors
+      if (instr)
+        maskWS->initialize(instr->getNumberDetectors(true), 1, 1); // don't include monitors
+      else
+        maskWS->initialize(inputWS->getNumberHistograms(), 1, 1);
+      WorkspaceFactory::Instance().initializeFromParent(inputWS, maskWS, bool(instr));
       maskWS->setTitle(inputWS->getTitle());
+      std::cout << "GETNUMBERMASKED=" << maskWS->getNumberMasked() << std::endl; // REMOVE
 
       return maskWS;
     }
