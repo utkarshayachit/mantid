@@ -87,7 +87,7 @@ namespace Algorithms
 
       // Lets load the file
       g_log.debug() << "Reading elastic estimate data from " << filename << std::endl;
-      std::ifstream infile(filename);
+      std::ifstream infile(filename.c_str());
       std::string lineData;
 
       // Some vectors to store the contents in
