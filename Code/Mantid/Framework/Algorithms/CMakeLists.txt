@@ -23,6 +23,7 @@ set ( SRC_FILES
 	src/CalculateTransmission.cpp
 	src/CalculateTransmissionBeamSpreader.cpp
 	src/CalculateZscore.cpp
+	src/CalibrateToElasticLine.cpp
 	src/CaltoDspacemap.cpp
 	src/ChangeBinOffset.cpp
 	src/ChangeLogTime.cpp
@@ -232,6 +233,7 @@ set ( INC_FILES
 	inc/MantidAlgorithms/CalculateTransmission.h
 	inc/MantidAlgorithms/CalculateTransmissionBeamSpreader.h
 	inc/MantidAlgorithms/CalculateZscore.h
+	inc/MantidAlgorithms/CalibrateToElasticLine.h
 	inc/MantidAlgorithms/CaltoDspacemap.h
 	inc/MantidAlgorithms/ChangeBinOffset.h
 	inc/MantidAlgorithms/ChangeLogTime.h
@@ -451,6 +453,7 @@ set ( TEST_FILES
 	CalculateTransmissionBeamSpreaderTest.h
 	CalculateTransmissionTest.h
 	CalculateZscoreTest.h
+	CalibrateToElasticLineTest.h
 	ChainedOperatorTest.h
 	ChangeBinOffsetTest.h
 	ChangeLogTimeTest.h
