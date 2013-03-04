@@ -152,7 +152,7 @@ namespace Algorithms
 
       // Get the number of spectra
       const std::size_t numberOfChannels = inputWS->blocksize();
-      const int numberOfSpectra = static_cast<int>(inputWS->size() / numberOfChannels);
+      //const int numberOfSpectra = static_cast<int>(inputWS->size() / numberOfChannels);
 
 
       // Get L1
@@ -192,8 +192,8 @@ namespace Algorithms
               // Get secondary flight path (L2)
               double l2 = det->getDistance(*sample);
               // Get scattering angle (radians)
-              double twoTheta = det->getTwoTheta(sample->getPos(),
-                                          Kernel::V3D(0.0,0.0,1.0)*Geometry::rad2deg);
+//              double twoTheta = det->getTwoTheta(sample->getPos(),
+//                                          Kernel::V3D(0.0,0.0,1.0)*Geometry::rad2deg);
 
               // Now let's work out what energy is required for this TOF
               double ltotal = l1+l2;
