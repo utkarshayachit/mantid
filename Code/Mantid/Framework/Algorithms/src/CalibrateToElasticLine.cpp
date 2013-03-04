@@ -151,7 +151,7 @@ namespace Algorithms
       Geometry::ParameterMap& pmap = outputWS->instrumentParameters();
 
       // Get the number of spectra
-      const std::size_t numberOfChannels = inputWS->blocksize();
+      //const std::size_t numberOfChannels = inputWS->blocksize();
       //const int numberOfSpectra = static_cast<int>(inputWS->size() / numberOfChannels);
 
 
@@ -189,6 +189,9 @@ namespace Algorithms
           Geometry::IDetector_const_sptr det = outputWS->getDetectorByID(detectorId[i]);
           if (!det->isMonitor())
           {
+              // TODO: what to do if detector pixel is masked (or doesn't exist)
+
+
               // Get secondary flight path (L2)
               double l2 = det->getDistance(*sample);
               // Get scattering angle (radians)
@@ -201,13 +204,12 @@ namespace Algorithms
                       / (PhysicalConstants::meV * 1e-12);
               double energy = factor / (peakCentre[i]*peakCentre[i]);
 
-              g_log.warning() << "det(" << i << ") = " << det->getFullName() << std::endl;
-              g_log.warning() << "      Ef = " << det->getNumberParameter("Efixed").at(0) << std::endl;
+              g_log.debug() << "Updating Ef for Detector id from " << detectorId[i]
+                            << det->getNumberParameter("Efixed").at(0) << " -> "
+                            << energy << "." << std::endl;
 
+              // Update the detector with the new Efixed.
               pmap.addDouble(det.get(), "Efixed", energy);
-
-              g_log.warning() << "      Ef = " << det->getNumberParameter("Efixed").at(0) << std::endl;
-
 
           }
       }
