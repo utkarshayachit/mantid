@@ -31,7 +31,10 @@ def CalibrateMaps( RunNumber ):
    ExpectedPositions = [4.0, 85.0, 128.0, 165.0, 252.0] # Expected positions of the edges and peak (initial values of fit parameters)
 
    # Set what we want to calibrate (e.g whole intrument or one door )
-   CalibratedComponent = 'MAPS'  # Calibrate all
+   # First Calibrate A, B, C windows 
+   CalibratedComponentsABC =  ['A1_window','A2_window', 'B1_window','B2_window', 'C1_window','C2_window','C3_window','C4_window'] 
+   # Secondly Calibrate D windows with a different ideal tube
+   CalibratedComponentsD = ['D1_window','D2_window','D3_window','D4_window']
  
     
    # Get calibration raw file and integrate it    
@@ -48,15 +51,20 @@ def CalibrateMaps( RunNumber ):
    calibrationTable.addColumn(type="int",name="Detector ID")  # "Detector ID" column required by ApplyCalbration
    calibrationTable.addColumn(type="V3D",name="Detector Position")  # "Detector Position" column required by ApplyCalbration
 
-   # Specify component to calibrate
-   thisTubeSet = TubeSpec(CalibInstWS)
-   thisTubeSet.setTubeSpecByString(CalibratedComponent)
+   # Specify components to calibrate
+   tubeSetABC = TubeSpec(CalibInstWS)
+   tubeSetABC.setTubeSpecByStringArray(CalibratedComponentsABC)
+   tubeSetD = TubeSpec(CalibInstWS)
+   tubeSetD.setTubeSpecByStringArray(CalibratedComponentsD)
 
-   # Get ideal tube
-   iTube = IdealTube()
+   # Get ideal tubes, which depend on the tube set
+   iTubeABC = IdealTube()
+   iTubeD = IdealTube()
    # Set positions of where the shadows and ends should be. 
-   # An intelligent guess is used here that is not correct for all tubes.
-   iTube.setPositionsAndForm([-0.50,-0.16,-0.00, 0.16, 0.50 ],[2,1,1,1,2]) 
+   # For A, B and C windows based on information supplied by Toby Perring.
+   iTubeABC.setPositionsAndForm([-0.50375,-0.16667,-0.00, 0.16667, 0.50375 ],[2,1,1,1,2]) 
+   # For D windows based on information supplied by Toby Perring.
+   iTubeD.setPositionsAndForm([-0.715,-0.2205,-0.00, 0.2205, 0.715 ],[2,1,1,1,2]) 
 
    # Get fitting parameters
    fitPar = TubeCalibFitParams( ExpectedPositions, ExpectedHeight, ExpectedWidth )
@@ -64,9 +72,12 @@ def CalibrateMaps( RunNumber ):
    print "Created objects needed for calibration."
 
    # == Get the calibration and put results into calibration table ==
-   # also put peaks into PeakFile
-   getCalibration( CalibInstWS, thisTubeSet, calibrationTable,  fitPar, iTube )
-   print "Got calibration (new positions of detectors) "
+   print "Getting calibration (new positions of detectors) for A, B and C windows"
+   getCalibration( CalibInstWS, tubeSetABC, calibrationTable,  fitPar, iTubeABC )
+   print "Got calibration (new positions of detectors) for A, B and C windows "
+   print "Getting calibration (new positions of detectors) for D windows"
+   getCalibration( CalibInstWS, tubeSetD, calibrationTable,  fitPar, iTubeD )
+   print "Got calibration (new positions of detectors) for D windows "
 
    # == Apply the Calibation ==
    ApplyCalibration( Workspace=CalibInstWS, PositionTable=calibrationTable)
