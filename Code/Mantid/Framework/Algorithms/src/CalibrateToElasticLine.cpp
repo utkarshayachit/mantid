@@ -103,6 +103,7 @@ namespace Algorithms
           infile.ignore(max_num_of_char_in_a_line,'\n');
       }
 
+
       while(getline(infile, lineData))
       {
           // Some temporary variables
