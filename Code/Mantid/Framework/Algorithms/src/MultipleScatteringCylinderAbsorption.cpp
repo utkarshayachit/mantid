@@ -99,7 +99,7 @@ void MultipleScatteringCylinderAbsorption::exec()
   }
   else  //Save input in Sample with wrong atomic number and name
   {
-    NeutronAtom *neutron = new NeutronAtom(static_cast<uint16_t>(999), static_cast<uint16_t>(0),
+    NeutronAtom *neutron = new NeutronAtom(static_cast<uint16_t>(EMPTY_DBL()), static_cast<uint16_t>(0),
                         0.0, 0.0, coeff3, 0.0, coeff3, coeff1);
     Material *mat = new Material("SetInMultipleScattering", *neutron, coeff2);
     in_WS->mutableSample().setMaterial(*mat);
@@ -234,32 +234,28 @@ void MultipleScatteringCylinderAbsorption::apply_msa_correction(
   else if (tof.size() == y_val.size())
     is_histogram = false;
 
-  double wl_val, Q2,
-         sigabs, sigir, sigsr, sigsct,
-         delta, deltp,
-         temp;
-
   vector<double> Z(Z_initial, Z_initial+Z_size);   // initialize Z array for this angle
   ZSet(angle_deg, Z);
 
-  Q2     = coeff1 * coeff2;
-  sigsct = coeff2 * coeff3;
-
+  double Q2     = coeff1 * coeff2;
+  double sigsct = coeff2 * coeff3;
   size_t n_ys = y_val.size();
+
   for ( size_t j = 0; j < n_ys; j++ )
   {
+	double wl_val;
     if ( is_histogram )
       wl_val = (wavelength(total_path,tof[j]) + wavelength(total_path,tof[j+1]))/2;
     else
       wl_val = wavelength(total_path,tof[j]);
 
-    sigabs = Q2 * wl_val;
-    sigir  = ( sigabs + sigsct ) * radius;
-    sigsr  = sigir;
-    temp   = AttFac( sigir, sigsr, Z );
+    double sigabs = Q2 * wl_val;
+    double sigir  = ( sigabs + sigsct ) * radius;
+    double sigsr  = sigir;
+    double temp   = AttFac( sigir, sigsr, Z );
 
-    delta = coeff4 * sigir + coeff5 * sigir * sigir;
-    deltp = (delta * sigsct) / (sigsct + sigabs) ;
+    double delta = coeff4 * sigir + coeff5 * sigir * sigir;
+    double deltp = (delta * sigsct) / (sigsct + sigabs) ;
 
     y_val[j] *= ( 1.0 - deltp ) / temp;
   }

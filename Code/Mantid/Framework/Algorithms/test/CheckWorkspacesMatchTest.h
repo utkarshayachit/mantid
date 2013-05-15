@@ -286,7 +286,7 @@ public:
     MDEventWorkspace3Lean::sptr mdews1 = MDEventsTestHelper::makeAnyMDEW<MDLeanEvent<3>, 3>(2, 0.0, 10.0, 1000, "A");
     MDEventWorkspace3Lean::sptr mdews2 = MDEventsTestHelper::makeAnyMDEW<MDLeanEvent<3>, 3>(2, 0.0, 10.0, 1000, "B");
     MDBoxBase<MDLeanEvent<3>, 3> *parentBox = dynamic_cast<MDBoxBase<MDLeanEvent<3>, 3> *>(mdews2->getBox());
-    std::vector<MDBoxBase<MDLeanEvent<3>, 3> *> boxes;
+    std::vector<IMDNode *> boxes;
     parentBox->getBoxes(boxes, 1000, true);
     MDBox<MDLeanEvent<3>, 3> *box = dynamic_cast<MDBox<MDLeanEvent<3>, 3> *>(boxes[0]);
     std::vector<MDLeanEvent<3> > &events = box->getEvents();
@@ -304,7 +304,7 @@ public:
     MDEventWorkspace3Lean::sptr mdews1 = MDEventsTestHelper::makeAnyMDEW<MDLeanEvent<3>, 3>(2, 0.0, 10.0, 1000, "A");
     MDEventWorkspace3Lean::sptr mdews2 = MDEventsTestHelper::makeAnyMDEW<MDLeanEvent<3>, 3>(2, 0.0, 10.0, 1000, "B");
     MDBoxBase<MDLeanEvent<3>, 3> *parentBox = dynamic_cast<MDBoxBase<MDLeanEvent<3>, 3> *>(mdews2->getBox());
-    std::vector<MDBoxBase<MDLeanEvent<3>, 3> *> boxes;
+    std::vector<IMDNode *> boxes;
     parentBox->getBoxes(boxes, 1000, true);
     MDBox<MDLeanEvent<3>, 3> *box = dynamic_cast<MDBox<MDLeanEvent<3>, 3> *>(boxes[0]);
     std::vector<MDLeanEvent<3> > &events = box->getEvents();
@@ -508,16 +508,31 @@ public:
   {
     if ( !checker.isInitialized() ) checker.initialize();
 
+    Mantid::API::MatrixWorkspace_sptr ws1local = WorkspaceCreationHelper::Create2DWorkspace123(2,2);
     Mantid::API::MatrixWorkspace_sptr ws2 = WorkspaceCreationHelper::Create2DWorkspace123(2,2);
+    // Put numeric axes on these workspaces as checkAxes won't test values on spectra axes
+    Axis * newAxisWS1 = new NumericAxis(ws1local->getAxis(1)->length());
+    newAxisWS1->setValue(0,1);
+    newAxisWS1->setValue(1,2);
+    Axis * newAxisWS2 = new NumericAxis(ws2->getAxis(1)->length());
+    newAxisWS2->setValue(0,1);
+    newAxisWS2->setValue(1,2);
+    ws1local->replaceAxis(1, newAxisWS1);
+    ws2->replaceAxis(1, newAxisWS2);
+
+    // Check that it's all good
+    TS_ASSERT( (Mantid::API::equals(ws1local, ws2)) );
+
+    // Now change a value in one axis
     ws2->getAxis(1)->setValue(1,99);
     
-    TS_ASSERT_THROWS_NOTHING( checker.setProperty("Workspace1",ws1) );
+    TS_ASSERT_THROWS_NOTHING( checker.setProperty("Workspace1",ws1local) );
     TS_ASSERT_THROWS_NOTHING( checker.setProperty("Workspace2",ws2) );
     
     TS_ASSERT( checker.execute() )
     TS_ASSERT_EQUALS( checker.getPropertyValue("Result"), "Axis 1 values mismatch" ) ;
     // Same, using the !Mantid::API::equals() function
-    TS_ASSERT( (!Mantid::API::equals(ws1, ws2)) );
+    TS_ASSERT( (!Mantid::API::equals(ws1local, ws2)) );
   }
 
   void testDifferentYUnit()

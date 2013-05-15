@@ -21,7 +21,8 @@ Property::Property( const std::string &name, const std::type_info &type, const u
   m_direction( direction ),
   m_units(""),
   m_settings(NULL),
-  m_group("")
+  m_group(""),
+  m_remember(true)
 {
     // Make sure a random int hasn't been passed in for the direction
     // Property & PropertyWithValue destructors will be called in this case
@@ -36,7 +37,8 @@ Property::Property( const Property& right ) :
   m_direction( right.m_direction ),
   m_units( right.m_units),
   m_settings(NULL),
-  m_group( right.m_group)
+  m_group( right.m_group),
+  m_remember(right.m_remember)
 {
   if (right.m_settings)
     m_settings = right.m_settings->clone();
@@ -103,7 +105,16 @@ std::string Property::isValid() const
 */
 bool Property::remember() const
 {
-  return true;
+  return m_remember;
+}
+
+/**
+ * Set wheter to remeber this property input
+ * @param remember :: true to remember
+ */
+void Property::setRemember(bool remember)
+{
+    m_remember=remember;
 }
 
 /** Sets the property's (optional) documentation string
@@ -206,6 +217,7 @@ namespace API
   class IMDWorkspace;
   class IEventWorkspace;
   class IMDHistoWorkspace;
+  class IFunction;
 }
 namespace DataObjects
 {
@@ -216,6 +228,9 @@ namespace DataObjects
   class MaskWorkspace;
   class SpecialWorkspace2D;
   class Workspace2D;
+  class TableWorkspace;
+  class SpecialWorkspace2D;
+  class SplittersWorkspace;
 }
 
 namespace Kernel
@@ -279,7 +294,15 @@ std::string getUnmangledTypeName(const std::type_info& type)
                                       string("SpecialWorkspace2D")));
     typestrings.insert(make_pair(typeid(boost::shared_ptr<IMDHistoWorkspace>).name(),
                                       string("IMDHistoWorkspace")));
-
+    typestrings.insert(make_pair(typeid(boost::shared_ptr<SplittersWorkspace>).name(),
+                                       string("SplittersWorkspace")));
+    typestrings.insert(make_pair(typeid(boost::shared_ptr<SpecialWorkspace2D>).name(),
+                                       string("SpecialWorkspace2D")));
+    typestrings.insert(make_pair(typeid(boost::shared_ptr<TableWorkspace>).name(),
+                                        string("TableWorkspace")));
+    // FunctionProperty
+    typestrings.insert(make_pair(typeid(boost::shared_ptr<IFunction>).name(),
+                                        string("Function")));
 
   }
   std::map<std::string, std::string>::const_iterator mitr = typestrings.find(type.name());

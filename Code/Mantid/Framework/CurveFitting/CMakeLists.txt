@@ -27,7 +27,6 @@ set ( SRC_FILES
 	src/Fit1D.cpp
 	src/FitMW.cpp
 	src/FitPowderDiffPeaks.cpp
-	src/FitPowderDiffPeaks2.cpp
 	src/FlatBackground.cpp
 	src/GSLFunctions.cpp
 	src/GSLMatrix.cpp
@@ -39,7 +38,7 @@ set ( SRC_FILES
 	src/GaussianLinearBG1D.cpp
 	src/GramCharlierComptonProfile.cpp
 	src/IkedaCarpenterPV.cpp
-	src/LeBailFit2.cpp
+	src/LeBailFit.cpp
 	src/LeBailFunction.cpp
 	src/LevenbergMarquardtMDMinimizer.cpp
 	src/LevenbergMarquardtMinimizer.cpp
@@ -115,7 +114,6 @@ set ( INC_FILES
 	inc/MantidCurveFitting/Fit1D.h
 	inc/MantidCurveFitting/FitMW.h
 	inc/MantidCurveFitting/FitPowderDiffPeaks.h
-	inc/MantidCurveFitting/FitPowderDiffPeaks2.h
 	inc/MantidCurveFitting/FlatBackground.h
 	inc/MantidCurveFitting/GSLFunctions.h
 	inc/MantidCurveFitting/GSLJacobian.h
@@ -130,7 +128,7 @@ set ( INC_FILES
 	inc/MantidCurveFitting/GramCharlierComptonProfile.h
 	inc/MantidCurveFitting/IkedaCarpenterPV.h
 	inc/MantidCurveFitting/Jacobian.h
-	inc/MantidCurveFitting/LeBailFit2.h
+	inc/MantidCurveFitting/LeBailFit.h
 	inc/MantidCurveFitting/LeBailFunction.h
 	inc/MantidCurveFitting/LevenbergMarquardtMDMinimizer.h
 	inc/MantidCurveFitting/LevenbergMarquardtMinimizer.h
@@ -174,7 +172,6 @@ set ( INC_FILES
               
 set ( TEST_FILES
 	# ChebyshevPolynomialBackgroundTest.h
-	# FitPowderDiffPeaksTest.h
 	# RefinePowderInstrumentParametersTest.h
 	#DiffSphereTest.h
 	#SCDPanelErrorsTest.h
@@ -196,7 +193,7 @@ set ( TEST_FILES
 	ExpDecayTest.h
 	FRConjugateGradientTest.h
 	FitMWTest.h
-	FitPowderDiffPeaks2Test.h
+	FitPowderDiffPeaksTest.h
 	FlatBackgroundTest.h
 	FunctionFactoryConstraintTest.h
 	GSLMatrixTest.h
@@ -207,7 +204,7 @@ set ( TEST_FILES
 	GaussianTest.h
 	GramCharlierComptonProfileTest.h
 	IkedaCarpenterPVTest.h
-	LeBailFit2Test.h
+	LeBailFitTest.h
 	LeBailFunctionTest.h
 	LeastSquaresTest.h
 	LevenbergMarquardtMDTest.h

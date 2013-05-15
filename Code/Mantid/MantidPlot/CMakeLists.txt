@@ -155,8 +155,7 @@ if ( CMAKE_COMPILER_IS_GNUCXX )
                                 PROPERTIES COMPILE_FLAGS -Wno-cast-qual )
 endif ()
 
-set ( MANTID_SRCS  src/Mantid/AbstractMantidLog.cpp
-                   src/Mantid/AlgorithmMonitor.cpp
+set ( MANTID_SRCS  src/Mantid/AlgorithmMonitor.cpp
                    src/Mantid/AlgorithmHistoryWindow.cpp
                    src/Mantid/ErrorBarSettings.cpp
                    src/Mantid/FirstTimeSetup.cpp
@@ -171,7 +170,6 @@ set ( MANTID_SRCS  src/Mantid/AbstractMantidLog.cpp
                    src/Mantid/MantidApplication.cpp
                    src/Mantid/MantidCurve.cpp
                    src/Mantid/MantidDock.cpp
-                   src/Mantid/MantidLog.cpp
                    src/Mantid/MantidMatrix.cpp
                    src/Mantid/MantidMatrixCurve.cpp
                    src/Mantid/MantidMDCurve.cpp
@@ -192,10 +190,9 @@ set ( MANTID_SRCS  src/Mantid/AbstractMantidLog.cpp
                    src/Mantid/InstrumentWidget/SampleActor.cpp
                    src/Mantid/InstrumentWidget/GLActorCollection.cpp
                    src/Mantid/InstrumentWidget/GLActor.cpp
+                   src/Mantid/InstrumentWidget/GLActorVisitor.cpp
                    src/Mantid/InstrumentWidget/GLColor.cpp
                    src/Mantid/InstrumentWidget/GLObject.cpp
-                   src/Mantid/InstrumentWidget/GLTrackball.cpp
-                   src/Mantid/InstrumentWidget/GLViewport.cpp
                    src/Mantid/InstrumentWidget/ICompAssemblyActor.cpp
                    src/Mantid/InstrumentWidget/InputController.cpp
                    src/Mantid/InstrumentWidget/InstrumentActor.cpp
@@ -227,6 +224,8 @@ set ( MANTID_SRCS  src/Mantid/AbstractMantidLog.cpp
                    src/Mantid/InstrumentWidget/Shape2D.cpp
                    src/Mantid/InstrumentWidget/Shape2DCollection.cpp
                    src/Mantid/InstrumentWidget/SimpleWidget.cpp
+                   src/Mantid/InstrumentWidget/Viewport.cpp
+                   src/Mantid/InstrumentWidget/DetXMLFile.cpp
 )
 
 ###########################################################################
@@ -382,8 +381,7 @@ set ( QTIPLOT_HDRS src/ApplicationWindow.h
                    src/lib/3rdparty/qtcolorpicker/src/qtcolorpicker.h
 )
 
-set ( MANTID_HDRS  src/Mantid/AbstractMantidLog.h
-                   src/Mantid/AlgorithmMonitor.h
+set ( MANTID_HDRS  src/Mantid/AlgorithmMonitor.h
                    src/Mantid/AlgorithmHistoryWindow.h
                    src/Mantid/ErrorBarSettings.h
                    src/Mantid/FirstTimeSetup.h
@@ -398,7 +396,6 @@ set ( MANTID_HDRS  src/Mantid/AbstractMantidLog.h
                    src/Mantid/MantidApplication.h
                    src/Mantid/MantidCurve.h
                    src/Mantid/MantidDock.h
-                   src/Mantid/MantidLog.h
                    src/Mantid/MantidMatrixCurve.h
                    src/Mantid/MantidMDCurve.h
                    src/Mantid/MantidMDCurveDialog.h
@@ -420,10 +417,9 @@ set ( MANTID_HDRS  src/Mantid/AbstractMantidLog.h
                    src/Mantid/InstrumentWidget/SampleActor.h
                    src/Mantid/InstrumentWidget/GLActorCollection.h
                    src/Mantid/InstrumentWidget/GLActor.h
+                   src/Mantid/InstrumentWidget/GLActorVisitor.h
                    src/Mantid/InstrumentWidget/GLColor.h
                    src/Mantid/InstrumentWidget/GLObject.h
-                   src/Mantid/InstrumentWidget/GLTrackball.h
-                   src/Mantid/InstrumentWidget/GLViewport.h
                    src/Mantid/InstrumentWidget/ICompAssemblyActor.h
                    src/Mantid/InstrumentWidget/InputController.h
                    src/Mantid/InstrumentWidget/InstrumentActor.h
@@ -455,6 +451,8 @@ set ( MANTID_HDRS  src/Mantid/AbstractMantidLog.h
                    src/Mantid/InstrumentWidget/Shape2D.h
                    src/Mantid/InstrumentWidget/Shape2DCollection.h
                    src/Mantid/InstrumentWidget/SimpleWidget.h
+                   src/Mantid/InstrumentWidget/Viewport.h
+                   src/Mantid/InstrumentWidget/DetXMLFile.h
 )
 
 ###########################################################################
@@ -661,7 +659,6 @@ set ( MANTID_MOC_FILES src/Mantid/AlgorithmMonitor.h
                        src/Mantid/MantidApplication.h
                        src/Mantid/MantidCurve.h
                        src/Mantid/MantidDock.h
-                       src/Mantid/MantidLog.h
                        src/Mantid/MantidMatrixCurve.h
                        src/Mantid/MantidMDCurve.h
                        src/Mantid/MantidMDCurveDialog.h
@@ -904,6 +901,7 @@ add_subdirectory( docs )
 # List of .py files than must be run WITHIN MantidPlot.
 set ( MANTIDPLOT_TEST_PY_FILES
     MantidPlotAlgorithmDialogTest.py
+    MantidPlotInstrumentViewTest.py
 	MantidPlotSliceViewerTest.py 
 	MantidPlot1DPlotTest.py
 	MantidPlotProxiesTest.py

@@ -9,7 +9,8 @@ Offsets in the file are all sets to zero and all detectors are selected. Overwri
 Detectors will be assigned to group one when using AlignDetector or DiffractionFocussing algorithms.
 
 
-==Usage==
+*WIKI*/
+/*WIKI_USAGE*
 '''Python'''
     CreateDummyCalFile("SNAP_4111","output.cal")
 
@@ -18,9 +19,7 @@ Detectors will be assigned to group one when using AlignDetector or DiffractionF
     alg->setPropertyValue("InputWorkspace", "SNAP_4111");
     alg->setPropertyValue("CalFilename", "output.cal");
     alg->execute();
-
-
-*WIKI*/
+*WIKI_USAGE*/
 //----------------------------------------------------------------------
 // Includes
 //----------------------------------------------------------------------
@@ -90,7 +89,7 @@ namespace Mantid
         new WorkspaceProperty<MatrixWorkspace>("InputWorkspace","",Direction::Input),
                             "The workspace containing the geometry to be calibrated." );
       declareProperty(new FileProperty("CalFilename","",FileProperty::Save, ".cal"),
-        "The name of the output CalFile");
+        "The name of the output [[CalFile]]");
     }
 
     /** Executes the algorithm

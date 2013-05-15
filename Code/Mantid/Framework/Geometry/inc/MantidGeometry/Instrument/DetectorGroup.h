@@ -63,6 +63,7 @@ namespace Mantid
       double getTwoTheta(const Kernel::V3D& observer, const Kernel::V3D& axis) const;
       double getSignedTwoTheta(const Kernel::V3D& observer, const Kernel::V3D& axis, const Kernel::V3D& instrumentUp) const;
       double getPhi() const;
+      double getPhiOffset(const double& offset) const;
       double solidAngle(const Kernel::V3D& observer) const; 
       bool isParametrized() const;
       bool isMasked() const;
@@ -120,6 +121,9 @@ namespace Mantid
       calculating such topology if it was not */
       det_topology getTopology(Kernel::V3D &center)const;
 
+      /// Return separator for list of names of detectors
+      std::string getNameSeparator() const { return ";"; }
+
     protected:
       /// The ID of this effective detector
       int m_id;
@@ -134,8 +138,7 @@ namespace Mantid
       mutable det_topology group_topology;
       /// group centre is the geometrical centre of the detectors group calculated when the calculate group topology is invoked
       mutable Kernel::V3D  groupCentre; 
-      /// Return separator for list of names of detectors
-      std::string getNameSeparator() const { return ";"; }
+
    
       // functions inherited from IComponent
       Component* clone() const{ return NULL; }
@@ -182,9 +185,9 @@ namespace Mantid
         return boost::shared_ptr<const Object>();
       }
       /// Returns the material of the Object
-      const boost::shared_ptr<const Material> material() const
+      const boost::shared_ptr<const Kernel::Material> material() const
       {
-        return boost::shared_ptr<const Material>();
+        return boost::shared_ptr<const Kernel::Material>();
       }
     private:
       /// Private, unimplemented copy constructor

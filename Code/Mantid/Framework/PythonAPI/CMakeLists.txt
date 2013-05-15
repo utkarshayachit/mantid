@@ -35,7 +35,7 @@ set ( INC_FILES
 )
 
 # Python files that need copying across
-set ( PY_FILES MantidFramework.py __init__.py setup.py mantidsimple.py)
+set ( PY_FILES MantidFramework.py __init__.py mantidsimple.py)
 
 if(UNITY_BUILD)
   include(UnityBuild)
@@ -264,6 +264,6 @@ endif ()
 # Pure Python files 
 install ( FILES ${PY_FILES} DESTINATION ${BIN_DIR} )
 # Algorithms
-install ( DIRECTORY PythonAlgorithms/ DESTINATION ${PLUGINS_DIR}/PythonAlgs
+install ( DIRECTORY PythonAlgorithms/ DESTINATION ${PLUGINS_DIR}/python/algorithms
           PATTERN "*.pyc" EXCLUDE
           PATTERN ".svn" EXCLUDE )

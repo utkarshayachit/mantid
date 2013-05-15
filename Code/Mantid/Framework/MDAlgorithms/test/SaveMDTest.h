@@ -4,6 +4,7 @@
 #include "MantidKernel/System.h"
 #include "MantidKernel/Timer.h"
 #include "MantidMDEvents/MDEventFactory.h"
+#include "MantidMDAlgorithms/BinMD.h"
 #include "MantidMDAlgorithms/SaveMD.h"
 #include "MantidTestHelpers/MDEventsTestHelper.h"
 #include "MantidAPI/FrameworkManager.h"
@@ -117,7 +118,8 @@ public:
       do_test_UpdateFileBackEnd(ws, filename);
     else
     {
-      ws->getBoxController()->closeFile(true);
+
+      ws->clearFileBacked(false);
       if (Poco::File(this_filename).exists()) Poco::File(this_filename).remove();
     }
 
@@ -136,6 +138,7 @@ public:
       ev.setCenter(0, double(i) * 0.01 + 0.4);
       ws->addEvent(ev);
     }
+    ws->splitAllIfNeeded(NULL);
     ws->refreshCache();
     // Manually set the flag that the algo would set
     ws->setFileNeedsUpdating(true);
@@ -151,16 +154,14 @@ public:
     alg.execute();
     TS_ASSERT( alg.isExecuted() );
 
-//    ws->getBoxController()->closeFile();
-
     // Since there are 330 events, the file needs to be that big (or bigger).
-    TS_ASSERT_LESS_THAN( 330, ws->getBoxController()->getFile()->getInfo().dims[0]);
+    TS_ASSERT_LESS_THAN( 330, ws->getBoxController()->getFileIO()->getFileLength());
 
     TSM_ASSERT("File back-end no longer needs updating.", !ws->fileNeedsUpdating() );
     // Clean up file
-  ws->getBoxController()->closeFile(true);
-    //std::string fullPath = alg.getPropertyValue("Filename");
-    //if (Poco::File(fullPath).exists()) Poco::File(fullPath).remove();
+    ws->clearFileBacked(false);
+    std::string fullPath = alg.getPropertyValue("Filename");
+    if (Poco::File(fullPath).exists()) Poco::File(fullPath).remove();
   }
 
   void test_saveExpInfo()
@@ -203,11 +204,44 @@ public:
     alg.execute();
     TS_ASSERT( alg.isExecuted() );
 
-    ws->getBoxController()->closeFile(true);
-  //  if (Poco::File(filename).exists()) Poco::File(filename).remove();
+    ws->clearFileBacked(false);
+    if (Poco::File(filename).exists()) Poco::File(filename).remove();
 
   }
 
+  void test_saveAffine()
+  {
+    std::string filename("MDAffineSaveTest.nxs");
+    // Make a 4D MDEventWorkspace
+    MDEventWorkspace4Lean::sptr ws = MDEventsTestHelper::makeMDEW<4>(10, 0.0, 10.0, 2);
+    AnalysisDataService::Instance().addOrReplace("SaveMDTest_ws", ws);
+
+    // Bin data to get affine matrix
+    BinMD balg;
+    balg.initialize();
+    balg.setProperty("InputWorkspace", "SaveMDTest_ws");
+    balg.setProperty("OutputWorkspace", "SaveMDTestHisto_ws");
+    balg.setProperty("AlignedDim0", "Axis2,0,10,10");
+    balg.setProperty("AlignedDim1", "Axis0,0,10,5");
+    balg.setProperty("AlignedDim2", "Axis1,0,10,5");
+    balg.setProperty("AlignedDim3", "Axis3,0,10,2");
+    balg.execute();
+
+    SaveMD alg;
+    TS_ASSERT_THROWS_NOTHING( alg.initialize() )
+    TS_ASSERT( alg.isInitialized() )
+    TS_ASSERT_THROWS_NOTHING( alg.setPropertyValue("InputWorkspace", "SaveMDTestHisto_ws") );
+    TS_ASSERT_THROWS_NOTHING( alg.setPropertyValue("Filename", filename) );
+    TS_ASSERT_THROWS_NOTHING( alg.setProperty("MakeFileBacked","0") );
+    alg.execute();
+    TS_ASSERT( alg.isExecuted() );
+
+    ws->clearFileBacked(false);
+    if (Poco::File(filename).exists())
+    {
+      Poco::File(filename).remove();
+    }
+  }
 
   /** Run SaveMD with the MDHistoWorkspace */
   void doTestHisto(MDHistoWorkspace_sptr ws)

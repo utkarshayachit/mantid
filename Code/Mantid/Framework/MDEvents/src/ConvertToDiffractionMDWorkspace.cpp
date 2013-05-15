@@ -473,7 +473,7 @@ namespace MDEvents
 
       // Build up the box controller, using the properties in BoxControllerSettingsAlgorithm
       BoxController_sptr bc = ws->getBoxController();
-      this->setBoxController(bc);
+      this->setBoxController(bc, m_inWS->getInstrument());
       // We always want the box to be split (it will reject bad ones)
       ws->splitBox();
 
@@ -607,8 +607,8 @@ namespace MDEvents
     if (DODEBUG) g_log.information() << cputim << ": Performing the refreshCache().\n";
 
     //TODO: Centroid in parallel, maybe?
-    ws->getBox()->refreshCentroid(NULL);
-    if (DODEBUG) g_log.information() << cputim << ": Performing the refreshCentroid().\n";
+    //ws->getBox()->refreshCentroid(NULL);
+    //if (DODEBUG) g_log.information() << cputim << ": Performing the refreshCentroid().\n";
 
 
     if (DODEBUG)

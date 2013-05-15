@@ -35,6 +35,7 @@ import CommonFunctions as common
 import diagnostics
 from mantid.simpleapi import *
 from mantid.kernel import funcreturns
+from mantid import api
 import glob
 import os.path
 import math
@@ -274,7 +275,7 @@ class DirectEnergyConversion(object):
             if 'Filename' in data_ws.getRun(): mono_run = data_ws.getRun()['Filename'].value
             else: raise RuntimeError('Cannot load monitors for event reduction. Unable to determine Filename from mono workspace, it should have been added as a run log.')
                  
-	    logger.debug("mono_run = %s (%s)" % (mono_run,type(mono_run)))
+            logger.debug("mono_run = %s (%s)" % (mono_run,type(mono_run)))
           
             if mono_run.endswith("_event.nxs"):
                 monitor_ws=LoadNexusMonitors(Filename=mono_run)
@@ -349,7 +350,8 @@ class DirectEnergyConversion(object):
                     raise RuntimeError('Cannot run LoadDetectorInfo: "Filename" property not found on input mono workspace')
                 if self.relocate_dets: 
                     self.log('Moving detectors to positions specified in RAW file.')
-            	LoadDetectorInfo(Workspace=result_name,DataFilename=filename,RelocateDets=self.relocate_dets)
+                    
+                LoadDetectorInfo(Workspace=result_name,DataFilename=filename,RelocateDets=self.relocate_dets)
             else:
                 self.log('Raw file detector header is superceeded') 
                 if self.relocate_dets: 
@@ -406,8 +408,9 @@ class DirectEnergyConversion(object):
 
         # Ki/Kf Scaling...
         if self.apply_kikf_correction:
-            # TODO: Write log message
+            self.log('Start Applying ki/kf corrections to the workpsace : '+result_name)                                
             CorrectKiKf(InputWorkspace=result_name,OutputWorkspace= result_name, EMode='Direct')
+            self.log('finished applying ki/kf corrections')                                            
 
         # Make sure that our binning is consistent
         if not self.energy_bins is None:
@@ -710,16 +713,25 @@ class DirectEnergyConversion(object):
         else:
             # Load an empty instrument if one isn't already there
             idf_dir = config.getString('instrumentDefinition.directory')
-            instr_pattern = os.path.join(idf_dir,self.instr_name + '*_Definition.xml')
-            idf_files = glob.glob(instr_pattern)
-            if len(idf_files) > 0:
+            try:
+                idf_file=api.ExperimentInfo.getInstrumentFilename(self.instr_name)
                 tmp_ws_name = '__empty_' + self.instr_name
                 if not mtd.doesExist(tmp_ws_name):
-                    LoadEmptyInstrument(Filename=idf_files[0],OutputWorkspace=tmp_ws_name)
+                    LoadEmptyInstrument(Filename=idf_file,OutputWorkspace=tmp_ws_name)
                 self.instrument = mtd[tmp_ws_name].getInstrument()
-            else:
+            except:
                 self.instrument = None
                 raise RuntimeError('Cannot load instrument for prefix "%s"' % self.instr_name)
+            #instr_pattern = os.path.join(idf_dir,self.instr_name + '*_Definition.xml')
+            #idf_files = glob.glob(instr_pattern)
+            #if len(idf_files) > 0:
+            #    tmp_ws_name = '__empty_' + self.instr_name
+            #    if not mtd.doesExist(tmp_ws_name):
+            #        LoadEmptyInstrument(Filename=idf_files[0],OutputWorkspace=tmp_ws_name)
+            #    self.instrument = mtd[tmp_ws_name].getInstrument()
+            #else:
+            #    self.instrument = None
+            #    raise RuntimeError('Cannot load instrument for prefix "%s"' % self.instr_name)
         # Initialise IDF parameters
         self.init_idf_params()
 

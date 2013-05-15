@@ -17,8 +17,9 @@ import os
 import time
 
 # Import into the global namespace qti classes that:
-#   (a) don't need a proxy & (b) can be constructed from python
-from _qti import PlotSymbol, ImageSymbol, ArrowMarker, ImageMarker
+#   (a) don't need a proxy & (b) can be constructed from python or (c) have enumerations within them
+from _qti import (PlotSymbol, ImageSymbol, ArrowMarker, ImageMarker,
+                  GraphOptions, InstrumentWindow, InstrumentWindowPickTab, InstrumentWindowMaskTab)
 
 # Make the ApplicationWindow instance accessible from the mantidplot namespace
 from _qti import app
@@ -250,9 +251,11 @@ def plotBin(source, indices, error_bars = False, graph_type = 0):
         return new_proxy(proxies.Graph,_qti.app.mantidUI.plotBin,wkspname, indexes, errors,graph_type)
 
     if isinstance(source, list) or isinstance(source, tuple):
-        raise RuntimeError("Currently unable to handle multiple sources for bin plotting. Merging must be done by hand.")
-    else:
-        return _callPlotBin(source, indices, error_bars, graph_type)
+        if len(source) > 1:
+            raise RuntimeError("Currently unable to handle multiple sources for bin plotting. Merging must be done by hand.")
+        else:
+            source = source[0]
+    return _callPlotBin(source, indices, error_bars, graph_type)
 
 #-----------------------------------------------------------------------------
 def stemPlot(source, index, power=None, startPoint=None, endPoint=None):
@@ -446,17 +449,20 @@ def getMantidMatrix(name):
     """Get a handle to the named Mantid matrix"""
     return new_proxy(proxies.MantidMatrix, _qti.app.mantidUI.getMantidMatrix, name)
 
-def getInstrumentView(name, tab=-1):
+def getInstrumentView(name, tab=InstrumentWindow.RENDER):
     """Create an instrument view window based on the given workspace.
     
     Args:
         name: The name of the workspace.
-        tab: The index of the tab to display initially.
+        tab: The index of the tab to display initially, (default=InstrumentWindow.RENDER)
         
     Returns:
         A handle to the created instrument view widget.
     """
-    return new_proxy(proxies.MDIWindow, _qti.app.mantidUI.getInstrumentView, name,tab)
+    ads = _get_analysis_data_service()
+    if name not in ads:
+        raise ValueError("Workspace %s does not exist" % name)
+    return new_proxy(proxies.InstrumentWindow, _qti.app.mantidUI.getInstrumentView, name, tab)
 
 def importMatrixWorkspace(name, firstIndex=None, lastIndex=None, showDialog=False, visible=False):
     """Create a MantidMatrix object from the named workspace.
@@ -814,12 +820,10 @@ def screenshot(widget, filename, description, png_exists=False):
     The MANTID_SCREENSHOT_REPORT environment variable must be set 
     to the destination folder. Screenshot taking is skipped otherwise.
     
-    @param widget :: QWidget to grab
-    @param filename :: Save to this file (no extension!)
-    @param description :: Short descriptive text of what the 
-            screenshot should look like
-    @param png_exists :: if True, then the 'filename' already
-            exists. Don't grab a screenshot, but add to the report.
+    :param widget: QWidget to grab.
+    :param filename: Save to this file (no extension!).
+    :param description: Short descriptive text of what the screenshot should look like.
+    :param png_exists: if True, then the 'filename' already exists. Don't grab a screenshot, but add to the report.
     """
     dest = get_screenshot_dir()
     if not dest is None:

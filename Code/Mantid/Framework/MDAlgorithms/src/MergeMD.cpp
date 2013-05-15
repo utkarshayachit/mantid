@@ -167,6 +167,24 @@ namespace MDAlgorithms
     // Perform the initial box splitting
     out->splitBox();
 
+    // copy experiment infos
+     uint16_t nExperiments(0);
+     if(m_workspaces.size()>std::numeric_limits<uint16_t>::max())
+        throw std::invalid_argument("currently we can not combine more then 65535 experiments");
+     else
+        nExperiments = static_cast<uint16_t>(m_workspaces.size());
+
+     for (uint16_t i=0; i < nExperiments; i++)
+     {
+         uint16_t nWSexperiments = m_workspaces[i]->getNumExperimentInfo();
+         for(uint16_t j=0;j<nWSexperiments;j++)
+         {
+            API::ExperimentInfo_sptr ei = API::ExperimentInfo_sptr(m_workspaces[i]->getExperimentInfo(j)->cloneExperimentInfo());
+            out->addExperimentInfo(ei);
+         }
+     }
+
+ 
   }
 
 
@@ -193,10 +211,15 @@ namespace MDAlgorithms
     size_t initial_numEvents = ws1->getNPoints();
 
     // Make a leaf-only iterator through all boxes with events in the RHS workspace
-    std::vector<MDBoxBase<MDE,nd> *> boxes;
+    std::vector<API::IMDNode *> boxes;
     box2->getBoxes(boxes, 1000, true);
     int numBoxes = int(boxes.size());
 
+    bool fileBasedSource(false);
+    if(ws2->isFileBacked())
+        fileBasedSource=true;
+
+ 
     // Add the boxes in parallel. They should be spread out enough on each
     // core to avoid stepping on each other.
     // cppcheck-suppress syntaxError
@@ -211,7 +234,10 @@ namespace MDAlgorithms
         const std::vector<MDE> & events = box->getConstEvents();
         // Add events, with bounds checking
         box1->addEvents(events);
-        box->releaseEvents();
+        if(fileBasedSource)
+          box->clear();
+        else
+          box->releaseEvents();
       }
       PARALLEL_END_INTERUPT_REGION
     }
@@ -228,8 +254,8 @@ namespace MDAlgorithms
 
     // Set a marker that the file-back-end needs updating if the # of events changed.
     if (ws1->getNPoints() != initial_numEvents)
-      ws1->setFileNeedsUpdating(true);
-
+       ws1->setFileNeedsUpdating(true);
+//
     //std::cout << tim << " to add workspace " << ws2->name() << std::endl;
 
   }

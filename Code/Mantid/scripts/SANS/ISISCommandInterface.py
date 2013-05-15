@@ -5,11 +5,14 @@
 import isis_instrument
 from reduction.command_interface import ReductionSingleton  
 import reduction.instruments.sans.sans_reduction_steps as sans_reduction_steps
+sanslog = sans_reduction_steps.sanslog
+
 import isis_reduction_steps
 import isis_reducer
 from centre_finder import CentreFinder as CentreFinder
 #import SANSReduction
-import MantidFramework
+from mantid.simpleapi import *
+from mantid.api import WorkspaceGroup
 import copy
 from SANSadd2 import *
 
@@ -37,7 +40,7 @@ def SetVerboseMode(state):
 # Print a message and log it if the 
 def _printMessage(msg, log = True, no_console=False):
     if log == True and _VERBOSE_ == True:
-        MantidFramework.mtd.sendLogMessage('::SANS::' + msg)
+        sanslog.notice(msg)
     if not no_console:
         print msg
     
@@ -476,22 +479,22 @@ def WavRangeReduction(wav_start=None, wav_end=None, full_trans_wav=None, name_su
 
         if maxQ > minQ:
             #preparing the sample
-            CropWorkspace(InputWorkspace=Nf, OutputWorkspace=Nf, XMin=minQ, XMax=maxQ)
-            CropWorkspace(InputWorkspace=Nr, OutputWorkspace=Nr, XMin=minQ, XMax=maxQ)
-            CropWorkspace(InputWorkspace=Cf, OutputWorkspace=Cf, XMin=minQ, XMax=maxQ)
-            CropWorkspace(InputWorkspace=Cr, OutputWorkspace=Cr, XMin=minQ, XMax=maxQ)
+            Nf = CropWorkspace(InputWorkspace=Nf, OutputWorkspace=Nf, XMin=minQ, XMax=maxQ)
+            Nr = CropWorkspace(InputWorkspace=Nr, OutputWorkspace=Nr, XMin=minQ, XMax=maxQ)
+            Cf = CropWorkspace(InputWorkspace=Cf, OutputWorkspace=Cf, XMin=minQ, XMax=maxQ)
+            Cr = CropWorkspace(InputWorkspace=Cr, OutputWorkspace=Cr, XMin=minQ, XMax=maxQ)
             if consider_can:
                 #preparing the can
-                CropWorkspace(InputWorkspace=Nf_can, OutputWorkspace=Nf_can, XMin=minQ, XMax=maxQ)
-                CropWorkspace(InputWorkspace=Nr_can, OutputWorkspace=Nr_can, XMin=minQ, XMax=maxQ)
-                CropWorkspace(InputWorkspace=Cf_can, OutputWorkspace=Cf_can, XMin=minQ, XMax=maxQ)
-                CropWorkspace(InputWorkspace=Cr_can, OutputWorkspace=Cr_can, XMin=minQ, XMax=maxQ)
+                Nf_can = CropWorkspace(InputWorkspace=Nf_can, OutputWorkspace=Nf_can, XMin=minQ, XMax=maxQ)
+                Nr_can = CropWorkspace(InputWorkspace=Nr_can, OutputWorkspace=Nr_can, XMin=minQ, XMax=maxQ)
+                Cf_can = CropWorkspace(InputWorkspace=Cf_can, OutputWorkspace=Cf_can, XMin=minQ, XMax=maxQ)
+                Cr_can = CropWorkspace(InputWorkspace=Cr_can, OutputWorkspace=Cr_can, XMin=minQ, XMax=maxQ)
             
             mergedQ = (Cf+shift*Nf+Cr)/(Nf/scale + Nr)        
             if consider_can:
                 mergedQ -= (Cf_can+Cr_can)/(Nf_can/scale + Nr_can)
             
-            RenameWorkspace(mergedQ, retWSname_merged)
+            RenameWorkspace(InputWorkspace=mergedQ,OutputWorkspace= retWSname_merged)
         else:
             issueWarning('rear and front data has no overlapping q-region. Merged workspace no calculated')
         
@@ -511,7 +514,7 @@ def WavRangeReduction(wav_start=None, wav_end=None, full_trans_wav=None, name_su
     if reduce_front_flag:
         frontWS = mtd[retWSname_front]
         frontWS = (frontWS+shift)*scale
-        RenameWorkspace(frontWS, retWSname_front)
+        RenameWorkspace(InputWorkspace=frontWS,OutputWorkspace= retWSname_front)
 
     # finished calculating cross section so can restore these value
     ReductionSingleton().to_Q.outputParts = toRestoreOutputParts
@@ -628,7 +631,7 @@ def _WavRangeReduction(name_suffix=None):
     if name_suffix:
         old = result
         result += name_suffix
-        RenameWorkspace(old, result)
+        RenameWorkspace(InputWorkspace=old,OutputWorkspace= result)
         
     return result
 
@@ -643,9 +646,9 @@ def delete_workspaces(workspaces):
             workspaces = [workspaces]
 
     for wksp in workspaces:
-        if wksp and mtd.workspaceExists(wksp):
+        if wksp and wksp in mtd:
             try:
-                DeleteWorkspace(wksp)
+                DeleteWorkspace(Workspace=wksp)
             except:
                 #we're only deleting to save memory, if the workspace really won't delete leave it
                 pass
@@ -884,7 +887,7 @@ def PlotResult(workspace, canvas=None):
     """ 
     #ensure that we are dealing with a workspace handle rather than its name
     workspace = mtd[str(workspace)]
-    if workspace.isGroup():
+    if isinstance(workspace, WorkspaceGroup):
         numSpecs = workspace[0].getNumberHistograms()
     else:
         numSpecs = workspace.getNumberHistograms()
@@ -933,15 +936,15 @@ def DisplayMask(mask_worksp=None):
         
         if samp:
             counts_data = '__DisplayMasked_tempory_wksp'
-            Integration(samp, counts_data)
-            CloneWorkspace(samp, mask_worksp)
+            Integration(InputWorkspace=samp,OutputWorkspace= counts_data)
+            CloneWorkspace(InputWorkspace=samp,OutputWorkspace= mask_worksp)
         else:
             instrument.load_empty(mask_worksp)
             instrument.set_up_for_run('emptyInstrument')
         
     ReductionSingleton().mask.display(mask_worksp, ReductionSingleton(), counts_data)
     if counts_data:
-        mantid.deleteWorkspace(counts_data)
+        DeleteWorkspace(counts_data)
         
     return mask_worksp
 
@@ -1032,20 +1035,20 @@ def FindBeamCentre(rlow, rupp, MaxIter = 10, xstart = None, ystart = None):
     xstart = beamcoords[0]
     ystart = beamcoords[1]
     
-    mantid.sendLogMessage("::SANS:: xstart,ystart="+str(XNEW*1000.)+" "+str(YNEW*1000.)) 
-    _printMessage("Starting centre finding routine ...")
 
     #remove this if we know running the Reducer() doesn't change i.e. all execute() methods are const
     centre_reduction = copy.deepcopy(ReductionSingleton().reference())
     LimitsR(str(float(rlow)), str(float(rupp)), quiet=True, reducer=centre_reduction)
 
     centre = CentreFinder(original)
+    centre.logger.notice("xstart,ystart="+str(XNEW*1000.)+" "+str(YNEW*1000.)) 
+    centre.logger.notice("Starting centre finding routine ...")
     #this function moves the detector to the beam center positions defined above and returns an estimate of where the beam center is relative to the new center  
     resX_old, resY_old = centre.SeekCentre(centre_reduction, [XNEW, YNEW])
     centre_reduction = copy.deepcopy(ReductionSingleton().reference())
     LimitsR(str(float(rlow)), str(float(rupp)), quiet=True, reducer=centre_reduction)
 
-    mantid.sendLogMessage(centre.status_str(0, resX_old, resY_old))
+    logger.notice(centre.status_str(0, resX_old, resY_old))
     
     # take first trial step
     XNEW = xstart + XSTEP
@@ -1061,7 +1064,7 @@ def FindBeamCentre(rlow, rupp, MaxIter = 10, xstart = None, ystart = None):
         centre_reduction = copy.deepcopy(ReductionSingleton().reference())
         LimitsR(str(float(rlow)), str(float(rupp)), quiet=True, reducer=centre_reduction)
 
-        mantid.sendLogMessage(centre.status_str(it, resX, resY))
+        centre.logger.notice(centre.status_str(it, resX, resY))
         
         try :
             if not graph_handle:
@@ -1081,7 +1084,7 @@ def FindBeamCentre(rlow, rupp, MaxIter = 10, xstart = None, ystart = None):
             YSTEP = -YSTEP/2.
         if abs(XSTEP) < 0.1251/1000. and abs(YSTEP) < 0.1251/1000. :
             # this is the success criteria, we've close enough to the center
-            mantid.sendLogMessage("::SANS:: Converged - check if stuck in local minimum!")
+            centre.logger.notice("Converged - check if stuck in local minimum!")
             break
         
         resX_old = resX
@@ -1090,13 +1093,13 @@ def FindBeamCentre(rlow, rupp, MaxIter = 10, xstart = None, ystart = None):
         YNEW += YSTEP
     
     if it == MaxIter:
-        mantid.sendLogMessage("::SANS:: Out of iterations, new coordinates may not be the best!")
+        centre.logger.notice("Out of iterations, new coordinates may not be the best!")
         XNEW -= XSTEP
         YNEW -= YSTEP
     
     ReductionSingleton().set_beam_finder(
         sans_reduction_steps.BaseBeamFinder(XNEW, YNEW), det_bank)
-    _printMessage("Centre coordinates updated: [" + str(XNEW)+ ", "+ str(YNEW) + ']')
+    centre.logger.notice("Centre coordinates updated: [" + str(XNEW)+ ", "+ str(YNEW) + ']')
     
     return XNEW, YNEW
 
@@ -1106,5 +1109,13 @@ NewTrans = 'False'
 
 _refresh_singleton()
 
-#if __name__ != '__main__':
-#    AssignSample('c:\\mantid\\test\\data\\SANS2D\\SANS2D000992.raw')
+if __name__ == '__main__':
+    SetVerboseMode(True)
+    SANS2D()
+    MaskFile('MASKSANS2D_123T_4m_Xpress_8mm.txt')
+    Set1D()
+    AssignSample('SANS2D00002500.nxs')
+    Gravity(True)
+    wav1 = 2.0
+    wav2 = wav1 + 2.0
+    reduced = WavRangeReduction(wav1, wav2, DefaultTrans)

@@ -9,6 +9,17 @@
   The input PeaksWorkspace must contain an orientation matrix and have been INDEXED by THIS MATRIX
   when the new peaks are not created from a range of h ,k, and l values
 
+  Example usage:
+
+     from mantidsimple import *
+     PeaksWrkSpace=mtd["PeaksQa"]
+             #Can be created via PredictPeaks( then do NOT use next line)
+     FindUBUsingFFT(PeaksWrkSpace,3,15,.12)
+     IndexPeaks(PeaksWrkSpace,.12,1)
+     PredictFractionalPeaks(PeaksWrkSpace,"FracPeaks","-.5,0,.5","-.5,.5","0")
+          #NOTE: There are editing options on PeaksWorkspaces, like combining 2 PeaksWorkspaces.
+
+
  *WIKI*/
 /*
  * PredictFractionalPeaks.cpp
@@ -180,7 +191,7 @@ namespace Mantid
        Kernel::DblMatrix UB= ol.getUB();
        vector< vector<int> > AlreadyDonePeaks;
        bool done = false;
-       int ErrPos = 1;//Used to determine position in code of a throw
+       int ErrPos =1;//Used to determine position in code of a throw
        while( !done)
        {
          for( size_t hoffset=0;hoffset<hOffsets.size();hoffset++)
@@ -209,6 +220,7 @@ namespace Mantid
 
                   if (Qs[2]>0 && peak->findDetector())
                   {
+					// cppcheck-suppress redundantAssignment
                     ErrPos=2;
                     vector<int> SavPk;
                     SavPk.push_back(RunNumber);
@@ -219,13 +231,14 @@ namespace Mantid
                   //TODO keep list sorted so searching is faster?
                     vector<vector<int> >::iterator it = find(AlreadyDonePeaks.begin(),AlreadyDonePeaks.end(),SavPk);
 
+					// cppcheck-suppress redundantAssignment
                     ErrPos=3;
                     if( it == AlreadyDonePeaks.end())
                       AlreadyDonePeaks.push_back(SavPk);
                     else
                       continue;
 
-
+					// cppcheck-suppress redundantAssignment
                     ErrPos=4;
                     peak->setHKL(hkl1);
                     peak->setRunNumber(RunNumber);

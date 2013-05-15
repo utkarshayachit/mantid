@@ -2,7 +2,7 @@
 
 The LoadEventNeXus algorithm loads data from an EventNexus file into an [[EventWorkspace]]. The default histogram bin boundaries consist of a single bin able to hold all events (in all pixels), and will have their [[units]] set to time-of-flight. Since it is an [[EventWorkspace]], it can be rebinned to finer bins with no loss of data.
 
-Sample logs, such as motor positions or e.g. temperature vs time, are also loaded using the [[LoadLogsFromSNSNexus]] Child Algorithm.
+Sample logs, such as motor positions or e.g. temperature vs time, are also loaded using the [[LoadNexusLogs]] child algorithm.
 
 === Optional properties ===
 
@@ -1000,7 +1000,7 @@ void LoadEventNexus::init()
   exts.push_back(".nxs.h5");
   exts.push_back(".nxs");
   this->declareProperty(new FileProperty("Filename", "", FileProperty::Load, exts),
-      "The name of the Event NeXus file to read, including its full or relative path. \n"
+      "The name of the Event NeXus file to read, including its full or relative path. "
       "The file name is typically of the form INST_####_event.nxs (N.B. case sensitive if running on Linux)." );
 
   this->declareProperty(
@@ -1009,12 +1009,12 @@ void LoadEventNexus::init()
 
   declareProperty(
       new PropertyWithValue<double>("FilterByTofMin", EMPTY_DBL(), Direction::Input),
-    "Optional: To exclude events that do not fall within a range of times-of-flight.\n"\
+    "Optional: To exclude events that do not fall within a range of times-of-flight. "\
     "This is the minimum accepted value in microseconds. Keep blank to load all events." );
 
   declareProperty(
       new PropertyWithValue<double>("FilterByTofMax", EMPTY_DBL(), Direction::Input),
-    "Optional: To exclude events that do not fall within a range of times-of-flight.\n"\
+    "Optional: To exclude events that do not fall within a range of times-of-flight. "\
     "This is the maximum accepted value in microseconds. Keep blank to load all events." );
 
   declareProperty(
@@ -1041,7 +1041,7 @@ void LoadEventNexus::init()
 
   declareProperty(
       new PropertyWithValue<bool>("SingleBankPixelsOnly", true, Direction::Input),
-    "Optional: Only applies if you specified a single bank to load with BankName.\n"
+    "Optional: Only applies if you specified a single bank to load with BankName. "
     "Only pixels in the specified bank will be created if true; all of the instrument's pixels will be created otherwise.");
   setPropertySettings("SingleBankPixelsOnly", new VisibleWhenProperty("BankName", IS_NOT_DEFAULT) );
 
@@ -1051,12 +1051,12 @@ void LoadEventNexus::init()
 
   declareProperty(
       new PropertyWithValue<bool>("Precount", false, Direction::Input),
-      "Pre-count the number of events in each pixel before allocating memory (optional, default False). \n"
+      "Pre-count the number of events in each pixel before allocating memory (optional, default False). "
       "This can significantly reduce memory use and memory fragmentation; it may also speed up loading.");
 
   declareProperty(
       new PropertyWithValue<double>("CompressTolerance", -1.0, Direction::Input),
-      "Run CompressEvents while loading (optional, leave blank or negative to not do). \n"
+      "Run CompressEvents while loading (optional, leave blank or negative to not do). "
       "This specified the tolerance to use (in microseconds) when compressing.");
   
   auto mustBePositive = boost::make_shared<BoundedValidator<int> >();
@@ -1080,16 +1080,16 @@ void LoadEventNexus::init()
       "Load the monitors from the file (optional, default False).");
 
   declareProperty(new PropertyWithValue<bool>("MonitorsAsEvents", false, Direction::Input),
-      "If present, load the monitors as events.\nWARNING: WILL SIGNIFICANTLY INCREASE MEMORY USAGE (optional, default False). \n");
+      "If present, load the monitors as events. '''WARNING:''' WILL SIGNIFICANTLY INCREASE MEMORY USAGE (optional, default False). ");
 
   declareProperty(
       new PropertyWithValue<double>("FilterMonByTofMin", EMPTY_DBL(), Direction::Input),
-    "Optional: To exclude events from monitors that do not fall within a range of times-of-flight.\n"\
+    "Optional: To exclude events from monitors that do not fall within a range of times-of-flight. "\
     "This is the minimum accepted value in microseconds." );
 
   declareProperty(
       new PropertyWithValue<double>("FilterMonByTofMax", EMPTY_DBL(), Direction::Input),
-    "Optional: To exclude events from monitors that do not fall within a range of times-of-flight.\n"\
+    "Optional: To exclude events from monitors that do not fall within a range of times-of-flight. "\
     "This is the maximum accepted value in microseconds." );
 
   declareProperty(
@@ -1118,6 +1118,10 @@ void LoadEventNexus::init()
   declareProperty(
       new PropertyWithValue<bool>("MetaDataOnly", false, Direction::Input),
       "If true, only the meta data and sample logs will be loaded.");
+
+  declareProperty(
+      new PropertyWithValue<bool>("LoadLogs", true, Direction::Input),
+      "Load the Sample/DAS logs from the file (default True).");
 }
 
 
@@ -1168,7 +1172,7 @@ void LoadEventNexus::exec()
   precount = getProperty("Precount");
   compressTolerance = getProperty("CompressTolerance");
 
-  loadlogs = true;
+  loadlogs = getProperty("LoadLogs");
 
   // Check to see if the monitors need to be loaded later
   bool load_monitors = this->getProperty("LoadMonitors");
@@ -1934,90 +1938,90 @@ BankPulseTimes * LoadEventNexus::runLoadNexusLogs(const std::string &nexusfilena
  */
 void LoadEventNexus::deleteBanks(API::MatrixWorkspace_sptr workspace, std::vector<std::string> bankNames)
 {
-	Instrument_sptr inst = boost::const_pointer_cast<Instrument>(workspace->getInstrument()->baseInstrument());
-	//Build a list of Rectangular Detectors
-	std::vector<boost::shared_ptr<RectangularDetector> > detList;
-	for (int i=0; i < inst->nelements(); i++)
-	{
-	  boost::shared_ptr<RectangularDetector> det;
-	  boost::shared_ptr<ICompAssembly> assem;
-	  boost::shared_ptr<ICompAssembly> assem2;
+    Instrument_sptr inst = boost::const_pointer_cast<Instrument>(workspace->getInstrument()->baseInstrument());
+    //Build a list of Rectangular Detectors
+    std::vector<boost::shared_ptr<RectangularDetector> > detList;
+    for (int i=0; i < inst->nelements(); i++)
+    {
+      boost::shared_ptr<RectangularDetector> det;
+      boost::shared_ptr<ICompAssembly> assem;
+      boost::shared_ptr<ICompAssembly> assem2;
 
-	  det = boost::dynamic_pointer_cast<RectangularDetector>( (*inst)[i] );
-	  if (det)
-	  {
-		detList.push_back(det);
-	  }
-	  else
-	  {
-		//Also, look in the first sub-level for RectangularDetectors (e.g. PG3).
-		// We are not doing a full recursive search since that will be very long for lots of pixels.
-		assem = boost::dynamic_pointer_cast<ICompAssembly>( (*inst)[i] );
-		if (assem)
-		{
-		  for (int j=0; j < assem->nelements(); j++)
-		  {
-			det = boost::dynamic_pointer_cast<RectangularDetector>( (*assem)[j] );
-			if (det)
-			{
-			  detList.push_back(det);
+      det = boost::dynamic_pointer_cast<RectangularDetector>( (*inst)[i] );
+      if (det)
+      {
+        detList.push_back(det);
+      }
+      else
+      {
+        //Also, look in the first sub-level for RectangularDetectors (e.g. PG3).
+        // We are not doing a full recursive search since that will be very long for lots of pixels.
+        assem = boost::dynamic_pointer_cast<ICompAssembly>( (*inst)[i] );
+        if (assem)
+        {
+          for (int j=0; j < assem->nelements(); j++)
+          {
+            det = boost::dynamic_pointer_cast<RectangularDetector>( (*assem)[j] );
+            if (det)
+            {
+              detList.push_back(det);
 
-			}
-			else
-			{
-			  //Also, look in the second sub-level for RectangularDetectors (e.g. PG3).
-			  // We are not doing a full recursive search since that will be very long for lots of pixels.
-			  assem2 = boost::dynamic_pointer_cast<ICompAssembly>( (*assem)[j] );
-			  if (assem2)
-			  {
-				for (int k=0; k < assem2->nelements(); k++)
-				{
-				  det = boost::dynamic_pointer_cast<RectangularDetector>( (*assem2)[k] );
-				  if (det)
-				  {
-					detList.push_back(det);
-				  }
-				}
-			  }
-			}
-		  }
-		}
-	  }
-	}
+            }
+            else
+            {
+              //Also, look in the second sub-level for RectangularDetectors (e.g. PG3).
+              // We are not doing a full recursive search since that will be very long for lots of pixels.
+              assem2 = boost::dynamic_pointer_cast<ICompAssembly>( (*assem)[j] );
+              if (assem2)
+              {
+                for (int k=0; k < assem2->nelements(); k++)
+                {
+                  det = boost::dynamic_pointer_cast<RectangularDetector>( (*assem2)[k] );
+                  if (det)
+                  {
+                    detList.push_back(det);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
     if (detList.size() == 0) return;
-	for (int i = 0; i<static_cast<int>(detList.size()); i++)
-	{
-		bool keep = false;
-	    boost::shared_ptr<RectangularDetector> det = detList[i];
-	    std::string det_name = det->getName();
-		for (int j = 0; j<static_cast<int>(bankNames.size()); j++)
-		{
-		    size_t pos = bankNames[j].find("_events");
-			if(det_name.compare(bankNames[j].substr(0,pos)) == 0) keep = true;
-			if(keep) break;
-		}
-		if (!keep)
-		{
-			boost::shared_ptr<const IComponent> parent = inst->getComponentByName(det_name);
-			std::vector<Geometry::IComponent_const_sptr> children;
-			boost::shared_ptr<const Geometry::ICompAssembly> asmb = boost::dynamic_pointer_cast<const Geometry::ICompAssembly>(parent);
-			asmb->getChildren(children, false);
-	        for (int col = 0; col<static_cast<int>(children.size()); col++)
-	        {
-				boost::shared_ptr<const Geometry::ICompAssembly> asmb2 = boost::dynamic_pointer_cast<const Geometry::ICompAssembly>(children[col]);
-				std::vector<Geometry::IComponent_const_sptr> grandchildren;
-				asmb2->getChildren(grandchildren,false);
+    for (int i = 0; i<static_cast<int>(detList.size()); i++)
+    {
+        bool keep = false;
+        boost::shared_ptr<RectangularDetector> det = detList[i];
+        std::string det_name = det->getName();
+        for (int j = 0; j<static_cast<int>(bankNames.size()); j++)
+        {
+            size_t pos = bankNames[j].find("_events");
+            if(det_name.compare(bankNames[j].substr(0,pos)) == 0) keep = true;
+            if(keep) break;
+        }
+        if (!keep)
+        {
+            boost::shared_ptr<const IComponent> parent = inst->getComponentByName(det_name);
+            std::vector<Geometry::IComponent_const_sptr> children;
+            boost::shared_ptr<const Geometry::ICompAssembly> asmb = boost::dynamic_pointer_cast<const Geometry::ICompAssembly>(parent);
+            asmb->getChildren(children, false);
+            for (int col = 0; col<static_cast<int>(children.size()); col++)
+            {
+                boost::shared_ptr<const Geometry::ICompAssembly> asmb2 = boost::dynamic_pointer_cast<const Geometry::ICompAssembly>(children[col]);
+                std::vector<Geometry::IComponent_const_sptr> grandchildren;
+                asmb2->getChildren(grandchildren,false);
 
-				for (int row = 0; row<static_cast<int>(grandchildren.size()); row++)
-				{
-					Detector* d = dynamic_cast<Detector*>(const_cast<IComponent*>(grandchildren[row].get()));
-					inst->removeDetector(d);
-				}
-	        }
-			IComponent* comp = dynamic_cast<IComponent*>(detList[i].get());
-			inst->remove(comp);
-		}
-	}
+                for (int row = 0; row<static_cast<int>(grandchildren.size()); row++)
+                {
+                    Detector* d = dynamic_cast<Detector*>(const_cast<IComponent*>(grandchildren[row].get()));
+                    inst->removeDetector(d);
+                }
+            }
+            IComponent* comp = dynamic_cast<IComponent*>(detList[i].get());
+            inst->remove(comp);
+        }
+    }
       return;
 }
 //-----------------------------------------------------------------------------
@@ -2074,7 +2078,6 @@ void LoadEventNexus::createSpectraMapping(const std::string &nxsfile,
   }
   else
   {
-    workspace->replaceAxis(1, new API::SpectraAxis(spectramap->nSpectra(), *spectramap));
     workspace->replaceSpectraMap(spectramap);
   }    
 }

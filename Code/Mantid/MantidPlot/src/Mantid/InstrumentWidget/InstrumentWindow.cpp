@@ -9,6 +9,7 @@
 #include "UnwrappedSphere.h"
 #include "Projection3D.h"
 #include "SimpleWidget.h"
+#include "DetXMLFile.h"
 #include "../MantidUI.h"
 #include "../AlgorithmMonitor.h"
 
@@ -41,11 +42,12 @@
 #include <QDropEvent>
 #include <QStackedLayout>
 #include <QKeyEvent>
+#include <QUrl>
+#include <QTemporaryFile>
 
 #include "MantidQtAPI/FileDialogHandler.h"
 
 #include <numeric>
-#include <fstream>
 #include <stdexcept>
 
 using namespace Mantid::API;
@@ -131,24 +133,6 @@ InstrumentWindow::InstrumentWindow(const QString& wsName, const QString& label, 
 
   mDetTableAction = new QAction(tr("&Extract Data"), this);
   connect(mDetTableAction, SIGNAL(triggered()), this, SLOT(showDetectorTable()));
-
-  mGroupDetsAction = new QAction(tr("&Group"), this);
-  connect(mGroupDetsAction, SIGNAL(triggered()), this, SLOT(groupDetectors()));
-
-  mMaskDetsAction = new QAction(tr("&Mask"), this);
-  connect(mMaskDetsAction, SIGNAL(triggered()), this, SLOT(maskDetectors()));
-
-  m_ExtractDetsToWorkspaceAction = new QAction("Extract to new workspace",this);
-  connect(m_ExtractDetsToWorkspaceAction,SIGNAL(activated()),this,SLOT(extractDetsToWorkspace()));
-
-  m_SumDetsToWorkspaceAction = new QAction("Sum to new workspace",this);
-  connect(m_SumDetsToWorkspaceAction,SIGNAL(activated()),this,SLOT(sumDetsToWorkspace()));
-
-  m_createIncludeGroupingFileAction = new QAction("Include",this);
-  connect(m_createIncludeGroupingFileAction,SIGNAL(activated()),this,SLOT(createIncludeGroupingFile()));
-
-  m_createExcludeGroupingFileAction = new QAction("Exclude",this);
-  connect(m_createExcludeGroupingFileAction,SIGNAL(activated()),this,SLOT(createExcludeGroupingFile()));
 
   m_clearPeakOverlays = new QAction("Clear peaks",this);
   connect(m_clearPeakOverlays,SIGNAL(activated()),this,SLOT(clearPeakOverlays()));
@@ -247,11 +231,60 @@ void InstrumentWindow::selectTab(int tab)
 }
 
 /**
- * Return the currently displayed tab.
+ * Returns the named tab or the current tab if none supplied
+ * @param title Optional title of a tab (default="")
  */
-InstrumentWindowTab *InstrumentWindow::getTab()const
+InstrumentWindowTab *InstrumentWindow::getTab(const QString & title)const
 {
-    return static_cast<InstrumentWindowTab*>(mControlsTab->currentWidget());
+  QWidget *tab(NULL);
+  if(title.isEmpty()) tab = mControlsTab->currentWidget();
+  else 
+  {
+    for(int i = 0; i < mControlsTab->count(); ++i)
+    {
+      if(mControlsTab->tabText(i) == title)
+      {
+        tab = mControlsTab->widget(i);
+        break;
+      }
+    }
+  }
+
+  if(tab) return qobject_cast<InstrumentWindowTab*>(tab);
+  else return NULL;
+}
+
+/**
+ * @param tab An enumeration for the tab to select
+ * @returns A pointer to the requested tab
+ */
+InstrumentWindowTab * InstrumentWindow::getTab(const Tab tab) const
+{
+  QWidget *widget = mControlsTab->widget(static_cast<int>(tab));
+  if(widget) return qobject_cast<InstrumentWindowTab*>(widget);
+  else return NULL;
+}
+
+/**
+  * Opens Qt file dialog to select the filename.
+  * The dialog opens in the directory used last for saving or the default user directory.
+  *
+  * @param title :: The title of the dialog.
+  * @param filters :: The filters
+  * @param selectedFilter :: The selected filter.
+  */
+QString InstrumentWindow::getSaveFileName(const QString& title, const QString& filters, QString *selectedFilter)
+{
+    QString filename = MantidQt::API::FileDialogHandler::getSaveFileName(this, title, m_savedialog_dir, filters, selectedFilter);
+
+    // If its empty, they cancelled the dialog
+    if( !filename.isEmpty() )
+    {
+        //Save the directory used
+        QFileInfo finfo(filename);
+        m_savedialog_dir = finfo.dir().path();
+    }
+    return filename;
 }
 
 /**
@@ -289,16 +322,19 @@ void InstrumentWindow::setSurfaceType(int type)
     ProjectionSurface* surface = getSurface().get();
     int peakLabelPrecision = 6;
     bool showPeakRow = true;
+    bool showPeakLabels = true;
     if ( surface )
     {
       peakLabelPrecision = surface->getPeakLabelPrecision();
-      showPeakRow = surface->getShowPeakRowFlag();
+      showPeakRow = surface->getShowPeakRowsFlag();
+      showPeakLabels = surface->getShowPeakLabelsFlag();
     }
     else
     {
       QSettings settings;
-      peakLabelPrecision = settings.value("Mantid/InstrumentWindow/PeakLabelPrecision",6).toInt();
+      peakLabelPrecision = settings.value("Mantid/InstrumentWindow/PeakLabelPrecision",2).toInt();
       showPeakRow = settings.value("Mantid/InstrumentWindow/ShowPeakRows",true).toBool();
+      showPeakLabels = settings.value("Mantid/InstrumentWindow/ShowPeakLabels",true).toBool();
     }
 
     // which display to use?
@@ -319,7 +355,8 @@ void InstrumentWindow::setSurfaceType(int type)
       surface = new UnwrappedSphere(m_instrumentActor,sample_pos,axis);
     }
     surface->setPeakLabelPrecision(peakLabelPrecision);
-    surface->setShowPeakRowFlag(showPeakRow);
+    surface->setShowPeakRowsFlag(showPeakRow);
+    surface->setShowPeakLabelsFlag(showPeakLabels);
     // set new surface
     setSurface(surface);
     // make sure to switch to the right instrument display
@@ -427,22 +464,13 @@ void InstrumentWindow::changeColormap(const QString &filename)
 
 void InstrumentWindow::showPickOptions()
 {
-  if (/*m_pickTab->canUpdateTouchedDetector() &&*/ !m_selectedDetectors.empty())
+  if ( !m_selectedDetectors.empty() )
   {
     QMenu context(m_InstrumentDisplay);
 
     context.addAction(mInfoAction);
     context.addAction(mPlotAction);
     context.addAction(mDetTableAction);
-
-    context.insertSeparator();
-    context.addAction(mGroupDetsAction);
-    context.addAction(mMaskDetsAction);
-    context.addAction(m_ExtractDetsToWorkspaceAction);
-    context.addAction(m_SumDetsToWorkspaceAction);
-    QMenu *gfileMenu = context.addMenu("Create grouping file");
-    gfileMenu->addAction(m_createIncludeGroupingFileAction);
-    gfileMenu->addAction(m_createExcludeGroupingFileAction);
 
     context.exec(QCursor::pos());
   }
@@ -549,54 +577,6 @@ QString InstrumentWindow::confirmDetectorOperation(const QString & opName, const
 }
 
 /**
- * Group selected detectors
- */
-void InstrumentWindow::groupDetectors()
-{
-  if (m_selectedDetectors.empty()) return;
-  std::vector<int> wksp_indices;
-  for(int i = 0; i < m_selectedDetectors.size(); ++i)
-  {
-    try {
-      wksp_indices.push_back(int(m_instrumentActor->getWorkspaceIndex(m_selectedDetectors[i])));
-    } catch (Mantid::Kernel::Exception::NotFoundError &) {
-      continue; // Detector doesn't have a workspace index relating to it
-    }
-  }
-
-  QString inputWS = m_workspaceName;
-  QString outputWS = confirmDetectorOperation("grouped", inputWS, static_cast<int>(m_selectedDetectors.size()));
-  if( outputWS.isEmpty() ) return;
-  QString param_list = "InputWorkspace=%1;OutputWorkspace=%2;WorkspaceIndexList=%3;KeepUngroupedSpectra=1";
-  emit execMantidAlgorithm("GroupDetectors",
-			   param_list.arg(inputWS, outputWS, asString(wksp_indices)),
-         this
-			   );
-}
-
-/**
- * Mask selected detectors
- */
-void InstrumentWindow::maskDetectors()
-{
-  if (m_selectedDetectors.empty()) return;
-  std::vector<int> wksp_indices;
-  for(int i = 0; i < m_selectedDetectors.size(); ++i)
-  {
-    try {
-      wksp_indices.push_back(int(m_instrumentActor->getWorkspaceIndex(m_selectedDetectors[i])));
-    } catch (Mantid::Kernel::Exception::NotFoundError &) {
-      continue; // Detector doesn't have a workspace index relating to it
-    }
-  }
-
-  QString inputWS = m_workspaceName;
-  // Masking can only replace the input workspace so no need to ask for confirmation
-  QString param_list = "Workspace=%1;WorkspaceIndexList=%2";
-  emit execMantidAlgorithm("MaskDetectors",param_list.arg(inputWS, asString(wksp_indices)),this);
-}
-
-/**
  * Convert a list of integers to a comma separated string of numbers 
  */
 QString InstrumentWindow::asString(const std::vector<int>& numbers) const
@@ -675,47 +655,77 @@ void InstrumentWindow::pickBackgroundColor()
 	setBackgroundColor(color);
 }
 
-void InstrumentWindow::saveImage()
+/**
+ * Saves the current image buffer as a png file.
+ * @param filename Optional filename. Empty string raises a save dialog
+ */
+void InstrumentWindow::saveImage(QString filename)
 {
+  QString defaultExt = ".png";
   QList<QByteArray> formats = QImageWriter::supportedImageFormats();
-  QListIterator<QByteArray> itr(formats);
-  QString filter("");
-  while( itr.hasNext() )
+  if(filename.isEmpty())
   {
-    filter += "*." + itr.next();
-    if( itr.hasNext() )
+    QListIterator<QByteArray> itr(formats);
+    QString filter("");
+    while( itr.hasNext() )
     {
-      filter += ";;";
+      filter += "*." + itr.next();
+      if( itr.hasNext() )
+      {
+        filter += ";;";
+      }
     }
+    QString selectedFilter = "*" + defaultExt;
+    filename = getSaveFileName("Save image ...", filter, &selectedFilter);
+
+    // If its empty, they cancelled the dialog
+    if( filename.isEmpty() ) return;
   }
-  QString selectedFilter = "*.png";
-  QString filename = MantidQt::API::FileDialogHandler::getSaveFileName(this, "Save image ...", m_savedialog_dir, filter, &selectedFilter);
-
-  // If its empty, they cancelled the dialog
-  if( filename.isEmpty() ) return;
   
-  //Save the directory used
   QFileInfo finfo(filename);
-  m_savedialog_dir = finfo.dir().path();
-
   QString ext = finfo.completeSuffix();
+
   if( ext.isEmpty() )
   {
-    filename += selectedFilter.section("*", 1);
+    filename += defaultExt;
     ext = QFileInfo(filename).completeSuffix();
   }
   else
   {
-    QStringList extlist = filter.split(";;");
-    if( !extlist.contains("*." + ext) )
+    if( !formats.contains(ext.toAscii()) )
     {
-      QMessageBox::warning(this, "MantidPlot", "Unsupported file extension, please use one from the supported list.");
+      QString msg("Unsupported file extension. Choose one of the following: ");
+      QListIterator<QByteArray> itr(formats);
+      while( itr.hasNext() )
+      {
+        msg += itr.next() + ", ";
+      }
+      msg.chop(2);// Remove last space and comma
+      QMessageBox::warning(this, "MantidPlot", msg);
       return;
     }
   }
   
   if ( m_InstrumentDisplay )
     m_InstrumentDisplay->saveToFile(filename);
+}
+
+/**
+ * Use the file dialog to select a filename to save grouping.
+ */
+QString InstrumentWindow::getSaveGroupingFilename()
+{
+  QString filename = MantidQt::API::FileDialogHandler::getSaveFileName(this, "Save grouping file", m_savedialog_dir, "Grouping (*.xml);;All files (*.*)");
+
+  // If its empty, they cancelled the dialog
+  if( !filename.isEmpty() )
+  {
+    //Save the directory used
+    QFileInfo finfo(filename);
+    m_savedialog_dir = finfo.dir().path();
+  }
+
+  return filename;
 }
 
 ///**
@@ -736,7 +746,8 @@ void InstrumentWindow::saveSettings()
   if ( m_InstrumentDisplay )
     settings.setValue("BackgroundColor", m_InstrumentDisplay->currentBackgroundColor());
   settings.setValue("PeakLabelPrecision",getSurface()->getPeakLabelPrecision());
-  settings.setValue("ShowPeakRows",getSurface()->getShowPeakRowFlag());
+  settings.setValue("ShowPeakRows",getSurface()->getShowPeakRowsFlag());
+  settings.setValue("ShowPeakLabels",getSurface()->getShowPeakLabelsFlag());
   foreach(InstrumentWindowTab* tab, m_tabs)
   {
       tab->saveSettings(settings);
@@ -760,7 +771,7 @@ void InstrumentWindow::preDeleteHandle(const std::string & ws_name, const boost:
   Mantid::API::IPeaksWorkspace_sptr pws = boost::dynamic_pointer_cast<Mantid::API::IPeaksWorkspace>(workspace_ptr);
   if (pws)
   {
-    getSurface()->peaksWorkspaceDeleted(pws);
+    getSurface()->deletePeaksWorkspace(pws);
     updateInstrumentView();
     return;
   }
@@ -939,170 +950,9 @@ void InstrumentWindow::componentSelected(ComponentID id)
     if (surface)
     {
       surface->componentSelected(id);
-      surface->updateView();
+      //surface->updateView();
       updateInstrumentView();
     }
-}
-
-/** A class for creating grouping xml files
-  */
-class DetXMLFile
-{
-public:
-  enum Option {List,Sum};
-  /// Create a grouping file to extract all detectors in detector_list excluding those in dets
-  DetXMLFile(const std::vector<int>& detector_list, const QList<int>& dets, const QString& fname)
-  {
-    m_fileName = fname;
-    m_delete = false;
-    std::ofstream out(m_fileName.toStdString().c_str());
-    out << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?> \n<detector-grouping> \n";
-    out << "<group name=\"sum\"> <detids val=\"";
-    std::vector<int>::const_iterator idet = detector_list.begin();
-    for(; idet != detector_list.end(); ++idet)
-    {
-      if (!dets.contains(*idet))
-      {
-        out <<  *idet << ',';
-      }
-    }
-    out << "\"/> </group> \n</detector-grouping>\n";
-  }
-
-  /// Create a grouping file to extract detectors in dets. Option List - one group - one detector,
-  /// Option Sum - one group which is a sum of the detectors
-  /// If fname is empty create a temporary file
-  DetXMLFile(const QList<int>& dets, Option opt = List, const QString& fname = "")
-  {
-    if (dets.empty())
-    {
-      m_fileName = "";
-      return;
-    }
-
-    if (fname.isEmpty())
-    {
-      QTemporaryFile mapFile;
-      mapFile.open();
-      m_fileName = mapFile.fileName() + ".xml";
-      mapFile.close();
-      m_delete = true;
-    }
-    else
-    {
-      m_fileName = fname;
-      m_delete = false;
-    }
-
-    switch(opt)
-    {
-    case Sum: makeSumFile(dets); break;
-    case List: makeListFile(dets); break;
-    }
-
-  }
-
-  /// Make grouping file where each detector is put into its own group
-  void makeListFile(const QList<int>& dets)
-  {
-    std::ofstream out(m_fileName.toStdString().c_str());
-    out << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?> \n<detector-grouping> \n";
-    foreach(int det,dets)
-    {
-      out << "<group name=\"" << det << "\"> <detids val=\"" << det << "\"/> </group> \n";
-    }
-    out << "</detector-grouping>\n";
-  }
-
-  /// Make grouping file for putting the detectors into one group (summing the detectors)
-  void makeSumFile(const QList<int>& dets)
-  {
-    std::ofstream out(m_fileName.toStdString().c_str());
-    out << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?> \n<detector-grouping> \n";
-    out << "<group name=\"sum\"> <detids val=\"";
-    foreach(int det,dets)
-    {
-      out << det << ',';
-    }
-    out << "\"/> </group> \n</detector-grouping>\n";
-  }
-
-  ~DetXMLFile()
-  {
-    if (m_delete)
-    {
-      QDir dir;
-      dir.remove(m_fileName);
-    }
-  }
-
-  /// Return the name of the created grouping file
-  const std::string operator()()const{return m_fileName.toStdString();}
-
-private:
-  QString m_fileName; ///< holds the grouping file name
-  bool m_delete;      ///< if true delete the file on destruction
-};
-
-/**
-  * Extract selected detectors to a new workspace
-  */
-void InstrumentWindow::extractDetsToWorkspace()
-{
-  QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
-  DetXMLFile mapFile(m_selectedDetectors);
-  std::string fname = mapFile();
-
-  if (!fname.empty())
-  {
-    Mantid::API::IAlgorithm* alg = Mantid::API::FrameworkManager::Instance().createAlgorithm("GroupDetectors");
-    alg->setPropertyValue("InputWorkspace",m_workspaceName.toStdString());
-    alg->setPropertyValue("MapFile",fname);
-    alg->setPropertyValue("OutputWorkspace",m_workspaceName.toStdString()+"_selection");
-    alg->execute();
-  }
-
-  QApplication::restoreOverrideCursor();
-}
-
-/**
-  * Sum selected detectors to a new workspace
-  */
-void InstrumentWindow::sumDetsToWorkspace()
-{
-  QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
-  DetXMLFile mapFile(m_selectedDetectors,DetXMLFile::Sum);
-  std::string fname = mapFile();
-
-  if (!fname.empty())
-  {
-    Mantid::API::IAlgorithm* alg = Mantid::API::FrameworkManager::Instance().createAlgorithm("GroupDetectors");
-    alg->setPropertyValue("InputWorkspace",m_workspaceName.toStdString());
-    alg->setPropertyValue("MapFile",fname);
-    alg->setPropertyValue("OutputWorkspace",m_workspaceName.toStdString()+"_sum");
-    alg->execute();
-  }
-
-  QApplication::restoreOverrideCursor();
-}
-
-void InstrumentWindow::createIncludeGroupingFile()
-{
-  QString fname = MantidQt::API::FileDialogHandler::getSaveFileName(this,"Save grouping file");
-  if (!fname.isEmpty())
-  {
-    DetXMLFile mapFile(m_selectedDetectors,DetXMLFile::Sum,fname);
-  }
-
-}
-
-void InstrumentWindow::createExcludeGroupingFile()
-{
-  QString fname = MantidQt::API::FileDialogHandler::getSaveFileName(this,"Save grouping file");
-  if (!fname.isEmpty())
-  {
-    DetXMLFile mapFile(m_instrumentActor->getAllDetIDs(),m_selectedDetectors,fname);
-  }
 }
 
 void InstrumentWindow::executeAlgorithm(const QString& alg_name, const QString& param_list)
@@ -1174,20 +1024,7 @@ void InstrumentWindow::dropEvent( QDropEvent* e )
   if (text.startsWith("Workspace::"))
   {
     QStringList wsName = text.split("::");
-    Mantid::API::IPeaksWorkspace_sptr pws = boost::dynamic_pointer_cast<Mantid::API::IPeaksWorkspace>(
-      Mantid::API::AnalysisDataService::Instance().retrieve(wsName[1].toStdString()));
-    auto surface = boost::dynamic_pointer_cast<UnwrappedSurface>( getSurface() );
-    if (pws && surface)
-    {
-      surface->setPeaksWorkspace(pws);
-      updateInstrumentView();
-      e->accept();
-      return;
-    }
-    else if (pws && !surface)
-    {
-      QMessageBox::warning(this,"MantidPlot - Warning","Please change to an unwrapped view to see peak labels.");
-    }
+    if(this->overlay(wsName[1])) e->accept();    
   }
   e->ignore();
 }
@@ -1238,6 +1075,30 @@ void InstrumentWindow::setColorMapAutoscaling(bool on)
 }
 
 /**
+ *  Overlay a workspace with the given name
+ * @param wsName The name of a workspace in the ADS
+ * @returns True if the overlay was successful, false otherwise
+ */
+bool InstrumentWindow::overlay(const QString & wsName)
+{
+  using namespace Mantid::API;
+  auto pws = boost::dynamic_pointer_cast<IPeaksWorkspace>(AnalysisDataService::Instance().retrieve(wsName.toStdString()));
+  auto surface = boost::dynamic_pointer_cast<UnwrappedSurface>( getSurface() );
+  bool success(false);
+  if (pws && surface)
+  {
+    surface->setPeaksWorkspace(pws);
+    updateInstrumentView();
+    success = true;
+  }
+  else if (pws && !surface)
+  {
+    QMessageBox::warning(this,"MantidPlot - Warning","Please change to an unwrapped view to see peak labels.");
+  }
+  return success;
+}
+
+/**
  * Remove all peak overlays from the instrument display.
  */
 void InstrumentWindow::clearPeakOverlays()
@@ -1258,11 +1119,22 @@ void InstrumentWindow::setPeakLabelPrecision(int n)
 
 /**
  * Enable or disable the show peak row flag
+ * @param on :: True to show, false to hide.
  */
 void InstrumentWindow::setShowPeakRowFlag(bool on)
 {
-  getSurface()->setShowPeakRowFlag(on);
+  getSurface()->setShowPeakRowsFlag(on);
   updateInstrumentView();
+}
+
+/**
+ * Enable or disable the show peak hkl labels flag
+ * @param on :: True to show, false to hide.
+ */
+void InstrumentWindow::setShowPeakLabelsFlag(bool on)
+{
+    getSurface()->setShowPeakLabelsFlag(on);
+    updateInstrumentView();
 }
 
 /**
@@ -1404,23 +1276,14 @@ void InstrumentWindow::enableOpenGL( bool on )
 /// Private slot to toggle between the GL and simple instrument display widgets
 void InstrumentWindow::enableGL( bool on )
 {
-  m_useOpenGL = on;
-  if ( m_surfaceType == FULL3D )
-  {
-    // always OpenGL in 3D
-    selectOpenGLDisplay( true );
-  }
-  else
-  {
-    // select the display
-    selectOpenGLDisplay( on );
-  }
+    m_useOpenGL = on;
+    selectOpenGLDisplay(isGLEnabled());
 }
 
 /// True if the GL instrument display is currently on
 bool InstrumentWindow::isGLEnabled() const
 {
-    return m_useOpenGL;
+    return m_useOpenGL || ( m_surfaceType == FULL3D );
 }
 
 /**
@@ -1442,7 +1305,7 @@ void InstrumentWindow::createTabs(QSettings& settings)
 
     // Mask controls
     InstrumentWindowMaskTab *maskTab = new InstrumentWindowMaskTab(this);
-    mControlsTab->addTab( maskTab, QString("Mask"));
+    mControlsTab->addTab( maskTab, QString("Mask/Group"));
     connect(maskTab,SIGNAL(executeAlgorithm(const QString&, const QString&)),this,SLOT(executeAlgorithm(const QString&, const QString&)));
     maskTab->loadSettings(settings);
 

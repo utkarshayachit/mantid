@@ -86,6 +86,10 @@ def slice(inputfiles, calib, xrange, spec, suffix, Save=False, Verbose=True,
     workdir = config['defaultsave.directory']
     outWSlist = []
     CheckXrange(xrange,'Time')
+    calib_wsname = None
+    if calib != '':
+        calib_wsname = '__calibration'
+        Load(Filename=calib,OutputWorkspace=calib_wsname)
     for file in inputfiles:
         if Verbose:
             logger.notice('Reading file :'+file)
@@ -120,10 +124,11 @@ def slice(inputfiles, calib, xrange, spec, suffix, Save=False, Verbose=True,
         DeleteWorkspace(root)
     if Plot:
         graph = mp.plotBin(outWSlist, 0)
+    if calib_wsname is not None:
+        DeleteWorkspace(Workspace=calib_wsname)
     EndTime('Slice')
         
 def useCalib(detectors):
-    CheckHistSame(detectors,'Detectors','__calibration','Calibration')
     Divide(LHSWorkspace=detectors, RHSWorkspace='__calibration', OutputWorkspace=detectors)
     return detectors
     
@@ -137,13 +142,16 @@ def getInstrumentDetails(instrument):
         LoadEmptyInstrument(Filename=idf, OutputWorkspace=instr_name)
         workspace = mtd[instr_name]
     instrument = workspace.getInstrument()
-    ana_list_split = instrument.getStringParameter('analysers')[0].split(',')
+    ana_list_param = instrument.getStringParameter('analysers')
+    if len(ana_list_param) != 1:
+        return ""
+    ana_list_split = ana_list_param[0].split(',')
     reflections = []
     result = ''
-    for i in range(0,len(ana_list_split)):
+    for analyser in ana_list_split:
         list = []
-        name = 'refl-' + ana_list_split[i]
-        list.append( ana_list_split[i] )
+        name = 'refl-' + analyser
+        list.append( analyser )
         try:
             item = instrument.getStringParameter(name)[0]
         except IndexError:
@@ -283,6 +291,7 @@ def SqwMoments(samWS,erange,factor,Verbose,Plot,Save):
     Xin = mtd[samWS].readX(0)
     CheckElimits(erange,Xin)
     CropWorkspace(InputWorkspace=samWS, OutputWorkspace=samWS, XMin=erange[0], XMax=erange[1])
+    Xin = mtd[samWS].readX(0)
     nw = len(Xin)-1
     if Verbose:
         logger.notice('Energy range is '+str(Xin[0])+' to '+str(Xin[nw]))

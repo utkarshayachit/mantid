@@ -15,7 +15,7 @@ where <math>m</math> is the particle's mass, <math>g</math> is the acceleration 
 This [[Algorithm|algorithm]] takes a workspace of number of neutron counts against [[Units|wavelength]] and creates a workspace of cross section against Q. The output Q bins boundaries are defined by setting the property OutputBinning.
 
 Below is the formula used to calculate the cross section, <math>P_I(Q)</math>, for one bin in the output workspace whose bin number is denoted by I, when the input workspace has just one detector. Each bin is calculated from the sum of all input wavelength bins, n, that evaluate to the same Q using the formula for Q at the top of this page. In equations this relationship between the input bins and the output bins is represented by <math>n \supset I</math> and an example of a set of two bins is shown diagrammatically below.
-[[File:wav_Q_bins.png|Each Q bin contains the sum of many, one, or no wavelength bins|centre]]
+[[File:Wav_Q_bins.png|Each Q bin contains the sum of many, one, or no wavelength bins|centre]]
  
 In the equation the number of counts in the input spectrum number is denoted by <math>S(n)</math>, <math>N(n)</math> is the wavelength dependent correction and <math>\Omega</math> is the [[SolidAngle|solid angle]] of the detector
 
@@ -50,9 +50,9 @@ From the equation it is possible to see that for pixels in <math>R > RadiusCut</
 
 '''References'''
 
-[http://scripts.iucr.org/cgi-bin/paper?gk0158/R.P. Hjelm Jr. ''J. Appl. Cryst.'' (1988), 21, 618-628].
+[http://scripts.iucr.org/cgi-bin/paper?gk0158 R.P. Hjelm Jr. ''J. Appl. Cryst.'' (1988), 21, 618-628].
 
-[http://scripts.iucr.org/cgi-bin/paper?gk0573/P.A. Seeger & R.P. Hjelm Jr. ''J. Appl. Cryst.'' (1991), 24, 467-478].
+[http://scripts.iucr.org/cgi-bin/paper?gk0573 P.A. Seeger & R.P. Hjelm Jr. ''J. Appl. Cryst.'' (1991), 24, 467-478].
 
 ===Variations on applying the normalization===
 It is possible to divide the input workspace by the WavelenghAdj and PixelAdj workspaces prior to calling this algorithm. The results will be same as if these workspaces were passed to Q1D instead when there are high numbers of particle counts. However, in this scheme the probabilities tend to converge on the true high count probabablities more slowly with increasing number of counts and so the result is less accuate.
@@ -61,64 +61,6 @@ Depending on the input and output bins there could be a significant difference i
 
 ===References===
 Calculation of Q is from Seeger, P. A. and Hjelm, R. P. Jr, "Small-Angle Neutron Scattering at Pulsed Spallation Sources" (1991) J. Appl '''24''' 467-478
-
-==Previous Versions==
-
-===Version 1===
-Before July 2011 the intensity was calculated with an equation like the following:
-:<math>P_I(Q) = \frac{ \sum_{\{i, j, n\} \supset \{I\}}G(i,j,n) }{ \sum_{\{i, j, n\} \supset \{I\}} \Omega_{i j} }</math>
-where G is the input workspace normally related to the raw counts workspace as:
-:<math>G(i,j,n) = S(i,j,n)/(M(n)\eta(n)T(n)F_{i j})</math>
-That is the normalization was performed before the Q calculation which gives the same probilities at high numbers of particles counts but weighted noisy, low count data too highly, giving more noise in <math>P_I(Q)</math>.
-
-The error was calculation did not include the errors due the normalization or any corrections.
-
-==== Properties ====
-
-{| border="1" cellpadding="5" cellspacing="0"
-!Order
-!Name
-!Direction
-!Type
-!Default
-!Description
-|-
-|1
-|InputWorkspace
-|Input
-|MatrixWorkspace
-|Mandatory
-|The (partly) corrected data in units of wavelength.
-|-
-|2
-|InputForErrors
-|Input
-|MatrixWorkspace
-|Mandatory
-|The workspace containing the counts to use for the error calculation. Must also be in units of wavelength and have matching bins to the InputWorkspace.
-|-
-|3
-|OutputWorkspace
-|Output
-|MatrixWorkspace
-|Mandatory
-|The workspace name under which to store the result histogram.
-|-
-|4
-|OutputBinning
-|Input
-|String
-|Mandatory
-|The bin parameters to use for the final result (in the format used by the [[Rebin]] algorithm).
-|-
-|5
-|AccountForGravity
-|Input
-|Boolean
-|False
-|Whether to correct for the effects of gravity.
-|}
-
 
 
 *WIKI*/

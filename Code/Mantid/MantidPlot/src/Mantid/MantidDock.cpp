@@ -18,6 +18,7 @@
 #include <MantidGeometry/MDGeometry/IMDDimension.h>
 #include <MantidGeometry/Crystal/OrientedLattice.h>
 #include <MantidQtAPI/InterfaceManager.h>
+#include <MantidQtAPI/Message.h>
 
 #include <Poco/Path.h>
 #include <boost/algorithm/string.hpp>
@@ -44,6 +45,7 @@
 #include <iomanip>
 #include <cstdio>
 #include <algorithm>
+#include <limits>
 
 using namespace Mantid::API;
 using namespace Mantid::Kernel;
@@ -87,15 +89,15 @@ QDockWidget(tr("Workspaces"),parent), m_mantidUI(mui), m_known_groups(), m_rerun
   m_loadMenu = new QMenu(this);
   
   QAction* loadFileAction = new QAction("File",this);
-  QAction *loadDAEAction = new QAction("from DAE",this);
+  QAction *liveDataAction = new QAction("Live Data",this);
   m_loadMapper = new QSignalMapper(this);
-  m_loadMapper->setMapping(loadDAEAction,"LoadDAE");
+  m_loadMapper->setMapping(liveDataAction,"StartLiveData");
   m_loadMapper->setMapping(loadFileAction,"Load");
-  connect(loadDAEAction,SIGNAL(activated()), m_loadMapper, SLOT(map()));
+  connect(liveDataAction,SIGNAL(activated()), m_loadMapper, SLOT(map()));
   connect(loadFileAction,SIGNAL(activated()),m_loadMapper,SLOT(map()));
   connect(m_loadMapper, SIGNAL(mapped(const QString &)), m_mantidUI, SLOT(executeAlgorithm(const QString&)));
   m_loadMenu->addAction(loadFileAction);
-  m_loadMenu->addAction(loadDAEAction);
+  m_loadMenu->addAction(liveDataAction);
   m_loadButton->setMenu(m_loadMenu);
 
   // SET UP SORT
@@ -167,16 +169,6 @@ QDockWidget(tr("Workspaces"),parent), m_mantidUI(mui), m_known_groups(), m_rerun
   connect(m_tree, SIGNAL(itemExpanded(QTreeWidgetItem*)), this, SLOT(populateChildData(QTreeWidgetItem*)));
 
   connect(this,SIGNAL(rerunFindAbandonedWorkspaces()),this,SLOT(findAbandonedWorkspaces()),Qt::QueuedConnection);
-}
-
-/**
-Generate a warning message and use MantidUI to display it.
-@param message : message contents to display
-*/
-void MantidTreeWidget::logWarningMessage(const std::string& message)
-{
-  Poco::Message msg("MantidPlot",message,Poco::Message::PRIO_WARNING);
-  m_mantidUI->logMessage(msg);
 }
 
 /** Returns the name of the selected workspace
@@ -440,8 +432,7 @@ void MantidDockWidget::populateChildData(QTreeWidgetItem* item)
 
   // Experiment info data
   ExperimentInfo_sptr experimentInfo_ws = boost::dynamic_pointer_cast<ExperimentInfo>(workspace);
-  bool specialWorkspace = false;
-  specialWorkspace = (workspace->id() == "SpecialWorkspace2D" || workspace->id() == "MaskWorkspace"
+  bool specialWorkspace = specialWorkspace = (workspace->id() == "SpecialWorkspace2D" || workspace->id() == "MaskWorkspace"
                       || workspace->id() == "OffsetsWorkspace" || workspace->id() == "GroupingWorkspace");
   if (experimentInfo_ws && (!specialWorkspace))
     populateExperimentInfoData(experimentInfo_ws, item);
@@ -667,8 +658,7 @@ void MantidDockWidget::populateExperimentInfoData(Mantid::API::ExperimentInfo_sp
 void MantidDockWidget::populateMatrixWorkspaceData(Mantid::API::MatrixWorkspace_sptr workspace, QTreeWidgetItem* ws_item)
 {
   // Are we showing one of the special workspaces, OffsetsWorkspace or GroupingWorkspace
-  bool specialWorkspace = false;
-  specialWorkspace = (workspace->id() == "MaskWorkspace" || workspace->id() == "SpecialWorkspace2D" || workspace->id() == "OffsetsWorkspace" || workspace->id() == "GroupingWorkspace");
+  bool specialWorkspace = (workspace->id() == "MaskWorkspace" || workspace->id() == "SpecialWorkspace2D" || workspace->id() == "OffsetsWorkspace" || workspace->id() == "GroupingWorkspace");
 
   MantidTreeWidgetItem* data_item = new MantidTreeWidgetItem(QStringList("Title: "+QString::fromStdString(workspace->getTitle())), m_tree);
   data_item->setFlags(Qt::NoItemFlags);
@@ -1671,7 +1661,8 @@ QStringList MantidTreeWidget::getSelectedWorkspaceNames() const
     static_cast<MantidDockWidget*>(parentWidget())->populateChildData(*it);
 
     // Look for children (workspace groups)
-    if ( (*it)->child(0)->text(0) == "WorkspaceGroup" )
+    QTreeWidgetItem *child = (*it)->child(0);
+    if ( child && child->text(0) == "WorkspaceGroup" )
     {
       // Have to populate the group's children if it hasn't been expanded
       if (!(*it)->isExpanded()) static_cast<MantidDockWidget*>(parentWidget())->populateChildData(*it);
@@ -1707,6 +1698,7 @@ QMultiMap<QString,std::set<int> > MantidTreeWidget::chooseSpectrumFromSelected()
       wsNames.append(allWsNames[i]);
   }
 
+  // cppcheck-suppress redundantAssignment
   QList<QString>::const_iterator it = wsNames.constBegin();
 
   // Check to see if all workspaces have a *single* histogram ...
@@ -1792,6 +1784,9 @@ bool MantidTreeWidgetItem::operator<(const QTreeWidgetItem &other)const
   
   bool thisShouldBeSorted = data(0,Qt::UserRole).isNull();
   bool otherShouldBeSorted = other.data(0,Qt::UserRole).isNull();
+
+  // just in case m_parent is NULL. I think I saw this once but cannot reproduce.
+  if ( !m_parent ) return false;
 
   if(!thisShouldBeSorted && !otherShouldBeSorted)
   {

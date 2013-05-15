@@ -27,11 +27,11 @@ public:
   void setBackgroundColor(QColor);
   QColor currentBackgroundColor() const;
   void saveToFile(const QString & filename);
-  int getLightingState() const {return m_lightingState;}
+  //int getLightingState() const {return m_lightingState;}
 
 public slots:
   void enableLighting(bool);
-  void updateView(bool picking = false);
+  void updateView(bool picking = true);
   void updateDetectors();
   void componentSelected(Mantid::Geometry::ComponentID id);
 
@@ -55,7 +55,7 @@ protected:
 private:
   void setRenderingOptions();
 
-  int m_lightingState;           ///< 0 = light off; 2 = light on
+  //int m_lightingState;           ///< 0 = light off; 2 = light on
   bool m_isKeyPressed;
   bool m_firstFrame;
 

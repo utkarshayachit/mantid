@@ -7,6 +7,7 @@
 
 namespace Mantid
 {
+
 namespace MDAlgorithms
 {
 
@@ -48,8 +49,6 @@ namespace MDAlgorithms
     /// Algorithm's category for identification
     virtual const std::string category() const { return "MDAlgorithms";}
     
-  protected: // for testing
-    void saveExperimentInfos(::NeXus::File * const file, API::IMDEventWorkspace_const_sptr ws);
   private:
     /// Sets documentation strings for this algorithm
     virtual void initDocs();
@@ -65,6 +64,17 @@ namespace MDAlgorithms
     /// Save the MDHistoWorkspace.
     void doSaveHisto(Mantid::MDEvents::MDHistoWorkspace_sptr ws);
 
+    /// Save all the affine matricies
+    void saveAffineTransformMatricies(::NeXus::File * const file,
+                                      API::IMDWorkspace_const_sptr ws);
+    /// Save a given affine matrix
+    void saveAffineTransformMatrix(::NeXus::File * const file,
+                                   API::CoordTransform *transform,
+                                   std::string entry_name);
+    /// Save a generic matrix
+    template<typename T>
+    void saveMatrix(::NeXus::File * const file, std::string name,
+                    Kernel::Matrix<T> &m, ::NeXus::NXnumtype type, std::string tag="");
   };
 
 

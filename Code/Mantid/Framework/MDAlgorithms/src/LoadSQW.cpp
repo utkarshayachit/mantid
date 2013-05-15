@@ -1,12 +1,8 @@
 /*WIKI* 
-== Summary ==
 
-Create an IMDEventWorkspace with events in reciprocal space (Qx, Qy, Qz) from a [http://horace.isis.rl.ac.uk/Main_Page Horace ] SQW file.
+The algorithm takes every pixel defined in the SQW horace file and converts it into an event.
 
-== Description ==
-
-The algorithm takes every pixel defined in the SQW horace file and converts it into an event. 
-Only top level binning information is currently taken from DND/Image data. All DND image information is currently ignored and the resulting MDEvent workspace is in the units of <math>Q^{-1}</math> (SQW dimensions, recalculated to the Lab frame, without HKL transformation).
+Only top level binning information is currently taken from DND/Image data. All DND image information is currently ignored and the resulting MDEvent workspace is in the units of <math>Q^{-1}</math> (SQW dimensions, recalculated to the Crystal? frame, without HKL transformation).
 
 U matrix is set to unity but the B-matrix is read from the SQW and attached to the workspace which may confuse the algorithms which work with [[MDEventWorkspace]] produced by Mantid algorithms.
 
@@ -162,7 +158,9 @@ Parts of the code were written with the idea of generalising functionality at a 
 #include <iostream>
 #include <cfloat>
 #include "MantidMDEvents/MDBox.h"
+#include "MantidMDEvents/BoxControllerNeXusIO.h"
 #include "MantidKernel/Memory.h"
+
 
 using namespace Mantid::Kernel;
 using namespace Mantid::API;
@@ -207,7 +205,7 @@ namespace Mantid
     /// Provide wiki documentation.
     void LoadSQW::initDocs()
     {
-      this->setWikiSummary("Create a MDEventWorkspace with events in reciprocal space (Qx, Qy, Qz, Energy) from a SQW file.");
+      this->setWikiSummary("Create an IMDEventWorkspace with events in reciprocal space (Qx, Qy, Qz) from a [http://horace.isis.rl.ac.uk/Main_Page Horace ] SQW file.");
       this->setOptionalMessage("Create a MDEventWorkspace with events in reciprocal space (Qx, Qy, Qz, Energy) from a SQW file.");
     }
 
@@ -218,7 +216,7 @@ namespace Mantid
       fileExtensions[0]=".sqw";
       declareProperty(new API::FileProperty("Filename","", API::FileProperty::Load,fileExtensions), "File of type SQW format");
       declareProperty(new API::WorkspaceProperty<API::IMDEventWorkspace>("OutputWorkspace","", Kernel::Direction::Output),
-        "Name of the output MDEventWorkspace that will contain the SQW data read in.");
+        "Output IMDEventWorkspace reflecting SQW data read-in.");
       declareProperty(new Kernel::PropertyWithValue<bool>("MetadataOnly", false),
         "Load Metadata without events.");
       std::vector<std::string> fileExtensions2(1);
@@ -231,6 +229,7 @@ namespace Mantid
     /// Execute the algorithm
     void LoadSQW::exec()
     {
+
       m_fileName  = std::string(getProperty("Filename"));
       // Parse Extract metadata. Including data locations.
       parseMetadata(m_fileName);
@@ -263,13 +262,21 @@ namespace Mantid
 
       // Add oriented lattice.
       addLattice(pWs);
+      // Save the empty WS and turn it into a file-backed MDEventWorkspace (on option)
+      m_outputFile = getPropertyValue("OutputFilename");
 
+      // set file backed;
+      if(!m_outputFile.empty()) 
+      {
+          auto Saver = boost::shared_ptr<API::IBoxControllerIO>(new MDEvents::BoxControllerNeXusIO(bc.get()));
+          bc->setFileBacked(Saver,m_outputFile);
+          pWs->getBox()->setFileBacked();
+          bc->getFileIO()->setWriteBufferSize(1000000);
+      }
       // Start with a MDGridBox.
       pWs->splitBox();
 
       readBoxSizes();
-      // Save the empty WS and turn it into a file-backed MDEventWorkspace (on option)
-      m_outputFile = getPropertyValue("OutputFilename");
 
       if (!m_outputFile.empty())
       {
@@ -291,9 +298,15 @@ namespace Mantid
           g_log.warning() << "You may not have enough physical memory available to load the " << m_nDataPoints << " points into memory. You can cancel and specify OutputFilename to load to a file back-end." << std::endl;
       }
 
-      bc = pWs->getBoxController();
-      bc->setCacheParameters( sizeof(MDEvent<4>), 1000000);
-      std::cout << "File backed? " << bc->isFileBacked() << ". Cache " << bc->getDiskBuffer().getMemoryStr() << std::endl;
+      if(bc->isFileBacked())
+      {
+          std::cout << "File backed? " << bc->isFileBacked() << ". Cache " << bc->getFileIO()->getMemoryStr() << std::endl;
+      }
+      else
+      {
+          bool ff(false);
+          std::cout << "File backed? " << ff << ". Cache  0" <<  std::endl;
+      }
 
       //Persist the workspace.
       API::IMDEventWorkspace_sptr i_out = getProperty("OutputWorkspace");
@@ -356,7 +369,9 @@ namespace Mantid
       // For tracking when to split boxes
       size_t eventsAdded = 0;
       BoxController_sptr bc = ws->getBoxController();
-      DiskBuffer & dbuf = bc->getDiskBuffer();
+      DiskBuffer * dbuf(NULL);
+      if(bc->isFileBacked())
+          dbuf = bc->getFileIO();
 
       for (int blockNum=0; blockNum < numBlocks; blockNum++)
       {
@@ -427,7 +442,7 @@ namespace Mantid
           tp.joinAll();
 
           // Flush the cache - this will save things out to disk
-          dbuf.flushCache();
+          dbuf->flushCache();
           // Flush memory
           Mantid::API::MemoryManager::Instance().releaseFreeMemory();
           eventsAdded = 0;
@@ -849,10 +864,10 @@ namespace LoadSQWHelper
    { // we do not need this header  at the moment -> just calculating its length; or may be we do soon?
       std::vector<char> data_buffer(8);
 
-
+	  // cppcheck-suppress redundantAssignment
       std::streamoff end_location = start_location;
       std::streamoff shift = start_location-dataStream.tellg();
-      // move to spefied location, which should be usually 0;
+      // move to specified location, which should be usually 0;
       dataStream.seekg(shift,std::ios_base::cur);
 
 
@@ -907,7 +922,8 @@ namespace LoadSQWHelper
     { //
       std::vector<char> data_buffer(8);
 
-      std::streamoff end_location = start_location;
+      // cppcheck-suppress redundantAssignment
+	  std::streamoff end_location = start_location;
       std::streamoff shift = start_location-dataStream.tellg();
       // move to specified location, which should be usually 0;
       dataStream.seekg(shift,std::ios_base::cur);              
@@ -943,7 +959,6 @@ namespace LoadSQWHelper
     {
       std::vector<char> data_buffer(12);
 
-      //std::streamoff end_location = data_start;
       std::streamoff shift = data_start-dataStream.tellg();
       // move to specified location, which should be usually 0;
       dataStream.seekg(shift,std::ios_base::cur);

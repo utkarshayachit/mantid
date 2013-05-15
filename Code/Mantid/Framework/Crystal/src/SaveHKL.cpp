@@ -1,4 +1,34 @@
 /*WIKI* 
+Used same format that works successfully in GSAS and SHELX from ISAW:
+	
+hklFile.write('%4d%4d%4d%8.2f%8.2f%4d%8.4f%7.4f%7d%7d%7.4f%4d%9.5f%9.4f\n'% (H, K, L, FSQ, SIGFSQ, hstnum, WL, TBAR, CURHST, SEQNUM, TRANSMISSION, DN, TWOTH, DSP))
+	
+HKL is flipped by -1 due to different q convention in ISAW vs Mantid.
+	
+FSQ = integrated intensity of peak (scaled)
+	
+SIGFSQ = sigma from integrating peak
+	
+hstnum = number of sample orientation (starting at 1)
+	
+WL = wavelength of peak
+	
+TBAR = output of absorption correction (-log(transmission)/mu)
+	
+CURHST = run number of sample
+	
+SEQNUM = peak number (unique number for each peak in file)
+	
+TRANSMISSION = output of absorption correction (exp(-mu*tbar))
+	
+DN = detector bank number
+	
+TWOTH = two-theta scattering angle
+	
+DSP = d-Spacing of peak (Angstroms)/TR
+
+Last line must have all 0's
+
 
 
 *WIKI*/
@@ -20,6 +50,7 @@ using namespace Mantid::Geometry;
 using namespace Mantid::DataObjects;
 using namespace Mantid::Kernel;
 using namespace Mantid::API;
+using namespace Mantid::PhysicalConstants;
 
 namespace Mantid
 {
@@ -88,12 +119,12 @@ namespace Crystal
     std::string filename = getPropertyValue("Filename");
     PeaksWorkspace_sptr ws = getProperty("InputWorkspace");
 
-    const Geometry::Material *m_sampleMaterial = &(ws->sample().getMaterial());
-    if( m_sampleMaterial->totalScatterXSection(1.7982) != 0.0)
+    const Kernel::Material *m_sampleMaterial = &(ws->sample().getMaterial());
+    if( m_sampleMaterial->totalScatterXSection(NeutronAtom::ReferenceLambda) != 0.0)
     {
   	  double rho =  m_sampleMaterial->numberDensity();
-  	  smu =  m_sampleMaterial->totalScatterXSection(1.7982) * rho;
-  	  amu = m_sampleMaterial->absorbXSection(1.7982) * rho;
+  	  smu =  m_sampleMaterial->totalScatterXSection(NeutronAtom::ReferenceLambda) * rho;
+  	  amu = m_sampleMaterial->absorbXSection(NeutronAtom::ReferenceLambda) * rho;
     }
     else
     {

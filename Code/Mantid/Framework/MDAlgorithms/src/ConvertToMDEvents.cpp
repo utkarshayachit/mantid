@@ -254,7 +254,7 @@ void ConvertToMDEvents::exec()
 
         // check if we are working in powder mode
         // set up target coordinate system and identify/set the (multi) dimension's names to use
-         TWSD.m_RotMatrix = MsliceProj.getTransfMatrix(TWSD,convert_to_);     
+         TWSD.m_RotMatrix = MsliceProj.getTransfMatrix(TWSD,"AutoSelect",convert_to_);     
      
     }
     else // user input is mainly ignored and everything is in old workspac
@@ -275,7 +275,7 @@ void ConvertToMDEvents::exec()
         // reset new ws description name
         TWSD = OLDWSD;
        // set up target coordinate system
-        TWSD.m_RotMatrix = MsliceProj.getTransfMatrix(TWSD,convert_to_);   
+        TWSD.m_RotMatrix = MsliceProj.getTransfMatrix(TWSD,"AutoSelect",convert_to_);   
     }
 
     // Check what to do with detectors:  
@@ -311,7 +311,7 @@ void ConvertToMDEvents::exec()
     // Build up the box controller
     Mantid::API::BoxController_sptr bc = pWSWrapper->pWorkspace()->getBoxController();
     // Build up the box controller, using the properties in BoxControllerSettingsAlgorithm
-    this->setBoxController(bc);
+    this->setBoxController(bc, inWS2D->getInstrument());
     // split boxes;
     spws->splitBox();
   // Do we split more due to MinRecursionDepth?

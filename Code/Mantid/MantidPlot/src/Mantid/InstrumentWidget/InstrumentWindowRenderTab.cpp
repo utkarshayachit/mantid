@@ -16,6 +16,7 @@
 #include <QAction>
 #include <QSignalMapper>
 #include <QMessageBox>
+#include <QToolTip>
 
 #include <qwt_scale_widget.h>
 #include <qwt_scale_engine.h>
@@ -51,14 +52,14 @@ InstrumentWindowTab(instrWindow)
   // Save image control
   mSaveImage = new QPushButton(tr("Save image"));
   mSaveImage->setToolTip("Save the instrument image to a file");
-  connect(mSaveImage, SIGNAL(clicked()), m_instrWindow, SLOT(saveImage()));
+  connect(mSaveImage, SIGNAL(clicked()), this, SLOT(saveImage()));
 
   // Setup Display Setting menu
   QPushButton* displaySettings = new QPushButton("Display Settings",this);
   QMenu* displaySettingsMenu = new QMenu(this);
   connect(displaySettingsMenu, SIGNAL(aboutToShow()),this,SLOT(displaySettingsAboutToshow()));
   m_colorMap = new QAction("Color Map",this);
-  connect(m_colorMap,SIGNAL(triggered()),this,SLOT(changeColormap()));
+  connect(m_colorMap,SIGNAL(triggered()),this,SLOT(changeColorMap()));
   m_backgroundColor = new QAction("Background Color",this);
   connect(m_backgroundColor,SIGNAL(triggered()),m_instrWindow,SLOT(pickBackgroundColor()));
   m_lighting = new QAction("Lighting",this);
@@ -69,6 +70,10 @@ InstrumentWindowTab(instrWindow)
   m_displayAxes->setCheckable(true);
   m_displayAxes->setChecked(true);
   connect(m_displayAxes, SIGNAL(toggled(bool)), this, SLOT(showAxes(bool)));
+  m_displayDetectorsOnly = new QAction("Display Detectors Only",this);
+  m_displayDetectorsOnly->setCheckable(true);
+  m_displayDetectorsOnly->setChecked(true);
+  connect(m_displayDetectorsOnly, SIGNAL(toggled(bool)), this, SLOT(displayDetectorsOnly(bool)));
   m_wireframe = new QAction("Wireframe",this);
   m_wireframe->setCheckable(true);
   m_wireframe->setChecked(false);
@@ -76,22 +81,25 @@ InstrumentWindowTab(instrWindow)
   
   // Create "Use OpenGL" action
   m_GLView = new QAction("Use OpenGL",this);
+  m_GLView->setToolTip("Toggle use of OpenGL for unwrapped view. Default value can be set in Preferences.");
   m_GLView->setCheckable(true);
   QString setting = QString::fromStdString(Mantid::Kernel::ConfigService::Instance().
   getString("MantidOptions.InstrumentView.UseOpenGL")).toUpper();
   bool useOpenGL = setting == "ON";
   m_instrWindow->enableGL( useOpenGL );
   m_GLView->setChecked( useOpenGL );
-  connect(m_GLView, SIGNAL( toggled(bool) ), m_instrWindow, SLOT( enableGL(bool) ));
+  connect(m_GLView, SIGNAL( toggled(bool) ), this, SLOT( enableGL(bool) ));
 
   displaySettingsMenu->addAction(m_colorMap);
   displaySettingsMenu->addAction(m_backgroundColor);
   displaySettingsMenu->addSeparator();
   displaySettingsMenu->addAction(m_displayAxes);
+  displaySettingsMenu->addAction(m_displayDetectorsOnly);
   displaySettingsMenu->addAction(m_wireframe);
   displaySettingsMenu->addAction(m_lighting);
   displaySettingsMenu->addAction(m_GLView);
   displaySettings->setMenu(displaySettingsMenu);
+  connect(displaySettingsMenu,SIGNAL(hovered(QAction*)),this,SLOT(showMenuToolTip(QAction*)));
 
   QFrame * axisViewFrame = setupAxisFrame();
 
@@ -160,14 +168,37 @@ QFrame * InstrumentWindowRenderTab::setupAxisFrame()
 
   return m_resetViewFrame;
 }
+
+/**
+  * Set checked n-th menu item in m_setPrecison menu.
+  */
+void InstrumentWindowRenderTab::setPrecisionMenuItemChecked(int n)
+{
+    for(int i = 0; i < m_precisionActions.size(); ++i)
+    {
+        QAction *prec = m_precisionActions[i];
+        if (i == n - 1)
+        {
+            prec->setChecked( true );
+            break;
+        }
+    }
+}
+
 void InstrumentWindowRenderTab::initSurface()
 {
   setAxis(QString::fromStdString(m_instrWindow->getInstrumentActor()->getInstrument()->getDefaultAxis()));
-  auto p3d = boost::dynamic_pointer_cast<Projection3D>(getSurface());
+  auto surface = getSurface();
+  auto p3d = boost::dynamic_pointer_cast<Projection3D>(surface);
   if ( p3d )
   {
       p3d->set3DAxesState(areAxesOn());
   }
+  bool detectorsOnly = !m_instrWindow->getInstrumentActor()->areGuidesShown();
+  m_displayDetectorsOnly->blockSignals(true);
+  m_displayDetectorsOnly->setChecked(detectorsOnly);
+  m_displayDetectorsOnly->blockSignals(false);
+  setPrecisionMenuItemChecked(surface->getPeakLabelPrecision());
 }
 
 /**
@@ -182,7 +213,7 @@ void InstrumentWindowRenderTab::setupColorBarScaling(const MantidColorMap& cmap,
 /**
  * Change color map button slot. This provides the file dialog box to select colormap or sets it directly a string is provided
  */
-void InstrumentWindowRenderTab::changeColormap(const QString &filename)
+void InstrumentWindowRenderTab::changeColorMap(const QString &filename)
 {
   m_instrWindow->changeColormap(filename);
 }
@@ -279,6 +310,11 @@ void InstrumentWindowRenderTab::showFlipControl(int iv)
   m_peakOverlaysButton->setVisible(vis);
 }
 
+/**
+ * Toggle display of 3D axes.
+ * 
+ * @param on :: True of false for on and off.
+ */
 void InstrumentWindowRenderTab::showAxes(bool on)
 {
   m_instrWindow->set3DAxesState(on);
@@ -287,12 +323,48 @@ void InstrumentWindowRenderTab::showAxes(bool on)
   m_displayAxes->blockSignals(false);
 }
 
+/**
+ * Toggle display of guide and other non-detector components.
+ *
+ * @param yes :: True of false for on and off.
+ */
+void InstrumentWindowRenderTab::displayDetectorsOnly(bool yes)
+{
+  m_instrWindow->getInstrumentActor()->showGuides( !yes );
+  m_instrWindow->updateInstrumentView();
+  m_displayDetectorsOnly->blockSignals(true);
+  m_displayDetectorsOnly->setChecked(yes);
+  m_displayDetectorsOnly->blockSignals(false);
+}
+
+/**
+ * Toggle use of OpenGL
+ *
+ * @param on :: True of false for on and off.
+ */
+void InstrumentWindowRenderTab::enableGL(bool on)
+{
+  m_instrWindow->enableGL(on);
+  m_GLView->blockSignals(true);
+  m_GLView->setChecked(m_instrWindow->isGLEnabled());
+  m_GLView->blockSignals(false);
+}
+
+
 void InstrumentWindowRenderTab::showEvent (QShowEvent *)
 {
   auto surface = getSurface();
   if (surface)
   {
     surface->setInteractionMode(ProjectionSurface::MoveMode);
+  }
+  InstrumentActor* actor = m_instrWindow->getInstrumentActor();
+  if ( actor )
+  {
+    auto visitor = SetAllVisibleVisitor();
+    actor->accept( visitor );
+    getSurface()->updateView();
+    getSurface()->requestRedraw();
   }
 }
 
@@ -302,6 +374,21 @@ void InstrumentWindowRenderTab::flipUnwrappedView(bool on)
   if (!surface) return;
   surface->setFlippedView(on);
   m_instrWindow->updateInstrumentView();
+  // Sync checkbox
+  m_flipCheckBox->blockSignals(true);
+  m_flipCheckBox->setChecked(on);
+  m_flipCheckBox->blockSignals(false);
+
+}
+
+/**
+ * Saves the current image buffer to the given file. An empty string raises a dialog
+ * for finding the file
+ * @param filename Optional full path of the saved image
+ */
+void InstrumentWindowRenderTab::saveImage(QString filename)
+{
+  m_instrWindow->saveImage(filename);
 }
 
 /**
@@ -340,20 +427,33 @@ QMenu* InstrumentWindowRenderTab::createPeaksMenu()
   settings.beginGroup("Mantid/InstrumentWindow");
   QMenu* menu = new QMenu(this);
 
-  QAction* showRows = new QAction("Show rows",this);
+  // show/hide peak hkl labels
+  QAction *showLabels = new QAction("Show labels",this);
+  showLabels->setCheckable(true);
+  showLabels->setChecked(settings.value("ShowPeakLabels",true).toBool());
+  connect(showLabels,SIGNAL(toggled(bool)),m_instrWindow,SLOT(setShowPeakLabelsFlag(bool)));
+  menu->addAction(showLabels);
+  // show/hide peak table rows
+  QAction *showRows = new QAction("Show rows",this);
   showRows->setCheckable(true);
   showRows->setChecked(settings.value("ShowPeakRows",true).toBool());
   connect(showRows,SIGNAL(toggled(bool)),m_instrWindow,SLOT(setShowPeakRowFlag(bool)));
+  connect(showLabels,SIGNAL(toggled(bool)),showRows,SLOT(setEnabled(bool)));
+  showRows->setEnabled( showLabels->isChecked() );
   menu->addAction(showRows);
   // setting precision set of actions
   QMenu *setPrecision = new QMenu("Label precision",this);
+  m_precisionActionGroup = new QActionGroup(this);
   QSignalMapper *signalMapper = new QSignalMapper(this);
   for(int i = 1; i < 10; ++i)
   {
     QAction *prec = new QAction(QString::number(i),setPrecision);
+    prec->setCheckable(true);
     setPrecision->addAction(prec);
     connect(prec,SIGNAL(triggered()),signalMapper,SLOT(map()));
     signalMapper->setMapping(prec,i);
+    m_precisionActions.append(prec);
+    m_precisionActionGroup->addAction(prec);
   }
   connect(signalMapper, SIGNAL(mapped(int)), m_instrWindow, SLOT(setPeakLabelPrecision(int)));
   menu->addMenu(setPrecision);
@@ -398,6 +498,10 @@ void InstrumentWindowRenderTab::displaySettingsAboutToshow()
  */
 void InstrumentWindowRenderTab::setSurfaceType(int index)
 {
+  m_renderMode->blockSignals(true);
+  m_renderMode->setCurrentIndex( index );
+  m_renderMode->blockSignals(false);
+  
   m_instrWindow->setSurfaceType( index );
   showResetView( index );
   showFlipControl( index );
@@ -446,4 +550,12 @@ void InstrumentWindowRenderTab::glOptionChanged(bool on)
     m_GLView->blockSignals(true);
     m_GLView->setChecked(on);
     m_GLView->blockSignals(false);
+}
+
+/**
+  * Show the tooltip of an action which is attached to a menu.
+  */
+void InstrumentWindowRenderTab::showMenuToolTip(QAction *action)
+{
+    QToolTip::showText(QCursor::pos(),action->toolTip(),this);
 }

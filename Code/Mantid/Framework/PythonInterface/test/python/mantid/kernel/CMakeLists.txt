@@ -18,12 +18,14 @@ set ( TEST_PY_FILES
   MandatoryValidatorTest.py
   MemoryStatsTest.py
   NullValidatorTest.py
+  ProgressBaseTest.py
   PropertyWithValueTest.py
   PythonPluginsTest.py
   TimeSeriesPropertyTest.py
   QuatTest.py
   UnitConversionTest.py
   UnitFactoryTest.py
+  UnitsTest.py
   V3DTest.py
 )
 

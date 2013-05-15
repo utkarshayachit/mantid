@@ -24,6 +24,11 @@ set ( CPACK_PACKAGE_NAME "mantid${CPACK_PACKAGE_SUFFIX}" )
 find_package ( Qt4 COMPONENTS QtCore QtGui QtOpenGL QtXml QtSvg Qt3Support REQUIRED )
 
 ###########################################################################
+# Set ParaView information since later items depend on it
+###########################################################################
+include ( ParaViewSetup )
+
+###########################################################################
 # Set paths to Third_Party for Windows builds
 ###########################################################################
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")	
@@ -178,24 +183,44 @@ if ( ENABLE_CPACK )
       set ( CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES},poco-crypto,poco-data,poco-mysql,poco-sqlite,poco-odbc,poco-util,poco-xml,poco-zip,poco-net,poco-netssl,poco-foundation,PyQt4,sip" )
       # scipy & matplotlib (ipython is too low a version to be used)
       set ( CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES},scipy,python-matplotlib" )
-      # On RHEL6 we have to use an updated qscintilla to fix an auto complete bug
+      set ( CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES},mxml,hdf,hdf5" )
+      
       if( ${UNIX_CODENAME} STREQUAL "Santiago" )
+        # On RHEL6 we have to use an updated qscintilla to fix an auto complete bug
         set ( CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES} qscintilla >= 2.4.6" )
+        # On RHEL6 we are using SCL packages for Qt
+        set ( CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES},scl-utils,mantidlibs,mantidlibs-runtime,mantidlibs-qt,mantidlibs-qt-x11" )
       else()  
         set ( CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES} qscintilla" )
       endif()
+
+      # Add software collections for RHEL
+      if (  ${UNIX_CODENAME} STREQUAL "Santiago" )
+        set ( CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES} scl-utils" )
+      endif()
+
+      # qt assistant is in different places in every distro
+      if ( ${UNIX_DIST} MATCHES "RedHatEnterprise" )
+        set ( CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES} qt4-x11" )
+      elseif ( ${UNIX_DIST} MATCHES "Fedora" )
+        set ( CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES} qt4-assistant" )
+      elseif ( ${UNIX_DIST} MATCHES "SUSE LINUX" )
+        set ( CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES} libqt4-devel-doc" )
+      endif ( ${UNIX_DIST} MATCHES "RedHatEnterprise" )
+
       if( ${UNIX_DIST} STREQUAL "Ubuntu" )
         if( ${UNIX_CODENAME} STREQUAL "lucid" )
-          set ( CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-date-time1.40.0,libboost-regex1.40.0,libboost-signals1.40.0,libpocofoundation9,libpocoutil9,libpoconet9,libpoconetssl9,libpococrypto9,libpocoxml9,libnexus0 (>= 4.2),libgsl0ldbl,libqtcore4 (>= 4.2),libqtgui4 (>= 4.2),libqt4-opengl (>= 4.2),libqt4-xml (>= 4.2),libqt4-svg (>= 4.2),libqt4-qt3support (>= 4.2),libqscintilla2-5,libqwt5-qt4,libqwtplot3d-qt4-0" )
+          set ( CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-date-time1.40.0,libboost-regex1.40.0,libpocofoundation9,libpocoutil9,libpoconet9,libpoconetssl9,libpococrypto9,libpocoxml9,libnexus0 (>= 4.3),libgsl0ldbl,libqtcore4 (>= 4.2),libqtgui4 (>= 4.2),libqt4-opengl (>= 4.2),libqt4-xml (>= 4.2),libqt4-svg (>= 4.2),libqt4-qt3support (>= 4.2),libqscintilla2-5,libqwt5-qt4,libqwtplot3d-qt4-0" )
           set ( CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS},libopencascade-foundation-6.3.0 (>= 6.3.0),libopencascade-modeling-6.3.0 (>= 6.3.0),libmuparser0,python-numpy,python-sip,python-qt4,libboost-python${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION}" )
         elseif( ${UNIX_CODENAME} STREQUAL "precise" )
-          set ( CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-date-time1.46.1,libboost-regex1.46.1,libboost-signals1.46.1,libpocofoundation9,libpocoutil9,libpoconet9,libpoconetssl9,libpococrypto9,libpocoxml9,libnexus0 (>= 4.2),libnexus0-python (>= 4.2),libgsl0ldbl,libqtcore4 (>= 4.2),libqtgui4 (>= 4.2),libqt4-opengl (>= 4.2),libqt4-xml (>= 4.2),libqt4-svg (>= 4.2),libqt4-qt3support (>= 4.2),libqscintilla2-8,libqwt5-qt4,libqwtplot3d-qt4-0" )
+          set ( CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-date-time1.46.1,libboost-regex1.46.1,libpocofoundation9,libpocoutil9,libpoconet9,libpoconetssl9,libpococrypto9,libpocoxml9,libnexus0 (>= 4.3),python-nxs (>= 4.3),libgsl0ldbl,libqtcore4 (>= 4.2),libqtgui4 (>= 4.2),libqt4-opengl (>= 4.2),libqt4-xml (>= 4.2),libqt4-svg (>= 4.2),libqt4-qt3support (>= 4.2),libqscintilla2-8,libqwt5-qt4,libqwtplot3d-qt4-0" )
           set ( CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS},libopencascade-foundation-6.5.0 (>= 6.5.0),libopencascade-modeling-6.5.0 (>= 6.5.0),libmuparser0debian1,python-numpy,python-sip,python-qt4,libboost-python${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION}" )
           # scipy, matploitlib & ipython
           set ( CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS},ipython-qtconsole,python-matplotlib,python-scipy" )
         else()
           message( WARNING "Mantid does not support packaging of this Ubuntu version: ${UNIX_CODENAME}")
         endif()
+        set ( CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS},qt4-dev-tools" ) # for qt assistant
       endif()
       # soft requirement of tcmalloc - if built with it, then require it
       IF ( USE_TCMALLOC AND TCMALLOC_FOUND )

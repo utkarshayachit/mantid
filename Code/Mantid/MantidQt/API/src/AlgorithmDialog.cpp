@@ -9,6 +9,7 @@
 #include "MantidQtAPI/AlgorithmDialog.h"
 #include "MantidQtAPI/AlgorithmInputHistory.h"
 #include "MantidQtAPI/MantidWidget.h"
+#include "MantidQtAPI/HelpWindow.h"
 
 #include <QIcon>
 #include <QLabel>
@@ -43,7 +44,7 @@ AlgorithmDialog::AlgorithmDialog(QWidget* parent) :
   QDialog(parent), m_algorithm(NULL), m_algName(""), m_algProperties(), 
   m_propertyValueMap(), m_tied_properties(), m_forScript(false), m_python_arguments(), 
   m_enabled(), m_disabled(), m_strMessage(""), m_msgAvailable(false), m_isInitialized(false), m_autoParseOnInit(true), 
-  m_showHidden(true), m_validators(), m_noValidation(), m_inputws_opts(), m_outputws_fields(), m_wsbtn_tracker()
+  m_validators(), m_noValidation(), m_inputws_opts(), m_outputws_fields(), m_wsbtn_tracker()
 {
 }
 
@@ -52,11 +53,6 @@ AlgorithmDialog::AlgorithmDialog(QWidget* parent) :
  */
 AlgorithmDialog::~AlgorithmDialog()
 {
-}
-
-void AlgorithmDialog::showHiddenWorkspaces(const bool & show)
-{
-  m_showHidden = show;
 }
 
 /**
@@ -730,22 +726,13 @@ void AlgorithmDialog::accept()
  */
 void AlgorithmDialog::helpClicked()
 {
-  // Default help URL
-  QString url = QString("http://www.mantidproject.org/") + m_algName;
-
+  // determine the version to show
+  int version(-1); // the latest version
   if (m_algorithm)
-  {
-    // Find the latest version
-    IAlgorithm* alg = Mantid::API::FrameworkManager::Instance().createAlgorithm(m_algName.toStdString(), -1);
-    int latest_version = alg->version();
-    // Adjust the link if you're NOT looking at the latest version of the algo
-    int this_version = m_algorithm->version();
-    if ((this_version != latest_version))
-      url += "_v." + QString::number(this_version);
-  }
+    version = m_algorithm->version();
 
-  // Open the URL
-  QDesktopServices::openUrl(QUrl(url));
+  // bring up the help window
+  HelpWindow::Instance().showAlgorithm(m_algName, version);
 }
 
 //------------------------------------------------------

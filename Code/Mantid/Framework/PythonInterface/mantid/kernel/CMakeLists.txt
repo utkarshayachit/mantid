@@ -20,6 +20,7 @@ set ( EXPORT_FILES
   src/Exports/StlContainers.cpp
   src/Exports/Logger.cpp
   src/Exports/Unit.cpp
+  src/Exports/Units.cpp
   src/Exports/BoundedValidator.cpp
   src/Exports/TimeSeriesProperty.cpp
   src/Exports/FilteredTimeSeriesProperty.cpp
@@ -38,6 +39,7 @@ set ( EXPORT_FILES
   src/Exports/DeltaEMode.cpp
   src/Exports/PropertyManager.cpp
   src/Exports/Memory.cpp
+  src/Exports/ProgressBase.cpp
 )  
 
 set ( SRC_FILES

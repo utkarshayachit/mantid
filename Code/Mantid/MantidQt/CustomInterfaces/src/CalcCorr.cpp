@@ -229,13 +229,19 @@ namespace IDA
         "siga = [" + uiForm().absp_lesamsiga->text() + ", 0.0, 0.0]\n";
     }
 
+    if ( uiForm().absp_ckVerbose->isChecked() ) pyInput += "verbose = True\n";
+    else pyInput += "verbose = False\n";
+
+    if ( uiForm().absp_ckSave->isChecked() ) pyInput += "save = True\n";
+    else pyInput += "save = False\n";
+
     pyInput +=
       "geom = '" + geom + "'\n"
       "beam = [3.0, 0.5*" + width + ", -0.5*" + width + ", 2.0, -2.0, 0.0, 3.0, 0.0, 3.0]\n"
       "size = " + size + "\n"
       "avar = " + uiForm().absp_leavar->text() + "\n"
       "plotOpt = '" + uiForm().absp_cbPlotOutput->currentText() + "'\n"
-      "IndirectAbsCor.AbsRunFeeder(inputws, geom, beam, ncan, size, density, sigs, siga, avar, plotOpt=plotOpt)\n";
+      "IndirectAbsCor.AbsRunFeeder(inputws, geom, beam, ncan, size, density, sigs, siga, avar, plotOpt=plotOpt, Save=save, Verbose=verbose)\n";
 
     QString pyOutput = runPythonCode(pyInput).trimmed();
   }

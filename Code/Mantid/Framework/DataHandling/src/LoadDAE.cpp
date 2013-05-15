@@ -1,7 +1,8 @@
 /*WIKI* 
 
-
 The LoadRaw algorithm reads data from the DAE in a [[Workspace2D]], which will naturally contain histogram data with each spectrum going into a separate histogram. The time bin boundaries (X values) will be common to all histograms and will have their [[units]] set to time-of-flight. The Y values will contain the counts and will be unit-less (i.e. no division by bin width or normalisation of any kind). The errors, currently assumed Gaussian, will be set to be the square root of the number of counts in the bin.
+
+'''Parameters Note''': Note that it is possible to use both of the optional 'spectrum' properties (i.e. a range and a list) together if so desired.
 
 === Optional properties ===
 If only a portion of the data is required, then the optional 'spectrum' properties can be set before execution of the algorithm. Prior to loading of the data the values provided are checked and the algorithm will fail if they are found to be outside the limits of the dataset.
@@ -44,7 +45,7 @@ namespace Mantid
     /// Sets documentation strings for this algorithm
     void LoadDAE::initDocs()
     {
-      this->setWikiSummary("Loads data from the ISIS DATA acquisition system and stores it in a 2D [[workspace]] ([[Workspace2D]] class). ");
+      this->setWikiSummary("Loads data from the ISIS DATA acquisition system and stores it in a 2D [[workspace]] ([[Workspace2D]] class).");
       this->setOptionalMessage("Loads data from the ISIS DATA acquisition system and stores it in a 2D workspace (Workspace2D class).");
     }
     
@@ -59,7 +60,10 @@ namespace Mantid
     LoadDAE::LoadDAE() :
       Algorithm(), m_daename(""), m_numberOfSpectra(0), m_numberOfPeriods(0),
       m_list(false), m_interval(false), m_spec_list(), m_spec_min(0), m_spec_max(Mantid::EMPTY_INT()),m_firstRun(true)
-    {}
+    {
+        this->useAlgorithm("StartLiveData");
+        this->deprecatedDate("2013-04-22");
+    }
 
 
     /// load data from the DAE
@@ -98,30 +102,31 @@ namespace Mantid
     void LoadDAE::init()
     {
       declareProperty("DAEname","", boost::make_shared<MandatoryValidator<std::string> >(),
-        "The name of and path to the input DAE host.");
+        "The name of and path to the input DAE host (e.g NDXCRISP, NDXGEM).");
 
       declareProperty(new WorkspaceProperty<Workspace>("OutputWorkspace",
         "",Direction::Output),
-        "The name of the workspace that will be created, filled with the\n"
-        "read-in data and stored in the Analysis Data Service.  If the\n"
-        "input data contain multiple periods higher periods will be\n"
+        "The name of the workspace that will be created, filled with the "
+        "read-in data and stored in the [[Analysis Data Service]]. If the "
+        "input data contain multiple periods higher periods will be "
         "stored in separate workspaces called OutputWorkspace_PeriodNo.");
 
 
       auto mustBePositive = boost::make_shared<BoundedValidator<int> >();
       mustBePositive->setLower(0);
       declareProperty("SpectrumMin", 0, mustBePositive,
-        "The number of the first spectrum to read (default 0).  Only used\n"
-        "if spectrum_max is set and is not available for multiperiod data\n"
+        "The number of the first spectrum to read (default 0). Only used "
+        "if spectrum_max is set. Not available for multiperiod data files."
         "files.");
       declareProperty("SpectrumMax", Mantid::EMPTY_INT(), mustBePositive,
-        "The number of the last spectrum to read.  Only used if explicitly\n"
-        "set and is not available for multiperiod data files. ");
+        "The number of the last spectrum to read. Only used if explicitly set. "
+                      "Not available for multiperiod data files.");
       declareProperty(new ArrayProperty<int>("SpectrumList"),
-        "A comma-separated list of individual spectra to read.  Only used\n"
+        "A comma-separated list of individual spectra to read.  Only used "
         "if explicitly set. Not available for multiperiod data files.");
 
-      declareProperty("UpdateRate",0, mustBePositive);
+      declareProperty("UpdateRate",0, mustBePositive,
+                      "If set specifies the period in seconds of data update.");
     }
 
     /** Function called by IDC routines to report an error. Passes the error through to the logger
@@ -364,7 +369,7 @@ namespace Mantid
           // Shift the histogram to read if we're not in the first period
           int histToRead = i + period*(total_specs+1);
           loadData(timeChannelsVec,counter,histToRead,dae_handle,lengthIn,spectrum.get(),localWorkspace,allData.get() );
-          localWorkspace->getAxis(1)->setValue(counter, i);
+          localWorkspace->getSpectrum(counter)->setSpectrumNo(i);
           counter++;
           if (++histCurrent % 10 == 0) progress(double(histCurrent)/histTotal);
           interruption_point();
@@ -375,7 +380,7 @@ namespace Mantid
           for(unsigned int i=0; i < m_spec_list.size(); ++i)
           {
             loadData(timeChannelsVec,counter,m_spec_list[i],dae_handle,lengthIn,spectrum.get(), localWorkspace,allData.get() );
-            localWorkspace->getAxis(1)->setValue(counter, i);
+            localWorkspace->getSpectrum(counter)->setSpectrumNo(i);
             counter++;
             if (++histCurrent % 10 == 0) progress(double(histCurrent)/histTotal);
             interruption_point();
@@ -406,7 +411,7 @@ namespace Mantid
             declareProperty(new WorkspaceProperty<Workspace>(outws,WSName,Direction::Output));
           }
           g_log.information() << "Workspace " << WSName << " created. \n";
-          if(wsGrpSptr)wsGrpSptr->add(WSName);
+          if (wsGrpSptr) wsGrpSptr->addWorkspace(localWorkspace);
           // Assign the result to the output workspace property
           setProperty(outws,boost::dynamic_pointer_cast<Workspace>(localWorkspace));
         }

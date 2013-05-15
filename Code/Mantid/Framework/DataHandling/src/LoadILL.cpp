@@ -204,6 +204,10 @@ void LoadILL::initInstrumentSpecific() {
 		m_l1 = 2.0;
 		m_l2 = 2.48;
 	}
+	else if (std::string::npos != m_instrumentName.find("IN4")) {
+		m_l1 = 2.0;
+		m_l2 = 2.0;
+	}
 	else{
 		g_log.warning("initInstrumentSpecific : Couldn't find instrument: " +  m_instrumentName);
 	}
@@ -303,7 +307,12 @@ void LoadILL::loadRunDetails(NXEntry & entry) {
 
 	//m_wavelength = entry.getFloat("wavelength");
 	std::string wavelength = boost::lexical_cast<std::string>(m_wavelength);
+	//runDetails.addProperty<double>("wavelength", m_wavelength);
 	runDetails.addProperty("wavelength", wavelength);
+	double ei = calculateEnergy(m_wavelength);
+	runDetails.addProperty<double>("Ei", ei,true); //overwrite
+	//std::string ei_str = boost::lexical_cast<std::string>(ei);
+	//runDetails.addProperty("Ei", ei_str);
 
 	std::string duration = boost::lexical_cast<std::string>(
 			entry.getFloat("duration"));
@@ -458,10 +467,18 @@ int LoadILL::getDetectorElasticPeakPosition(const NeXus::NXInt &data) {
 		//calculatedDetectorElasticPeakPosition = *it;
 		calculatedDetectorElasticPeakPosition = static_cast<int>(std::distance(cumulatedSumOfSpectras.begin(), it));
 
-		g_log.debug() << "Calculated Detector EPP: "
-				<< calculatedDetectorElasticPeakPosition;
-		g_log.debug() << " :: Read EPP from the nexus file: "
-				<< m_monitorElasticPeakPosition << std::endl;
+		if (calculatedDetectorElasticPeakPosition == 0) {
+			g_log.warning()
+							<< "Elastic peak position is ZERO Assuming the EPP in the Nexus file: "
+							<< m_monitorElasticPeakPosition << std::endl;
+			calculatedDetectorElasticPeakPosition = m_monitorElasticPeakPosition;
+
+		} else {
+			g_log.debug() << "Calculated Detector EPP: "
+					<< calculatedDetectorElasticPeakPosition;
+			g_log.debug() << " :: Read EPP from the nexus file: "
+					<< m_monitorElasticPeakPosition << std::endl;
+		}
 	}
 	return calculatedDetectorElasticPeakPosition;
 
@@ -518,9 +535,15 @@ void LoadILL::loadDataIntoTheWorkSpace(NeXus::NXEntry& entry) {
 				// just copy the time binning axis to every spectra
 				m_localWorkspace->dataX(spec) = m_localWorkspace->readX(0);
 			}
+			// Assign Y
 			int* data_p = &data(static_cast<int>(i), static_cast<int>(j), 0);
 			m_localWorkspace->dataY(spec).assign(data_p,
 					data_p + m_numberOfChannels);
+
+			// Assign Error
+			MantidVec& E = m_localWorkspace->dataE(spec);
+			std::transform(data_p, data_p + m_numberOfChannels, E.begin(), LoadILL::calculateError);
+
 			++spec;
 			progress.report();
 		}
@@ -594,6 +617,11 @@ void LoadILL::runLoadInstrument() {
 	}
 }
 
+/**
+ * Calculate TOF from distance
+ *  @param distance :: distance in meters
+ *  @return tof in seconds
+ */
 double LoadILL::calculateTOF(double distance) {
 	if (m_wavelength <= 0) {
 		g_log.error("Wavelenght is <= 0");
@@ -605,6 +633,19 @@ double LoadILL::calculateTOF(double distance) {
 
 	return distance / velocity;
 }
+
+/**
+ * Calculate Neutron Energy from wavelength: \f$ E = h^2 / 2m\lambda ^2 \f$
+ *  @param wavelength :: wavelength in \f$ \AA \f$
+ *  @return tof in seconds
+ */
+double LoadILL::calculateEnergy(double wavelength) {
+	double e = (PhysicalConstants::h * PhysicalConstants::h) /
+			(2 * PhysicalConstants::NeutronMass * wavelength*wavelength * 1e-20)/
+			PhysicalConstants::meV;
+	return e;
+}
+
 
 } // namespace DataHandling
 } // namespace Mantid

@@ -12,7 +12,8 @@ The error of <math> f = a / b </math> is propagated with <math> df^2 = f^2 * (da
 * '''[[MDEventWorkspace]]'s'''
 ** This operation is not supported, as it is not clear what its meaning would be.
 
-== Usage ==
+*WIKI*/
+/*WIKI_USAGE*
 
  C = A / B
  C = A / 123.4
@@ -20,8 +21,7 @@ The error of <math> f = a / b </math> is propagated with <math> df^2 = f^2 * (da
  A /= 123.4
 
 See [[MDHistoWorkspace#Arithmetic_Operations|this page]] for examples on using arithmetic operations.
-
-*WIKI*/
+*WIKI_USAGE*/
 
 #include "MantidMDAlgorithms/DivideMD.h"
 #include "MantidKernel/System.h"
@@ -104,12 +104,22 @@ namespace MDAlgorithms
 
     // Get all the MDBoxes contained
     MDBoxBase<MDE,nd> * parentBox = ws->getBox();
-    std::vector<MDBoxBase<MDE,nd> *> boxes;
+    std::vector<API::IMDNode *> boxes;
     parentBox->getBoxes(boxes, 1000, true);
+
+    bool fileBackedTarget(false);
+    Kernel::DiskBuffer *dbuff(NULL);
+    if(ws->isFileBacked())
+    {
+        fileBackedTarget = true;
+        dbuff = ws->getBoxController()->getFileIO();
+    }
+ 
 
     for (size_t i=0; i<boxes.size(); i++)
     {
       MDBox<MDE,nd> * box = dynamic_cast<MDBox<MDE,nd> *>(boxes[i]);
+      size_t ic(0);
       if (box)
       {
         typename std::vector<MDE> & events = box->getEvents();
@@ -123,8 +133,15 @@ namespace MDAlgorithms
           float errorSquared = signal * signal * (it->getErrorSquared() / (oldSignal * oldSignal) + scalarRelativeErrorSquared);
           it->setSignal(signal);
           it->setErrorSquared(errorSquared);
+          ic++;
         }
+
         box->releaseEvents();
+        if(fileBackedTarget && ic>0)
+        {
+            Kernel::ISaveable *const pSaver(box->getISaveable());
+            dbuff->toWrite(pSaver);
+        }
       }
     }
     // Recalculate the totals

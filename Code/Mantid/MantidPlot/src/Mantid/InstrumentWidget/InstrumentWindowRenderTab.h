@@ -14,14 +14,16 @@ class QLineEdit;
 class QComboBox;
 class QCheckBox;
 class QAction;
+class QActionGroup;
 class QMenu;
 
 /**
-  * Implements the Render tab in InstrumentWindow
+  * Implements the Render tab in InstrumentWindow.
   */
 class InstrumentWindowRenderTab: public InstrumentWindowTab
 {
   Q_OBJECT
+
 public:
   InstrumentWindowRenderTab(InstrumentWindow* instrWindow);
   ~InstrumentWindowRenderTab();
@@ -34,33 +36,42 @@ public:
   void setAxis(const QString& axisName);
   bool areAxesOn()const;
   void setupColorBar(const MantidColorMap&,double,double,double,bool);
+
 signals:
   void rescaleColorMap();
   void setAutoscaling(bool);
+
 public slots:
   void setMinValue(double value, bool apply = true);
   void setMaxValue(double value, bool apply = true);
   void setRange(double minValue, double maxValue, bool apply = true);
   void showAxes(bool on);
+  void displayDetectorsOnly(bool yes);
+  void enableGL(bool on);
   void setColorMapAutoscaling(bool);
+  void changeColorMap(const QString & filename = "");
+  void setSurfaceType(int);
+  void flipUnwrappedView(bool);
+  void saveImage(QString filename = "");
+
 private slots:
-  void changeColormap(const QString & filename = "");
+
   void showResetView(int);
   void showFlipControl(int);
-  void flipUnwrappedView(bool);
   /// Called before the display setting menu opens. Filters out menu options.
   void displaySettingsAboutToshow();
-  /// Change the type of the surface
-  void setSurfaceType(int);
+  /// Change the type of the surfac
   void surfaceTypeChanged(int);
   void colorMapChanged();
   void scaleTypeChanged(int);
   void glOptionChanged(bool);
+  void showMenuToolTip(QAction*);
+
 private:
   void showEvent (QShowEvent *);
   QMenu* createPeaksMenu();
-
   QFrame * setupAxisFrame();
+  void setPrecisionMenuItemChecked(int n);
 
   QComboBox* m_renderMode;
   QPushButton *mSaveImage;
@@ -74,9 +85,12 @@ private:
   QAction *m_colorMap;
   QAction *m_backgroundColor;
   QAction *m_displayAxes;
+  QAction *m_displayDetectorsOnly;
   QAction *m_wireframe;
   QAction *m_lighting;
   QAction *m_GLView; ///< toggle between OpenGL and simple view
+  QActionGroup *m_precisionActionGroup;
+  QList<QAction*> m_precisionActions;
 
   friend class InstrumentWindow;
   

@@ -9,8 +9,10 @@ If you specify UpdateFileBackEnd, then any changes (e.g. events added using the 
 
 *WIKI*/
 
+#include "MantidAPI/CoordTransform.h"
 #include "MantidAPI/FileProperty.h"
 #include "MantidAPI/IMDEventWorkspace.h"
+#include "MantidKernel/Matrix.h"
 #include "MantidKernel/System.h"
 #include "MantidMDEvents/MDBoxIterator.h"
 #include "MantidMDEvents/MDEventFactory.h"
@@ -22,6 +24,14 @@ If you specify UpdateFileBackEnd, then any changes (e.g. events added using the 
 #include <Poco/File.h>
 #include "MantidMDEvents/MDHistoWorkspace.h"
 #include "MantidMDEvents/MDBoxFlatTree.h"
+#include "MantidMDEvents/BoxControllerNeXusIO.h"
+
+
+#if defined (__INTEL_COMPILER)
+ typedef std::auto_ptr< ::NeXus::File>  file_holder_type;
+#else 
+ typedef std::unique_ptr< ::NeXus::File>  file_holder_type;
+#endif
 
 using namespace Mantid::Kernel;
 using namespace Mantid::API;
@@ -85,48 +95,7 @@ namespace MDAlgorithms
     setPropertySettings("MakeFileBacked", new EnabledWhenProperty("UpdateFileBackEnd", IS_EQUAL_TO, "0"));
   }
 
- /// Save each NEW ExperimentInfo to a spot in the file
- void SaveMD::saveExperimentInfos(::NeXus::File * const file, API::IMDEventWorkspace_const_sptr ws)
- {
-
-    std::map<std::string,std::string> entries;
-    file->getEntries(entries);
-    for (uint16_t i=0; i < ws->getNumExperimentInfo(); i++)
-    {
-      ExperimentInfo_const_sptr ei = ws->getExperimentInfo(i);
-      std::string groupName = "experiment" + Strings::toString(i);
-      if (entries.find(groupName) == entries.end())
-      {
-        // Can't overwrite entries. Just add the new ones
-        file->makeGroup(groupName, "NXgroup", true);
-        file->putAttr("version", 1);
-        ei->saveExperimentInfoNexus(file);
-        file->closeGroup();
-
-        // Warning for high detector IDs.
-        // The routine in MDEvent::saveVectorToNexusSlab() converts detector IDs to single-precision floats
-        // Floats only have 24 bits of int precision = 16777216 as the max, precise detector ID
-        detid_t min = 0;
-        detid_t max = 0;
-        try
-        {
-          ei->getInstrument()->getMinMaxDetectorIDs(min, max);
-        }
-        catch (std::runtime_error &)
-        { /* Ignore error. Min/max will be 0 */ }
-
-        if (max > 16777216)
-        {
-          g_log.warning() << "This instrument (" << ei->getInstrument()->getName() <<
-              ") has detector IDs that are higher than can be saved in the .NXS file as single-precision floats." << std::endl;
-          g_log.warning() << "Detector IDs above 16777216 will not be precise. Please contact the developers." << std::endl;
-        }
-      }
-    }
-
-
-
- }
+ 
   //----------------------------------------------------------------------------------------------
   /** Save the MDEventWorskpace to a file.
    * Based on the Intermediate Data Format Detailed Design Document, v.1.R3 found in SVN.
@@ -140,182 +109,134 @@ namespace MDAlgorithms
     bool update = getProperty("UpdateFileBackEnd");
     bool MakeFileBacked = getProperty("MakeFileBacked");
 
+    bool wsIsFileBacked = ws->isFileBacked();
     if (update && MakeFileBacked)
       throw std::invalid_argument("Please choose either UpdateFileBackEnd or MakeFileBacked, not both.");
 
-    if (MakeFileBacked && ws->isFileBacked())
+    if (MakeFileBacked && wsIsFileBacked)
       throw std::invalid_argument("You picked MakeFileBacked but the workspace is already file-backed!");
 
     BoxController_sptr bc = ws->getBoxController();
 
-    // Open/create the file
-    ::NeXus::File * file;
-    if (update)
-    {
-      progress(0.01, "Flushing Cache");
-      // First, flush to disk. This writes all the event data to disk!
-      bc->getDiskBuffer().flushCache();
-
-      // Use the open file
-      file = bc->getFile();
-      if (!file)
-        throw std::invalid_argument("MDEventWorkspace is not file-backed. Do not check UpdateFileBackEnd!");
-
-      // Normally the file is left open with the event data open, but in READ only mode.
-      // Needs to be closed and reopened for things to work
-      file->closeData();
-      file->close();
-      // Reopen the file
-      filename = bc->getFilename();
-      file = new ::NeXus::File(filename, NXACC_RDWR);
-    }
-    else
-    {
-    // Erase the file if it exists
-    Poco::File oldFile(filename);
-    if (oldFile.exists())
-      oldFile.remove();
-      // Create a new file in HDF5 mode.
-      file = new ::NeXus::File(filename, NXACC_CREATE5);
+    if(!wsIsFileBacked)
+    {   // Erase the file if it exists
+      Poco::File oldFile(filename);
+      if (oldFile.exists())
+        oldFile.remove();
     }
 
-    // The base entry. Named so as to distinguish from other workspace types.
-    if (update) // open workspace group
-      file->openGroup("MDEventWorkspace", "NXentry");
-    else // create and open workspace group
-      file->makeGroup("MDEventWorkspace", "NXentry", true);
-    
-
-    // General information
-    if (!update)
+    Progress * prog = new Progress(this, 0.0, 0.05,1);
+    if(update)  // workspace has its own file and ignores any changes to the algorithm parameters
     {
-      // Write out some general information like # of dimensions
-      file->writeData("dimensions", int32_t(nd));
-      // Save the algorithm history under "process"
-      ws->getHistory().saveNexus(file);
+      if(!ws->isFileBacked())
+        throw std::runtime_error(" attemtp to update non-file backed workspace");
+      filename = bc->getFileIO()->getFileName();
     }
 
-    file->putAttr("event_type", MDE::getTypeName());
+    //-----------------------------------------------------------------------------------------------------
+    // create or open WS group and put there additional information about WS and its dimesnions
+    auto file = file_holder_type(MDBoxFlatTree::createOrOpenMDWSgroup(filename,nd,MDE::getTypeName(),false));
     // Save each NEW ExperimentInfo to a spot in the file
-    this->saveExperimentInfos(file,ws);
+    MDBoxFlatTree::saveExperimentInfos(file.get(),ws);
 
-    // Save some info as attributes. (Note: need to use attributes, not data sets because those cannot be resized).
-    file->putAttr("definition",  ws->id());
-    file->putAttr("title",  ws->getTitle() );
-    // Save each dimension, as their XML representation
-    for (size_t d=0; d<nd; d++)
+    if(!update)
     {
-      std::ostringstream mess;
-      mess << "dimension" << d;
-      file->putAttr( mess.str(), ws->getDimension(d)->toXMLString() );
-    }
-    MDBoxFlatTree BoxFlatStruct(filename);
+      // Save the algorithm history under "process"
+      ws->getHistory().saveNexus(file.get());
 
-  // flatten the box structure
-    BoxFlatStruct.initFlatStructure<MDE,nd>(ws,filename);
+      // Write out the affine matrices
+      this->saveAffineTransformMatricies(file.get(),
+                                         boost::dynamic_pointer_cast<const IMDWorkspace>(ws));
 
-    // Start the event Data group and prepare the data chunk storage.
-    BoxFlatStruct.initEventFileStorage(file,bc,MakeFileBacked||update,MDE::getTypeName());
-//----------------------------------------------------------------------------------------------------------------
- 
-    // get boxes vector
-    std::vector<Kernel::ISaveable *> &boxes = BoxFlatStruct.getBoxes();
-
-    size_t maxBoxes = boxes.size();
-    size_t chunkSize = bc->getDataChunk();
-
-    Progress * prog = new Progress(this, 0.05, 0.9, maxBoxes);
-    if(update)
-    {
-      // use write buffer to update file and allocate/reallocate all data chunk to their rightfull positions
-      Kernel::DiskBuffer &db = bc->getDiskBuffer();
-      // if write buffer size is smaller then chunk size it is usually not very efficietn
-      if(db.getWriteBufferSize()<chunkSize)db.setWriteBufferSize(chunkSize);
-      for(size_t i=0;i<maxBoxes;i++)
+      // Save some info as attributes. (Note: need to use attributes, not data sets because those cannot be resized).
+      file->putAttr("definition",  ws->id());
+      file->putAttr("title",  ws->getTitle() );
+      // Save each dimension, as their XML representation
+      for (size_t d=0; d<nd; d++)
       {
-        MDBox<MDE,nd> * mdBox = dynamic_cast<MDBox<MDE,nd> *>(boxes[i]);
-        if(!mdBox)continue;
-        if(mdBox->getDataMemorySize()>0) // if part of the object is on HDD, this will load it into memory before saving
-          db.toWrite(mdBox);
-      }
-      // clear all still remaining in the buffer. 
-      db.flushCache();
-
-    }
-    else 
-    {
-      BoxFlatStruct.setBoxesFilePositions(MakeFileBacked);
-      boxes = BoxFlatStruct.getBoxes();
-      for(size_t i=0;i<maxBoxes;i++)
-      {
-        MDBox<MDE,nd> * mdBox = dynamic_cast<MDBox<MDE,nd> *>(boxes[i]);
-        if(!mdBox)continue;
-        // avoid HDF/Nexus error on empty writes
-        if(mdBox->getNPoints() != 0)
-            mdBox->saveNexus(file);
-          // set that it is on disk and clear the actual events to free up memory, saving occured earlier
-        if (MakeFileBacked) mdBox->clearDataFromMemory();
-        prog->report("Saving Box");
+        std::ostringstream mess;
+        mess << "dimension" << d;
+        file->putAttr( mess.str(), ws->getDimension(d)->toXMLString() );
       }
     }
-
-    // Done writing the event data.
-    file->closeData();
-
-
-    // ------------------------- Save Free Blocks --------------------------------------------------
-    // Get a vector of the free space blocks to save to the file
-    std::vector<uint64_t> freeSpaceBlocks;
-    bc->getDiskBuffer().getFreeSpaceVector(freeSpaceBlocks);
-    if (freeSpaceBlocks.empty())
-      freeSpaceBlocks.resize(2, 0); // Needs a minimum size
-    std::vector<int64_t> free_dims(2,2);
-    free_dims[0] = int64_t(freeSpaceBlocks.size()/2);
-    std::vector<int64_t> free_chunk(2,2);
-    free_chunk[0] =int64_t(bc->getDataChunk());
-
-    // Now the free space blocks under event_data -- should be done better
-    try
-    {
-       file->writeUpdatedData("free_space_blocks", freeSpaceBlocks, free_dims);
-    }catch(...)
-    {
-       file->writeExtendibleData("free_space_blocks", freeSpaceBlocks, free_dims, free_chunk);
-    }
-/*    if (!update)
-      file->writeExtendibleData("free_space_blocks", freeSpaceBlocks, free_dims, free_chunk);
-    else
-      file->writeUpdatedData("free_space_blocks", freeSpaceBlocks, free_dims);
-  */  // close event group
     file->closeGroup();
+    file->close();
+
+    MDBoxFlatTree BoxFlatStruct;
+    //-----------------------------------------------------------------------------------------------------
+    if(update) // the workspace is already file backed; We not usually use this mode but want to leave it for compartibility
+    {
+      // remove all boxes from the DiskBuffer. DB will calculate boxes positions on HDD.
+      bc->getFileIO()->flushCache();
+      // flatten the box structure; this will remember boxes file positions in the box structure
+      BoxFlatStruct.initFlatStructure(ws,filename);
+    }
+    else   // not file backed;
+    {
+      // the boxes file positions are unknown and we need to calculate it.
+      BoxFlatStruct.initFlatStructure(ws,filename);
+      // create saver class
+      auto Saver = boost::shared_ptr<API::IBoxControllerIO>(new MDEvents::BoxControllerNeXusIO(bc.get()));
+      Saver->setDataType(sizeof(coord_t),MDE::getTypeName());
+      if(MakeFileBacked)
+      {
+        // store saver with box controller
+        bc->setFileBacked(Saver,filename);
+        // get access to boxes array
+        std::vector<API::IMDNode *> &boxes = BoxFlatStruct.getBoxes();
+        // calculate the position of the boxes on file, indicating to make them saveable and that the boxes were not saved.
+        BoxFlatStruct.setBoxesFilePositions(true);
+        prog->resetNumSteps(boxes.size(),0.06,0.90);
+        for(size_t i=0;i<boxes.size();i++)
+        {
+          auto saveableTag = boxes[i]->getISaveable();
+          if(saveableTag) // only boxes can be saveable
+          {
+            // do not spend time on empty boxes
+            if(boxes[i]->getDataInMemorySize()==0)continue;
+            // save boxes directly using the boxes file postion, precalculated in boxFlatStructure.
+            saveableTag->save();
+            // remove boxes data from memory. This will actually correctly set the tag indicatin that data were not loaded.
+            saveableTag->clearDataFromMemory();
+            // put boxes into write buffer wich will save them when necessary
+            //Saver->toWrite(saveTag);
+            prog->report("Saving Box");
+          }
+        }
+        // remove everything from diskBuffer;  (not sure if it really necessary but just in case , should not make any harm)
+        Saver->flushCache();
+        // drop NeXus on HDD (not sure if it really necessary but just in case )
+        Saver->flushData();
+      }
+      else  // just save data, and finish with it
+      {
+        Saver->openFile(filename,"w");
+        BoxFlatStruct.setBoxesFilePositions(false);
+        std::vector<API::IMDNode *> &boxes = BoxFlatStruct.getBoxes();
+        std::vector<uint64_t> &eventIndex  = BoxFlatStruct.getEventIndex();
+        prog->resetNumSteps(boxes.size(),0.06,0.90);
+        for(size_t i=0;i<boxes.size();i++)
+        {
+          if(eventIndex[2*i+1]==0)continue;
+          boxes[i]->saveAt(Saver.get(),eventIndex[2*i]);
+          prog->report("Saving Box");
+        }
+        Saver->closeFile();
+      }
+    }
 
 
     // -------------- Save Box Structure  -------------------------------------
-    // OK, we've filled these big arrays of data. Save them.
+    // OK, we've filled these big arrays of data representing flat box structrre. Save them.
     progress(0.91, "Writing Box Data");
     prog->resetNumSteps(8, 0.92, 1.00);
 
     //Save box structure;
-    BoxFlatStruct.saveBoxStructure(file);
-
-    if (update || MakeFileBacked)
-    {
-      // Need to keep the file open since it is still used as a back end.
-      // Reopen the file
-      filename = bc->getFilename();
-      file = new ::NeXus::File(filename, NXACC_RDWR);
-      // Re-open the data for events.
-      file->openGroup("MDEventWorkspace", "NXentry");
-      file->openGroup("event_data", "NXdata");
-      uint64_t totalNumEvents = API::BoxController::openEventNexusData(file);
-      bc->setFile(file, filename, totalNumEvents);
-      // Mark file is up-to-date
-      ws->setFileNeedsUpdating(false);
-
-    }
+    BoxFlatStruct.saveBoxStructure(filename);
 
     delete prog;
 
+    ws->setFileNeedsUpdating(false);
   }
 
 
@@ -368,6 +289,9 @@ namespace MDAlgorithms
       mess << "dimension" << d;
       file->putAttr( mess.str(), ws->getDimension(d)->toXMLString() );
     }
+
+    // Write out the affine matrices
+    this->saveAffineTransformMatricies(file, boost::dynamic_pointer_cast<const IMDWorkspace>(ws));
 
     // Check that the typedef has not been changed. The NeXus types would need changing if it does!
     assert(sizeof(signal_t) == sizeof(double));
@@ -422,6 +346,79 @@ namespace MDAlgorithms
       throw std::runtime_error("SaveMD can only save MDEventWorkspaces and MDHistoWorkspaces.\nPlease use SaveNexus or another algorithm appropriate for this workspace type.");
   }
 
+  /**
+   * Save the affine matricies to both directional conversions to the
+   * data.
+   * @param file : pointer to the NeXus file
+   * @param ws : workspace to get matrix from
+   */
+  void SaveMD::saveAffineTransformMatricies(::NeXus::File *const file,
+                                            IMDWorkspace_const_sptr ws)
+  {
+    try {
+      this->saveAffineTransformMatrix(file,
+                                      ws->getTransformToOriginal(),
+                                      "transform_to_orig");
+    }
+    catch (std::runtime_error &)
+    {
+      // Do nothing
+    }
+    try {
+      this->saveAffineTransformMatrix(file,
+                                      ws->getTransformFromOriginal(),
+                                      "transform_from_orig");
+    }
+    catch (std::runtime_error &)
+    {
+      // Do nothing
+    }
+  }
+
+  /**
+   * Extract and save the requested affine matrix.
+   * @param file : pointer to the NeXus file
+   * @param transform : the object to extract the affine matrix from
+   * @param entry_name : the tag in the NeXus file to save under
+   */
+  void SaveMD::saveAffineTransformMatrix(::NeXus::File *const file,
+                                         CoordTransform *transform,
+                                         std::string entry_name)
+  {
+    Matrix<coord_t> matrix = transform->makeAffineMatrix();
+    g_log.debug() << "TRFM: " << matrix.str() << std::endl;
+    this->saveMatrix<coord_t>(file, entry_name, matrix,
+                              ::NeXus::FLOAT32, transform->id());
+  }
+
+
+  /**
+   * Save routine for a generic matrix
+   * @param file : pointer to the NeXus file
+   * @param name : the tag in the NeXus file to save under
+   * @param m : matrix to save
+   * @param type : NXnumtype for the matrix data
+   * @param tag : id for an affine matrix conversion
+   */
+  template<typename T>
+  void SaveMD::saveMatrix(::NeXus::File *const file, std::string name,
+                         Matrix<T> &m, ::NeXus::NXnumtype type, std::string tag)
+  {
+    std::vector<T> v = m.getVector();
+    // Number of data points
+    int nPoints = static_cast<int>(v.size());
+
+    file->makeData(name, type, nPoints, true);
+    // Need a pointer
+    file->putData(&v[0]);
+    if (!tag.empty())
+    {
+      file->putAttr("type", tag);
+      file->putAttr("rows", static_cast<int>(m.numRows()));
+      file->putAttr("columns", static_cast<int>(m.numCols()));
+    }
+    file->closeData();
+  }
 
 
 } // namespace Mantid

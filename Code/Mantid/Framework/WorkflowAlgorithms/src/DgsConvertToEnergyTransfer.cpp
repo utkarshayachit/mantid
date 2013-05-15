@@ -19,6 +19,7 @@ energy transfer for direct geometry spectrometers.
 #include "MantidKernel/System.h"
 #include "MantidKernel/TimeSeriesProperty.h"
 #include "MantidKernel/VisibleWhenProperty.h"
+#include "MantidWorkflowAlgorithms/WorkflowAlgorithmHelpers.h"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
@@ -26,6 +27,7 @@ energy transfer for direct geometry spectrometers.
 using namespace Mantid::Kernel;
 using namespace Mantid::API;
 using namespace Mantid::Geometry;
+using namespace WorkflowAlgorithmHelpers;
 
 namespace Mantid
 {
@@ -57,7 +59,7 @@ namespace Mantid
     int DgsConvertToEnergyTransfer::version() const { return 1; };
 
     /// Algorithm's category for identification. @see Algorithm::category
-    const std::string DgsConvertToEnergyTransfer::category() const { return "Workflow\\Inelastic"; }
+    const std::string DgsConvertToEnergyTransfer::category() const { return "Workflow\\Inelastic\\UsesPropertyManager"; }
 
     //----------------------------------------------------------------------------------------------
     /// Sets documentation strings for this algorithm
@@ -313,9 +315,15 @@ namespace Mantid
         IAlgorithm_sptr cnvToDist = this->createChildAlgorithm("ConvertToDistribution");
 
         // Set the binning parameters for the background region
-        double tibTofStart = reductionManager->getProperty("TibTofRangeStart");
+        double tibTofStart = getDblPropOrParam("TibTofRangeStart",
+                                               reductionManager,
+                                               "bkgd-range-min",
+                                               inputWS);
         tibTofStart += binOffset;
-        double tibTofEnd = reductionManager->getProperty("TibTofRangeEnd");
+        double tibTofEnd = getDblPropOrParam("TibTofRangeEnd",
+                                             reductionManager,
+                                             "bkgd-range-max",
+                                             inputWS);
         tibTofEnd += binOffset;
         const double tibTofWidth = tibTofEnd - tibTofStart;
         std::vector<double> params;

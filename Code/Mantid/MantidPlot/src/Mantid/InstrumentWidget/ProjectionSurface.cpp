@@ -6,6 +6,7 @@
 
 #include "MantidGeometry/IDetector.h"
 #include "MantidGeometry/Objects/Object.h"
+#include "MantidAPI/IPeaksWorkspace.h"
 
 #include <QRgb>
 #include <QSet>
@@ -37,16 +38,18 @@ ProjectionSurface::ProjectionSurface(const InstrumentActor* rootActor,const Mant
     m_viewRect(),
     m_selectRect(),
     m_interactionMode(MoveMode),
-    m_peakLabelPrecision(6),
+    m_isLightingOn(false),
+    m_peakLabelPrecision(2),
     m_peakShapesStyle(0),
     m_viewChanged(true),
     m_redrawPicking(true)
 {
   connect(rootActor,SIGNAL(colorMapChanged()),this,SLOT(colorMapChanged()));
-  connect(&m_maskShapes,SIGNAL(shapeCreated()),this,SLOT(catchShapeCreated()));
-  connect(&m_maskShapes,SIGNAL(shapeSelected()),this,SLOT(catchShapeSelected()));
-  connect(&m_maskShapes,SIGNAL(shapesDeselected()),this,SLOT(catchShapesDeselected()));
-  connect(&m_maskShapes,SIGNAL(shapeChanged()),this,SLOT(catchShapeChanged()));
+  connect(&m_maskShapes,SIGNAL(shapeCreated()),this,SIGNAL(shapeCreated()));
+  connect(&m_maskShapes,SIGNAL(shapeSelected()),this,SIGNAL(shapeSelected()));
+  connect(&m_maskShapes,SIGNAL(shapesDeselected()),this,SIGNAL(shapesDeselected()));
+  connect(&m_maskShapes,SIGNAL(shapeChanged()),this,SIGNAL(shapeChanged()));
+  connect(&m_maskShapes,SIGNAL(cleared()),this,SIGNAL(shapesCleared()));
 
   // create and connect the pick input controller
   InputControllerPick* pickController = new InputControllerPick(this);
@@ -80,7 +83,6 @@ ProjectionSurface::ProjectionSurface(const InstrumentActor* rootActor,const Mant
 
 ProjectionSurface::~ProjectionSurface()
 {
-  //std::cerr<<"ProjectionSurface deleted\n";
   if (m_viewImage)
   {
     delete m_viewImage;
@@ -119,6 +121,7 @@ void ProjectionSurface::clear()
     m_pickImage = NULL;
   }
   m_viewChanged = true;
+  m_redrawPicking = true;
   m_viewRect = RectF();
   m_selectRect = QRect();
 }
@@ -129,7 +132,10 @@ void ProjectionSurface::clear()
  */
 void ProjectionSurface::draw(MantidGLWidget *widget)const
 {
-  if ( m_viewChanged && ( m_redrawPicking || m_interactionMode == PickSingleMode || m_interactionMode == PickTubeMode ) )
+  if ( m_viewChanged && ( m_redrawPicking
+                          || m_interactionMode == PickSingleMode
+                          || m_interactionMode == PickTubeMode
+                          || m_interactionMode == DrawMode ) )
   {
     draw(widget,true);
     m_redrawPicking = false;
@@ -316,18 +322,29 @@ void ProjectionSurface::leaveEvent(QEvent *e)
 void ProjectionSurface::updateView(bool picking)
 {
   m_viewChanged = true;
-  m_redrawPicking = picking;
+  if (picking)
+  {
+    // don't change to false if it's already true
+    m_redrawPicking = true;
+  }
 }
 
 void ProjectionSurface::updateDetectors()
 {
   clear();
   this->init();
+  // if integration range in the instrument actor has changed
+  // update visiblity of peak markers
+  setPeakVisibility();
 }
 
 /// Send a redraw request to the surface owner
-void ProjectionSurface::requestRedraw()
+void ProjectionSurface::requestRedraw(bool resetPeakVisibility)
 {
+  if ( resetPeakVisibility )
+  {
+    setPeakVisibility();
+  }
   emit redrawRequired();
 }
 
@@ -393,7 +410,7 @@ bool ProjectionSurface::hasSelection()const
 void ProjectionSurface::colorMapChanged()
 {
   this->changeColorMap();
-  updateView();
+  updateView(false);
 }
 
 /**
@@ -531,6 +548,25 @@ void ProjectionSurface::setInputController(int mode, InputController *controller
 }
 
 /**
+  * Set visibility of the peak markers according to the integration range
+  * in the instrument actor.
+  */
+void ProjectionSurface::setPeakVisibility() const
+{
+    if ( hasPeakOverlays() )
+    {
+        Mantid::Kernel::Unit_sptr unit = m_instrActor->getWorkspace()->getAxis(0)->unit();
+        QString unitID = QString::fromStdString(unit->unitID());
+        double xmin = m_instrActor->minBinValue();
+        double xmax = m_instrActor->maxBinValue();
+        foreach(PeakOverlay* po, m_peakShapes)
+        {
+            po->setPeakVisibility(xmin,xmax,unitID);
+        }
+    }
+}
+
+/**
   * Returns the current controller. If the controller doesn't exist throws a logic_error exceotion.
   */
 InputController *ProjectionSurface::getController() const
@@ -550,26 +586,6 @@ void ProjectionSurface::startCreatingShape2D(const QString& type,const QColor& b
   emit signalToStartCreatingShape2D(type,borderColor,fillColor);
 }
 
-void ProjectionSurface::catchShapeCreated()
-{
-  emit shapeCreated();
-}
-
-void ProjectionSurface::catchShapeSelected()
-{
-  emit shapeSelected();
-}
-
-void ProjectionSurface::catchShapesDeselected()
-{
-  emit shapesDeselected();
-}
-
-void ProjectionSurface::catchShapeChanged()
-{
-    emit shapeChanged();
-}
-
 /**
  * Return a combined list of peak parkers from all overlays
  * @param detID :: The detector ID of interest
@@ -585,12 +601,25 @@ QList<PeakMarker2D*> ProjectionSurface::getMarkersWithID(int detID)const
 }
 
 /**
+  * Get peaks workspace for manually editing.
+  */
+boost::shared_ptr<Mantid::API::IPeaksWorkspace> ProjectionSurface::getEditPeaksWorkspace() const
+{
+    if ( !m_peakShapes.isEmpty() )
+    {
+        return m_peakShapes.last()->getPeaksWorkspace();
+    }
+    return boost::shared_ptr<Mantid::API::IPeaksWorkspace>();
+}
+
+/**
  * Remove an overlay if its peaks workspace is deleted.
  * @param ws :: Shared pointer to the deleted peaks workspace.
  */
-void ProjectionSurface::peaksWorkspaceDeleted(boost::shared_ptr<Mantid::API::IPeaksWorkspace> ws)
+void ProjectionSurface::deletePeaksWorkspace(boost::shared_ptr<Mantid::API::IPeaksWorkspace> ws)
 {
-  for(int i=0;i < m_peakShapes.size(); ++i)
+  const int npeaks = m_peakShapes.size();
+  for(int i=0;i < npeaks; ++i)
   {
     if (m_peakShapes[i]->getPeaksWorkspace() == ws)
     {
@@ -599,6 +628,10 @@ void ProjectionSurface::peaksWorkspaceDeleted(boost::shared_ptr<Mantid::API::IPe
       break;
     }
   }
+  if ( m_peakShapes.size() < npeaks )
+  {
+      emit peaksWorkspaceDeleted();
+  }
 }
 
 /**
@@ -606,12 +639,16 @@ void ProjectionSurface::peaksWorkspaceDeleted(boost::shared_ptr<Mantid::API::IPe
  */
 void ProjectionSurface::clearPeakOverlays()
 {
-  for(int i=0;i < m_peakShapes.size(); ++i)
-  {
-      delete m_peakShapes[i];
-  }
-  m_peakShapes.clear();
-  m_peakShapesStyle = 0;
+    if ( !m_peakShapes.isEmpty() )
+    {
+        for(int i=0;i < m_peakShapes.size(); ++i)
+        {
+          delete m_peakShapes[i];
+        }
+        m_peakShapes.clear();
+        m_peakShapesStyle = 0;
+        emit peaksWorkspaceDeleted();
+    }
 }
 
 /**
@@ -635,13 +672,25 @@ void ProjectionSurface::setPeakLabelPrecision(int n)
 /**
  * Enable or disable the show peak row flag
  */
-void ProjectionSurface::setShowPeakRowFlag(bool on)
+void ProjectionSurface::setShowPeakRowsFlag(bool on)
 {
-  m_showPeakRow = on;
+  m_showPeakRows = on;
   for(int i=0;i < m_peakShapes.size(); ++i)
   {
     m_peakShapes[i]->setShowRowsFlag(on);
   }
+}
+
+/**
+ * Enable or disable the show peak label flag
+ */
+void ProjectionSurface::setShowPeakLabelsFlag(bool on)
+{
+    m_showPeakLabels = on;
+    for(int i=0;i < m_peakShapes.size(); ++i)
+    {
+      m_peakShapes[i]->setShowLabelsFlag(on);
+    }
 }
 
 /**
@@ -696,3 +745,26 @@ void ProjectionSurface::erasePeaks(const QRect &rect)
     }
 
 }
+
+/**
+ * Enable or disable lighting in non-picking mode
+ * @param on :: True for enabling, false for disabling.
+ */
+void ProjectionSurface::enableLighting(bool on)
+{
+    m_isLightingOn = on;
+}
+
+/**
+  * Return names of attached peaks workspaces.
+  */
+QStringList ProjectionSurface::getPeaksWorkspaceNames() const
+{
+    QStringList names;
+    foreach(PeakOverlay* po, m_peakShapes)
+    {
+        names << QString::fromStdString(po->getPeaksWorkspace()->name());
+    }
+    return names;
+}
+

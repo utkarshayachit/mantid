@@ -14,9 +14,10 @@ class MSGReducer(reducer.Reducer):
     providing a semi-consistent interface to both.
     """
     
-    _instrument_name = None #: Name of the instrument used in experiment
-    _sum = False #: Whether to sum input files or treat them sequentially
-    _monitor_index = None #: Index of Monitor specturm
+    _instrument_name = None #: Name of the instrument used in experiment.
+    _sum = False #: Whether to sum input files or treat them sequentially.
+    _load_logs = False #: Whether to load the log file(s) associated with the raw file.
+    _monitor_index = None #: Index of Monitor specturm.
     _multiple_frames = False
     _detector_range = [-1, -1]
     _masking_detectors = []
@@ -25,6 +26,7 @@ class MSGReducer(reducer.Reducer):
     _fold_multiple_frames = True
     _save_formats = []
     _info_table_props = None
+    _extra_load_opts = {}
     
     def __init__(self):
         super(MSGReducer, self).__init__()
@@ -35,10 +37,12 @@ class MSGReducer(reducer.Reducer):
         loadData = steps.LoadData()
         loadData.set_ws_list(self._data_files)
         loadData.set_sum(self._sum)
+        loadData.set_load_logs(self._load_logs)
         loadData.set_monitor_index(self._monitor_index)
         loadData.set_detector_range(self._detector_range[0],
             self._detector_range[1])
         loadData.set_parameter_file(self._parameter_file)
+        loadData.set_extra_load_opts(self._extra_load_opts)
         loadData.execute(self, None)
         
         self._multiple_frames = loadData.is_multiple_frames()
@@ -56,7 +60,7 @@ class MSGReducer(reducer.Reducer):
         
         if ( self._sum ):
             self._data_files = loadData.get_ws_list()
-            
+        
         self._setup_steps()
     
     def create_info_table(self):
@@ -144,6 +148,15 @@ class MSGReducer(reducer.Reducer):
         if not isinstance(value, bool):
             raise TypeError("value must be either True or False (boolean)")
         self._sum = value
+    
+    def set_load_logs(self, value):
+        """Mark whether the log file(s) associated with a raw file should be
+        loaded along with the raw file.
+        The default value for this is False.
+        """
+        if not isinstance(value, bool):
+            raise TypeError("value must be either True or False (boolean)")
+        self._load_logs = value
         
     def set_save_formats(self, formats):
         """Selects the save formats in which to export the reduced data.
@@ -159,6 +172,13 @@ class MSGReducer(reducer.Reducer):
         if not isinstance(formats, list):
             raise TypeError("formats variable must be of list type")
         self._save_formats = formats
+
+    def append_load_option(self, name, value):
+        """
+           Additional options for the Load call, require name & value
+           of property
+        """
+        self._extra_load_opts[name] = value
         
     def get_result_workspaces(self):
         """Returns a Python list object containing the names of the workspaces

@@ -1,34 +1,33 @@
 /*WIKI* 
 
-
 The Load algorithm is a more intelligent algorithm than most other load algorithms. When passed a filename it attempts to search the existing load [[:Category:Algorithms|algorithms]] and find the most appropriate to load the given file. The specific load algorithm is then run as a child algorithm with the exception that it logs messages to the Mantid logger.
 
 ==== Specific Load Algorithm Properties ====
 
 Each specific loader will have its own properties that are appropriate to it:  SpectrumMin and SpectrumMax for ISIS RAW/NeXuS, FilterByTof_Min and FilterByTof_Max for Event data. The Load algorithm cannot know about these properties until it has been told the filename and found the correct loader. Once this has happened the properties of the specific Load algorithm are redeclared on to that copy of Load.
 
-== Usage ==
-
+*WIKI*/
+/*WIKI_USAGE_NO_SIGNATURE*
 ==== Python ====
-
 Given the variable number and types of possible arguments that Load can take, its simple Python function cannot just list the properties as arguments like the others do. Instead the Python function <code>Load</code> can handle any number of arguments. The OutputWorkspace and Filename arguments are the exceptions in that they are always checked for. A snippet regarding usage from the <code>help(Load)</code> is shown below
 <div style="border:1pt dashed blue; background:#f9f9f9;padding: 1em 0;">
 <source lang="python">
 # Simple usage, ISIS NeXus file
-Load('INSTR00001000.nxs', 'run_ws')
+Load('INSTR00001000.nxs', OutputWorkspace='run_ws')
 
 # ISIS NeXus with SpectrumMin and SpectrumMax = 1
-Load('INSTR00001000.nxs', 'run_ws', SpectrumMin=1,SpectrumMax=1)
+Load('INSTR00001000.nxs', OutputWorkspace='run_ws', SpectrumMin=1, SpectrumMax=1)
 
 # SNS Event NeXus with precount on
-Load('INSTR_1000_event.nxs', 'event_ws', Precount=True)
+Load('INSTR_1000_event.nxs', OutputWorkspace='event_ws', Precount=True)
 
 # A mix of keyword and non-keyword is also possible
-Load('event_ws', Filename='INSTR_1000_event.nxs',Precount=True)
+Load(OutputWorkspace='event_ws', Filename='INSTR_1000_event.nxs', Precount=True)
 </source></div>
+==== Loading Multiple Files ====
 
-
-*WIKI*/
+Loading multiple files is also possible with <code>Load</code>, as well as workspace addition.  For more information, see [[MultiFileLoading]].
+*WIKI_USAGE_NO_SIGNATURE*/
 //----------------------------------------------------------------------
 // Includes
 //----------------------------------------------------------------------
@@ -380,16 +379,19 @@ namespace Mantid
       exts.push_back(".spe");
       exts.push_back(".grp");
       exts.push_back(".nxspe");
+      exts.push_back(".h5");
+      exts.push_back(".hd5");
 
       declareProperty(new MultipleFileProperty("Filename", exts),
-        "The name of the file(s) to read, including the full or relative\n"
-        "path. (N.B. case sensitive if running on Linux). Multiple runs\n"
+        "The name of the file(s) to read, including the full or relative "
+        "path. (N.B. case sensitive if running on Linux). Multiple runs "
         "can be loaded and added together, e.g. INST10,11+12,13.ext");
       declareProperty(new WorkspaceProperty<Workspace>("OutputWorkspace", "",Direction::Output), 
-        "The name of the workspace that will be created, filled with the\n"
-        "read-in data and stored in the Analysis Data Service.");
+        "The name of the workspace that will be created, filled with the "
+        "read-in data and stored in the Analysis Data Service. Some algorithms "
+        "can created additional OutputWorkspace properties on the fly, e.g. multi-period data.");
 
-      declareProperty("LoaderName", std::string(""), "A string containing the name of the concrete loader used", 
+      declareProperty("LoaderName", std::string(""), "When an algorithm has been found that will load the given file, its name is set here.", 
         Direction::Output);
       // Save for later what the base Load properties are
       const std::vector<Property*> & props = this->getProperties();
@@ -694,7 +696,7 @@ namespace Mantid
     /*
     * Overrides the default cancel() method. Calls cancel() on the actual loader.
     */
-    void Load::cancel()const
+    void Load::cancel()
     {
       if (m_loader)
       {

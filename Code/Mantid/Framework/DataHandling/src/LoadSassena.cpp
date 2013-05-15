@@ -1,7 +1,26 @@
 /*WIKI*
 
-This algorithm loads a Sassena output file into a group workspace.
-It will create a workspace for each scattering intensity and one workspace for the Q-values
+The Sassena application [http://sassena.org] generates intermediate scattering factors from molecular dynamics trajectories. This algorithm reads Sassena output and stores all data in workspaces of type [[Workspace2D]], grouped under a single [[WorkspaceGroup]].
+  
+Sassena ouput files are in HDF5 format [http://www.hdfgroup.org/HDF5], and can be made up of the following datasets: ''qvectors'', ''fq'', ''fq0'', ''fq2'', and ''fqt''
+  
+Time units:
+Current Sassena version does not specify the time unit, thus the user is required to enter the time in between consecutive data points. Enter the number of picoseconds separating consecutive datapoints.
+
+The workspace for '''qvectors''':
+* X-values for the origin of the vector, default: (0,0,0)
+* Y-values for the tip of the vector
+* one spectra with three bins for each q-vector, one bin per vector component. If orientational average was performed by Sassena, then only the first component is non-zero.
+
+The workspaces for '''fq''', '''fq0''', and '''fq2''' contains two spectra:
+* First spectrum is the real part, second spectrum is the imaginary part
+* X-values contain the moduli of the q vector
+* Y-values contain the structure factors
+
+Dataset '''fqt''' is split into two workspaces, one for the real part and the other for the imaginary part. The structure of these two workspaces is the same:
+* X-values contain the time variable
+* Y-values contain the structure factors
+* one spectra for each q-vector
 
 *WIKI*/
 
@@ -31,9 +50,8 @@ DECLARE_LOADALGORITHM(LoadSassena)
 /// Sets documentation strings for this algorithm
 void LoadSassena::initDocs()
 {
-  this->setWikiSummary("This algorithm loads a Sassena output file into a group workspace.");
+  this->setWikiSummary("This algorithm loads a Sassena output file into a group workspace. It place the data in a workspace for each scattering intensity and one workspace for the Q-values.");
   this->setOptionalMessage(" Algorithm to load an NXSPE file into a group workspace.");
-  this->setWikiDescription("This algorithm loads a Sassena output file into a group workspace. It will create a workspace for each scattering intensity and one workspace for the Q-values");
 }
 
 /**
@@ -308,8 +326,8 @@ void LoadSassena::init()
   // Declare the Filename algorithm property. Mandatory. Sets the path to the file to load.
   declareProperty(new API::FileProperty("Filename", "", API::FileProperty::Load, exts),"A Sassena file");
   // Declare the OutputWorkspace property
-  declareProperty(new API::WorkspaceProperty<API::WorkspaceGroup>("OutputWorkspace","",Kernel::Direction::Output), "The name of the group workspace to be created.");
-  declareProperty(new Kernel::PropertyWithValue<double>("TimeUnit", 1.0, Kernel::Direction::Input),"The time unit in between data points, in picoseconds");
+  declareProperty(new API::WorkspaceProperty<API::Workspace>("OutputWorkspace","",Kernel::Direction::Output), "The name of the group workspace to be created.");
+  declareProperty(new Kernel::PropertyWithValue<double>("TimeUnit", 1.0, Kernel::Direction::Input),"The Time unit in between data points, in picoseconds. Default is 1.0 picosec.");
 }
 
 /**
@@ -317,9 +335,20 @@ void LoadSassena::init()
  */
 void LoadSassena::exec()
 {
-  API::WorkspaceGroup_sptr gws(new API::WorkspaceGroup);
+  //auto gws=boost::dynamic_pointer_cast<API::WorkspaceGroup>(getProperty("OutputWorkspace"));
+  //API::WorkspaceGroup_sptr gws=getProperty("OutputWorkspace");
+  API::Workspace_sptr ows=getProperty("OutputWorkspace");
+  API::WorkspaceGroup_sptr gws=boost::dynamic_pointer_cast<API::WorkspaceGroup>(ows);
+  if(gws)
+  {
+    gws->deepRemoveAll(); // remove workspace members
+  }
+  else
+  {
+    gws = boost::make_shared<API::WorkspaceGroup>();
+    setProperty("OutputWorkspace", boost::dynamic_pointer_cast<API::Workspace>(gws));
+  }
   gws->observeADSNotifications( false ); // Prevent sending unnecessary notifications
-  setProperty("OutputWorkspace", gws); // Register the groupWorkspace in the analysis data service
 
   //populate m_validSets
   int nvalidSets = 4;

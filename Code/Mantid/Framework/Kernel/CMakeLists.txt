@@ -40,6 +40,7 @@ set ( SRC_FILES
 	src/MagneticIon.cpp
 	src/MandatoryValidator.cpp
 	src/MantidVersion.cpp
+	src/Material.cpp
 	src/MaskedProperty.cpp
 	src/Math/Distributions/BoseEinsteinDistribution.cpp
 	src/Math/Distributions/HermitePolynomials.cpp
@@ -65,11 +66,11 @@ set ( SRC_FILES
 	src/ReadLock.cpp
 	src/RebinParamsValidator.cpp
 	src/RegexStrings.cpp
-	src/SignalChannel.cpp
 	src/SingletonHolder.cpp
 	src/SobolSequence.cpp
 	src/StartsWithValidator.cpp
 	src/Statistics.cpp
+	src/StdoutChannel.cpp
 	src/Strings.cpp
 	src/TestChannel.cpp
 	src/ThreadPool.cpp
@@ -160,6 +161,7 @@ set ( INC_FILES
 	inc/MantidKernel/MagneticIon.h
 	inc/MantidKernel/MandatoryValidator.h
 	inc/MantidKernel/MantidVersion.h
+	inc/MantidKernel/Material.h
 	inc/MantidKernel/MaskedProperty.h
 	inc/MantidKernel/Math/Distributions/BoseEinsteinDistribution.h
 	inc/MantidKernel/Math/Distributions/HermitePolynomials.h
@@ -191,11 +193,11 @@ set ( INC_FILES
 	inc/MantidKernel/RebinParamsValidator.h
 	inc/MantidKernel/RegexStrings.h
 	inc/MantidKernel/RegistrationHelper.h
-	inc/MantidKernel/SignalChannel.h
 	inc/MantidKernel/SingletonHolder.h
 	inc/MantidKernel/SobolSequence.h
 	inc/MantidKernel/StartsWithValidator.h
 	inc/MantidKernel/Statistics.h
+	inc/MantidKernel/StdoutChannel.h
 	inc/MantidKernel/Strings.h
 	inc/MantidKernel/System.h
 	inc/MantidKernel/Task.h
@@ -242,6 +244,7 @@ set ( TEST_FILES
 	DateValidatorTest.h
 	DeltaEModeTest.h
 	DirectoryValidatorTest.h
+	DiskBufferISaveableTest.h
 	DiskBufferTest.h
 	DynamicFactoryTest.h
 	EnabledWhenPropertyTest.h
@@ -268,6 +271,7 @@ set ( TEST_FILES
 	MagneticFormFactorTableTest.h
 	MagneticIonTest.h
 	MandatoryValidatorTest.h
+	MaterialTest.h
 	MaskedPropertyTest.h
 	MatrixPropertyTest.h
 	MatrixTest.h
@@ -291,10 +295,10 @@ set ( TEST_FILES
 	RebinHistogramTest.h
 	RebinParamsValidatorTest.h
 	RegexStringsTest.h
-	SignalChannelTest.h
 	SobolSequenceTest.h
 	StartsWithValidatorTest.h
 	StatisticsTest.h
+	StdoutChannelTest.h
 	StringsTest.h
 	TaskTest.h
 	ThreadPoolRunnableTest.h
@@ -381,9 +385,11 @@ set ( PLUGINS "." )
 set ( PV_PLUGINS "./pvplugins" )
 set ( IGNORE_PARAVIEW "0" )
 set ( QTPLUGINS "." )
-set ( PYTHONALG_DIRS "${MANTID_ROOT}/Framework/PythonAPI/PythonAlgorithms;${MANTID_ROOT}/Framework/PythonInterface/PythonAlgorithms" )
+set ( PYTHONALG_DIRS "${MANTID_ROOT}/Framework/PythonAPI/PythonAlgorithms;${MANTID_ROOT}/Framework/PythonInterface/PythonAlgorithms" ) # deprecated
+set ( PYTHONPLUGIN_DIRS "${MANTID_ROOT}/Framework/PythonAPI/PythonAlgorithms;${MANTID_ROOT}/Framework/PythonInterface/plugins" )
 set ( DATADIRS ${MANTID_ROOT}/../../Test/AutoTestData;${MANTID_ROOT}/instrument )
 set ( COLORMAPS_FOLDER ${MANTID_ROOT}/Installers/colormaps/ )
+SET ( MANTIDPUBLISHER "http://upload.mantidproject.org/scriptrepository/payload/publish_debug" )
 
 # Construct script paths.
 set ( MANTID_SCRIPTS ${MANTID_ROOT}/scripts )
@@ -454,8 +460,10 @@ else ()
 endif ()
 
 set ( PLUGINS ${MANTID_ROOT}/plugins )
-set ( PYTHONALG_DIRS ${PLUGINS}/PythonAlgs )
+set ( PYTHONALG_DIRS ${PLUGINS}/PythonAlgs ) # deprecated
+set ( PYTHONPLUGIN_DIRS ${PLUGINS}/python )
 set ( DATADIRS "" )
+SET ( MANTIDPUBLISHER "http://upload.mantidproject.org/scriptrepository/payload/publish" )
 
 # Construct script paths by replacing the old MANTID_ROOT with the new one.
 # Unfortunately string (REGEX REPLACE ... )removes the semi-colons so we have to do this in a loop.

@@ -12,7 +12,16 @@ namespace Mantid
   namespace PythonInterface
   {
     using namespace boost::python;
-    using Environment::CallMethod_NoArg;
+    using Environment::CallMethod0;
+
+    /**
+     * Construct the "wrapper" and stores the reference to the PyObject
+     * * @param self A reference to the calling Python object
+     */
+    AlgorithmWrapper::AlgorithmWrapper(PyObject* self)
+      : PythonAlgorithm(), m_self(self)
+    {
+    }
 
     /**
      * Returns the name of the algorithm. This cannot be overridden in Python.
@@ -28,7 +37,7 @@ namespace Mantid
      */
     int AlgorithmWrapper::version() const
     {
-      return CallMethod_NoArg<int>::dispatchWithDefaultReturn(getSelf(), "version", defaultVersion());
+      return CallMethod0<int>::dispatchWithDefaultReturn(getSelf(), "version", defaultVersion());
     }
 
     int AlgorithmWrapper::defaultVersion() const
@@ -42,7 +51,7 @@ namespace Mantid
      */
     const std::string AlgorithmWrapper::category() const
     {
-      return CallMethod_NoArg<std::string>::dispatchWithDefaultReturn(getSelf(), "category", defaultCategory());
+      return CallMethod0<std::string>::dispatchWithDefaultReturn(getSelf(), "category", defaultCategory());
     }
 
     /**
@@ -60,10 +69,7 @@ namespace Mantid
      */
     void AlgorithmWrapper::init()
     {
-      std::ostringstream os;
-      os << "Python algorithm '" << this->name()
-      << "' does not define the PyInit function, cannot initialize.";
-      CallMethod_NoArg<void>::dispatchWithException(getSelf(), "PyInit", os.str().c_str());
+      CallMethod0<void>::dispatchWithException(getSelf(), "PyInit");
     }
 
     /**
@@ -72,19 +78,8 @@ namespace Mantid
      */
     void AlgorithmWrapper::exec()
     {
-      std::ostringstream os;
-      os << "Python algorithm '" << this->name()
-         << "' does not define the PyExec function, cannot execute.";
-      CallMethod_NoArg<void>::dispatchWithException(getSelf(), "PyExec", os.str().c_str());
-    }
 
-    /**
-     *  Returns the PyObject that owns this wrapper, i.e. self
-     * @returns A pointer to self
-     */
-    PyObject * AlgorithmWrapper::getSelf() const
-    {
-      return boost::python::detail::wrapper_base_::get_owner(*this);
+      CallMethod0<void>::dispatchWithException(getSelf(), "PyExec");
     }
 
   }

@@ -177,20 +177,10 @@ namespace Mantid
     */
     void MatrixWorkspace::updateSpectraUsingMap()
     {
-      // The Axis1 needs to be set correctly for the ISpectraDetectorMap to make any sense
-      if (m_axes.size() < 2) throw std::runtime_error("MatrixWorkspace::updateSpectraUsingMap() needs a SpectraAxis at index 1 to work.");
-      SpectraAxis * ax1 = dynamic_cast<SpectraAxis *>(m_axes[1]);
-      if (!ax1)
-        throw std::runtime_error("MatrixWorkspace::updateSpectraUsingMap() needs a SpectraAxis at index 1 to work.");
-      if (ax1->length() < this->getNumberHistograms())
-        throw std::runtime_error("MatrixWorkspace::updateSpectraUsingMap(): the SpectraAxis is shorter than the number of histograms! Cannot run.");
-
       for (size_t wi=0; wi < this->getNumberHistograms(); wi++)
       {
-        specid_t specNo = ax1->spectraNo(wi);
-
         ISpectrum * spec = getSpectrum(wi);
-        spec->setSpectrumNo(specNo);
+        specid_t specNo = spec->getSpectrumNo();
 
         std::vector<detid_t> dets = m_spectraMap->getDetectors(specNo);
         spec->clearDetectorIDs();
@@ -221,12 +211,12 @@ namespace Mantid
       if( m_axes.size() > 1 && m_axes[1]->isSpectra() )
       {
         delete m_axes[1];
-        m_axes[1] = new SpectraAxis(pixelIDs.size(), false);
+        m_axes[1] = new SpectraAxis(this);
       }
       else
       {
         if (m_axes.size() == 0) m_axes.push_back( new NumericAxis(this->blocksize()) );
-        m_axes.push_back(  new SpectraAxis(pixelIDs.size(), false) );
+        m_axes.push_back(  new SpectraAxis(this) );
       }
 
       try
@@ -242,9 +232,6 @@ namespace Mantid
           const specid_t specNo = specid_t(index + 1);
           // We keep the entry in the spectraDetectorMap. TODO: Deprecate spectraDetectorMap entirely.
           spectramap->addSpectrumEntry(specNo, detId);
-
-          // Also set the spectrum number in the axis(1). TODO: Remove this, it is redundant (but it is stuck everywhere)
-          m_axes[1]->setValue(index, specNo);
 
           if (index < this->getNumberHistograms())
           {
@@ -287,12 +274,11 @@ namespace Mantid
       if( m_axes.size() > 1 )
       {
         delete m_axes[1];
-        m_axes[1] = new SpectraAxis(this->getNumberHistograms(), false);
+        m_axes[1] = new SpectraAxis(this);
       }
       else
-        m_axes.push_back(  new SpectraAxis(this->getNumberHistograms(), false) );
+        m_axes.push_back(  new SpectraAxis(this) );
 
-      API::Axis *ax1 = getAxis(1);
       API::SpectraDetectorMap *newMap = new API::SpectraDetectorMap;
 
       //Go through all the spectra
@@ -301,7 +287,6 @@ namespace Mantid
         ISpectrum * spec = getSpectrum(wi);
         specid_t specNo = spec->getSpectrumNo();
         newMap->addSpectrumEntries(specNo, spec->getDetectorIDs());
-        ax1->setValue(wi, specNo);
         //std::cout << "generateSpectraMap : wi " << wi << " specNo " << specNo << " detID " << *spec->getDetectorIDs().begin() << std::endl;
       }
 
@@ -780,7 +765,7 @@ namespace Mantid
     {
       double xmin;
       double xmax;
-      this->getXMinMax(xmin, xmax); // delagate to the proper code
+      this->getXMinMax(xmin, xmax); // delegate to the proper code
       return xmin;
     }
 
@@ -788,7 +773,7 @@ namespace Mantid
     {
       double xmin;
       double xmax;
-      this->getXMinMax(xmin, xmax); // delagate to the proper code
+      this->getXMinMax(xmin, xmax); // delegate to the proper code
       return xmax;
     }
 
@@ -800,13 +785,11 @@ namespace Mantid
       size_t numberOfSpectra = this->getNumberHistograms();
 
       // determine the data range
-      double xfront;
-      double xback;
       for (size_t workspaceIndex = 0; workspaceIndex < numberOfSpectra; workspaceIndex++)
       {
-        const MantidVec& dataX = this->readX(workspaceIndex); // force using const version
-        xfront = dataX.front();
-        xback = dataX.back();
+        const MantidVec& dataX = this->readX(workspaceIndex);
+        const double xfront = dataX.front();
+        const double xback = dataX.back();
         if (boost::math::isfinite(xfront) && boost::math::isfinite(xback))
         {
           if (xfront < xmin)
@@ -1271,18 +1254,16 @@ namespace Mantid
      *
      * @return the time of the first pulse
      * @throw runtime_error if the log is not found; or if it is empty.
+     * @throw invalid_argument if the log is not a double TimeSeriesProperty (should be impossible)
      */
     Kernel::DateAndTime MatrixWorkspace::getFirstPulseTime() const
     {
-      TimeSeriesProperty<double>* log = dynamic_cast<TimeSeriesProperty<double>*> (this->run().getLogData("proton_charge"));
-      if (!log)
-        throw std::runtime_error("EventWorkspace::getFirstPulseTime: No TimeSeriesProperty called 'proton_charge' found in the workspace.");
-      DateAndTime startDate;
+      TimeSeriesProperty<double>* log = this->run().getTimeSeriesProperty<double>("proton_charge");
+
+      DateAndTime startDate = log->firstTime();
       DateAndTime reference("1991-01-01T00:00:00");
 
       int i=0;
-      startDate = log->nthTime(i);
-
       // Find the first pulse after 1991
       while (startDate < reference && i < 100)
       {
@@ -1301,15 +1282,12 @@ namespace Mantid
      *
      * @return the time of the first pulse
      * @throw runtime_error if the log is not found; or if it is empty.
+     * @throw invalid_argument if the log is not a double TimeSeriesProperty (should be impossible)
      */
     Kernel::DateAndTime MatrixWorkspace::getLastPulseTime() const
     {
-      TimeSeriesProperty<double>* log = dynamic_cast<TimeSeriesProperty<double>*> (this->run().getLogData("proton_charge"));
-      if (!log)
-        throw std::runtime_error("EventWorkspace::getFirstPulseTime: No TimeSeriesProperty called 'proton_charge' found in the workspace.");
-      DateAndTime stopDate = log->lastTime();
-      //Return as DateAndTime.
-      return stopDate;
+      TimeSeriesProperty<double>* log = this->run().getTimeSeriesProperty<double>("proton_charge");
+      return log->lastTime();
     }
 
 

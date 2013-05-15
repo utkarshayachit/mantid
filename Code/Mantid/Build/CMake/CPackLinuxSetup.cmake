@@ -8,27 +8,7 @@ string ( TOLOWER "${CPACK_PACKAGE_NAME}" CPACK_PACKAGE_NAME )
 # define the source generators
 set ( CPACK_SOURCE_GENERATOR TGZ )
 
-find_program (LSB_CMD lsb_release)
-if ( LSB_CMD )
-  # get the distribution
-  execute_process ( COMMAND ${LSB_CMD} -i
-    OUTPUT_VARIABLE UNIX_DIST
-    OUTPUT_STRIP_TRAILING_WHITESPACE )
-  string ( REGEX REPLACE "Distributor ID:" "" UNIX_DIST ${UNIX_DIST} )
-  string ( STRIP ${UNIX_DIST} UNIX_DIST )
-  string ( REGEX REPLACE "RedHatEnterpriseClient" "RedHatEnterprise" UNIX_DIST ${UNIX_DIST} )
-  string ( REGEX REPLACE "RedHatEnterpriseWorkstation" "RedHatEnterprise" UNIX_DIST ${UNIX_DIST} )
-  # get the codename
-  execute_process ( COMMAND ${LSB_CMD} -c
-    OUTPUT_VARIABLE UNIX_CODENAME
-    OUTPUT_STRIP_TRAILING_WHITESPACE )
-  string ( REGEX REPLACE "Codename:" "" UNIX_CODENAME ${UNIX_CODENAME} )
-  string ( STRIP ${UNIX_CODENAME} UNIX_CODENAME )
-else ( LSB_CMD )
-  set ( UNIX_DIST "" )
-  set ( UNIX_CODENAME "" )
-endif ( LSB_CMD )
-message ( STATUS " DIST: ${UNIX_DIST} CODENAME: ${UNIX_CODENAME}" )
+include (DetermineLinuxDistro)
 
 # define which binary generators to use
 if ( ${UNIX_DIST} MATCHES "Ubuntu" )
@@ -45,7 +25,7 @@ if ( ${UNIX_DIST} MATCHES "Ubuntu" )
 endif ( ${UNIX_DIST} MATCHES "Ubuntu" )
 
 #RedHatEnterpriseClient RedHatEnterpriseWorkstation
-if ( ${UNIX_DIST} MATCHES "RedHatEnterprise" OR ${UNIX_DIST} MATCHES "Fedora")
+if ( ${UNIX_DIST} MATCHES "RedHatEnterprise" OR ${UNIX_DIST} MATCHES "Fedora" OR ${UNIX_DIST} MATCHES "SUSE LINUX" )
   find_program ( RPMBUILD_CMD rpmbuild )
   if ( RPMBUILD_CMD )
     set ( CPACK_GENERATOR "RPM" )
@@ -61,6 +41,10 @@ if ( ${UNIX_DIST} MATCHES "RedHatEnterprise" OR ${UNIX_DIST} MATCHES "Fedora")
       set ( CPACK_RPM_PACKAGE_RELEASE "${CPACK_RPM_PACKAGE_RELEASE}.fc15" )
     elseif ( ${UNIX_CODENAME} MATCHES "Verne" )
       set ( CPACK_RPM_PACKAGE_RELEASE "${CPACK_RPM_PACKAGE_RELEASE}.fc16" )
+    elseif ( ${UNIX_CODENAME} MATCHES "BeefyMiracle" )
+      set ( CPACK_RPM_PACKAGE_RELEASE "${CPACK_RPM_PACKAGE_RELEASE}.fc17" )
+    elseif ( ${UNIX_CODENAME} MATCHES "SphericalCow" )
+      set ( CPACK_RPM_PACKAGE_RELEASE "${CPACK_RPM_PACKAGE_RELEASE}.fc18" )
     endif ( ${UNIX_CODENAME} MATCHES "Tikanga" )
     
     # If CPACK_SET_DESTDIR is ON then the Prefix doesn't get put in the spec file
@@ -73,4 +57,5 @@ if ( ${UNIX_DIST} MATCHES "RedHatEnterprise" OR ${UNIX_DIST} MATCHES "Fedora")
     set ( CPACK_PACKAGE_FILE_NAME
       "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_RPM_PACKAGE_RELEASE}.${CPACK_RPM_PACKAGE_ARCHITECTURE}" )
   endif ( RPMBUILD_CMD)
-endif ( ${UNIX_DIST} MATCHES "RedHatEnterprise" OR ${UNIX_DIST} MATCHES "Fedora")
+endif ( ${UNIX_DIST} MATCHES "RedHatEnterprise" OR ${UNIX_DIST} MATCHES "Fedora" OR ${UNIX_DIST} MATCHES "SUSE LINUX" )
+

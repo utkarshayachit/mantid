@@ -1,4 +1,5 @@
 #include "GLActorCollection.h"
+#include "GLActorVisitor.h"
 #include "OpenGLError.h"
 
 #include "MantidKernel/Exception.h"
@@ -12,10 +13,12 @@
 GLActorCollection::GLActorCollection()
   :GLActor(),
   m_minBound(DBL_MAX,DBL_MAX,DBL_MAX),
-  m_maxBound(-DBL_MAX,-DBL_MAX,-DBL_MAX),
-  m_displayListId(0),
-  m_useDisplayList(false)
+  m_maxBound(-DBL_MAX,-DBL_MAX,-DBL_MAX)
 {
+    m_displayListId[0] = 0;
+    m_displayListId[1] = 0;
+    m_useDisplayList[0] = false;
+    m_useDisplayList[1] = false;
 }
 
 GLActorCollection::~GLActorCollection()
@@ -25,10 +28,13 @@ GLActorCollection::~GLActorCollection()
 	  delete (*i);
 	}
 	mActorsList.clear();
-	if(m_displayListId != 0)
-  {
-		glDeleteLists(m_displayListId,1);
-  }
+    for(size_t i = 0; i < 2; ++i)
+    {
+        if (m_displayListId[i] != 0)
+        {
+            glDeleteLists(m_displayListId[i],1);
+        }
+    }
 
 }
 
@@ -37,37 +43,31 @@ GLActorCollection::~GLActorCollection()
  */
 void GLActorCollection::draw(bool picking)const
 {
-  if (!isVisible()) return;
-  OpenGLError::check("GLActorCollection::draw(0)");
-  if (picking)
-  {
-    drawGL(picking);
-  }
-  else
-  {
-    if (m_useDisplayList)
+    if (!isVisible()) return;
+    OpenGLError::check("GLActorCollection::draw(0)");
+    size_t i = picking? 1 : 0;
+    if (m_useDisplayList[i])
     {
-      glCallList(m_displayListId);
+      glCallList(m_displayListId[i]);
     }
-    else if (m_displayListId == 0)
+    else if (m_displayListId[i] == 0)
     {
-      m_displayListId = glGenLists(1);
+      m_displayListId[i] = glGenLists(1);
       // child actors can also create display lists, so delay
       // until all the children have finished making theirs
       drawGL(picking);
     }
     else
     {
-      m_useDisplayList = true;
-      glNewList(m_displayListId,GL_COMPILE); //Construct display list for object representation
+      m_useDisplayList[i] = true;
+      glNewList(m_displayListId[i],GL_COMPILE); //Construct display list for object representation
       drawGL(picking);
       glEndList();
       if(glGetError()==GL_OUT_OF_MEMORY) //Throw an exception
         throw Mantid::Kernel::Exception::OpenGLError("OpenGL: Out of video memory");
-      glCallList(m_displayListId);
+      glCallList(m_displayListId[i]);
     }
-  }
-  OpenGLError::check("GLActorCollection::draw()");
+    OpenGLError::check("GLActorCollection::draw()");
 }
 
 void GLActorCollection::drawGL(bool picking )const
@@ -78,7 +78,7 @@ void GLActorCollection::drawGL(bool picking )const
   }
 }
 
-bool GLActorCollection::accept(const GLActorVisitor& visitor)
+bool GLActorCollection::accept(GLActorVisitor& visitor)
 {
   const SetVisibilityVisitor* svv = dynamic_cast<const SetVisibilityVisitor*>(&visitor);
   // accepting a set visibility visitor. 
@@ -167,11 +167,14 @@ void GLActorCollection::getBoundingBox(Mantid::Kernel::V3D& minBound,Mantid::Ker
 
 void GLActorCollection::invalidateDisplayList()const
 {
-	if(m_displayListId != 0)
+  for(size_t i = 0; i < 2; ++i)
   {
-		glDeleteLists(m_displayListId,1);
-    m_displayListId = 0;
-    m_useDisplayList = false;
+      if (m_displayListId[i] != 0)
+      {
+          glDeleteLists(m_displayListId[i],1);
+          m_displayListId[i] = 0;
+          m_useDisplayList[i] = false;
+      }
   }
 }
 

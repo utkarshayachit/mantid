@@ -1,7 +1,38 @@
 /*WIKI*
+This algorithm reads in an EventWorkspace.  The log on time can be either belonged to the workspace (given by ''LogName'') or given by a [[Workspace2D]] object whose X values are absolute time (given by ''SampleEnvironmentWorkspace'').
 
-Filter events for VULCAN
+Each event is calibrated by the offset from detector to sample.  The log's time is calibrated by the offset from sensor to sample.  These two calibrations are used to make a precise event filtering on micro-second scale.
 
+A calibrated event will be matched to the log value by this event's total time (pulse time + TOF). If its corresponding log value is within the user defined range (''ValueLowerBound'' and ''ValueUpperBound'') and its total time is within ''T0'' and ''Tf'', then it will be added to the output event worksapce.
+
+=== About T0 and Tf ===
+There are three ways to define ''T0'' and ''Tf''.  First we define that TimeStart is the earliest possible time (from time zero of CPU time) of an event to be selected, and TimeEnd is the latest possible time (from time zero of CPU time) of an event to be selected.
+
+1. If ''TimeRangeOption'' is set to 'Absolute Time', then
+ * TimeStart = T0
+ * TimeEnd = Tf
+
+2. If ''TimeRangeOption'' is set to 'Relative Time', then
+ * TimeStart = T0 + RunStartTime
+ * TimeEnd = Tf + RunStartTime
+where RunStartTime is ''run start time'' recorded in log
+
+3. If ''TimeRangeOption'' is set to 'Percentage', then
+ * TimeStart = T0log+(Tflog-T0log)*T0/100
+ * TimeEnd = T0log+(Tflog-T0log)*Tf/100
+where T0log is the earliest time in log, and Tflog is the latest time in log.
+
+=== Offset ===
+
+==== Detector/Pixel Offset File ====
+The detector (pixel) offset file is in 2-column format.  The first column is detector ID. And the second column is the corresponding offset on TOF of that detector.
+
+For each event:  TOF(source-to-sample) = TOF(source-to-sample) * offset
+
+==== Example 1: VULCAN ====
+For VULCAN, the offset is TOF[1-2.0/45.754]
+
+===Subalgorithms used===
 *WIKI*/
 //----------------------------------------------------------------------
 // Includes
@@ -347,8 +378,7 @@ namespace Algorithms
   void FilterEventsHighFrequency::importCalibrationFile(std::string calfilename){
 
     detid_t indet;
-    double doffset; // Assuming the file gives offset in micro-second
-
+    
     // 1. Check workspace
     if (!eventWS){
       g_log.error() << "Required to import EventWorkspace before calling importCalibrationFile()" << std::endl;
@@ -363,6 +393,7 @@ namespace Algorithms
     try{
       // a. Successful scenario
       ifs.open(calfilename.c_str(), std::ios::in);
+	  double doffset; // Assuming the file gives offset in micro-second
 
       for (size_t i = 0; i < eventWS->getNumberHistograms(); i ++){
         // i. each pixel:  get detector ID from EventWorkspace
@@ -374,6 +405,7 @@ namespace Algorithms
           detid = *detit;
 
         // ii. read file
+
         ifs >> indet >> doffset;
 
         // iii. store

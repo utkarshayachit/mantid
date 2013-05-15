@@ -71,12 +71,16 @@ public:
   // set the bounding rect of the current shape such that its real rect is given by the argument
   void setCurrentBoundingRectReal(const QRectF& rect);
 
+  /// Change border color of all shapes.
+  void changeBorderColor(const QColor& color);
+
 signals:
 
   void shapeCreated();
   void shapeSelected();
   void shapesDeselected();
   void shapeChanged();
+  void cleared();
 
 public slots:
   void addShape(const QString& type,int x,int y,const QColor& borderColor,const QColor& fillColor);

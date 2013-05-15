@@ -42,6 +42,7 @@ void Shape2DCollection::draw(QPainter& painter) const
   QList<Shape2D*> nonscalable;
   foreach(Shape2D* shape,m_shapes)
   {
+    if ( !shape->isVisible() ) continue;
     if (shape->isScalable())
     {
       scalable << shape;
@@ -104,6 +105,10 @@ void Shape2DCollection::removeShape(Shape2D* shape)
     m_shapes.removeOne(shape);
     delete shape;
   }
+  if (m_shapes.isEmpty())
+  {
+      emit cleared();
+  }
 }
 
 /**
@@ -120,6 +125,10 @@ void Shape2DCollection::removeShapes(const QList<Shape2D*>& shapeList)
     }
     removeShape( shape );
   }
+  if (m_shapes.isEmpty())
+  {
+      emit cleared();
+  }
 }
 
 /**
@@ -129,19 +138,6 @@ void Shape2DCollection::setWindow(const RectF &surface,const QRect& viewport) co
   m_viewport = viewport;
   m_surfaceRect = surface;
   m_surfaceRect.findTransform( m_transform, viewport );
-
-//  std::cerr << "surface:" << std::endl;
-//  std::cerr << surface.x0() << ' ' << surface.y0() << ' ' << surface.width() << ' ' << surface.height() << std::endl;
-//  std::cerr << "Viewport:" << std::endl;
-//  std::cerr << viewport.x() << ' ' << viewport.y() << ' ' << viewport.width() << ' ' << viewport.height() << std::endl;
-//  std::cerr << "Transform:" << std::endl;
-//  std::cerr << m_transform.m11() << ' '
-//            << m_transform.m12() << ' '
-//            << m_transform.m22() << ' '
-//            << m_transform.m31() << ' '
-//            << m_transform.m32() << ' '
-//            << m_transform.m33() << ' '
-//            << std::endl;
 }
 
 void Shape2DCollection::refit()
@@ -583,6 +579,17 @@ void Shape2DCollection::setCurrentBoundingRectReal(const QRectF& rect)
 {
   if (!m_currentShape) return;
   m_currentShape->setBoundingRect(rect);
+}
+
+/**
+  * Change border color.
+  */
+void Shape2DCollection::changeBorderColor(const QColor &color)
+{
+    foreach(Shape2D* shape,m_shapes)
+    {
+        shape->setColor( color );
+    }
 }
 
 /**

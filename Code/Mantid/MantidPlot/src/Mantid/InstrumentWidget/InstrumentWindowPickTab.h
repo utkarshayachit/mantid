@@ -43,7 +43,9 @@ public:
   ///   SelectPeak: click on a peak marker or draw a rubber-band selector to select peak
   ///               markers. Selected peaks can be deleted by pressing the Delete key.
   enum SelectionType {Single=0,AddPeak,ErasePeak,SingleDetectorSelection,Tube};
+  enum ToolType {Zoom,PixelSelect,TubeSelect,PeakSelect,PeakErase};
   enum TubeXUnits {DETECTOR_ID = 0,LENGTH,PHI,NUMBER_OF_UNITS};
+
   InstrumentWindowPickTab(InstrumentWindow* instrWindow);
   void updatePick(int detid);
   bool canUpdateTouchedDetector()const;
@@ -53,6 +55,7 @@ public:
   void saveSettings(QSettings& settings) const;
   void loadSettings(const QSettings& settings);
   bool addToDisplayContextMenu(QMenu&) const;
+  void selectTool(const ToolType tool);
 
 public slots:
   void setTubeXUnits(int units);
@@ -69,6 +72,7 @@ private slots:
   void savePlotToWorkspace();
   void singleDetectorTouched(int detid);
   void singleDetectorPicked(int detid);
+  void updateSelectionInfoDisplay();
 private:
   void showEvent (QShowEvent *);
   void updatePlot(int detid);
@@ -96,10 +100,12 @@ private:
     std::vector<double>* err = NULL);
     TubeXUnits getTubeXUnits(const QString& name) const;
     QString getTubeXUnitsName(TubeXUnits unit) const;
+  QString getNonDetectorInfo();
 
   /* Pick tab controls */
   OneCurvePlot* m_plot; ///< Miniplot to display data in the detectors
   QLabel *m_activeTool; ///< Displays a tip on which tool is currently selected
+  QPushButton *m_zoom;  ///< Button switching on navigation mode
   QPushButton *m_one;   ///< Button switching on single detector selection mode
   QPushButton *m_tube;  ///< Button switching on detector's parent selection mode
   QPushButton *m_peak;  ///< Button switching on peak creation mode

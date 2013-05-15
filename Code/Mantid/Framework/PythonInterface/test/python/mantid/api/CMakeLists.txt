@@ -7,18 +7,24 @@ set ( TEST_PY_FILES
   AlgorithmManagerTest.py
   AnalysisDataServiceTest.py
   AxisTest.py
+  DeprecatedAlgorithmCheckerTest.py
   ExperimentInfoTest.py
   FilePropertyTest.py
   FileFinderTest.py
   FrameworkManagerTest.py
   FunctionFactoryTest.py
+  FunctionPropertyTest.py
   IEventWorkspaceTest.py
+  IFunction1DTest.py
+  IPeakFunctionTest.py
   IPeaksWorkspaceTest.py
   ITableWorkspaceTest.py
+  JacobianTest.py
   MatrixWorkspaceTest.py
   MDHistoWorkspaceTest.py
   MultipleExperimentInfos.py
   MultipleFilePropertyTest.py
+  ProgressTest.py
   PythonAlgorithmPropertiesTest.py
   PythonAlgorithmChildAlgCallTest.py
   PythonAlgorithmTraitsTest.py

@@ -12,8 +12,8 @@ The group number is assigned based on a descent in the instrument tree assembly.
 If two assemblies are parented, say Bank1 and module1, and both assembly names
 are given in the GroupNames, they will get assigned different grouping numbers.
 This allows to isolate a particular sub-assembly of a particular leaf of the tree.
-
-==Usage==
+*WIKI*/
+/*WIKI_USAGE*
 '''Python'''
     CreateCalFileByNames("GEM","output.cal","Bank1,Bank2,Module1")
 
@@ -23,9 +23,8 @@ This allows to isolate a particular sub-assembly of a particular leaf of the tre
     alg->setPropertyValue("GroupingFileName", "output.cal");
     alg->setPropertyValue("GroupNames", "Bank1,Bank2,Module1");
     alg->execute();
+*WIKI_USAGE*/
 
-
-*WIKI*/
 //----------------------------------------------------------------------
 // Includes
 //----------------------------------------------------------------------
@@ -79,13 +78,13 @@ namespace Mantid
     void CreateCalFileByNames::init()
     {
       declareProperty(new WorkspaceProperty<> ("InstrumentWorkspace", "", Direction::Input, boost::make_shared<InstrumentValidator>()),
-        "A workspace that contains a reference to the instrument of interest.\n"
-        "You can use LoadEmptyInstrument if you do not have any data files to load.");
+        "A workspace that contains a reference to the instrument of interest. "
+        "You can use [[LoadEmptyInstrument]] to create such a workspace.");
       declareProperty(new FileProperty("GroupingFileName","",FileProperty::Save, ".cal"),
-        "The name of the output CalFile");
+        "The name of the output [[CalFile]]");
       declareProperty("GroupNames","",
-        "A string of the instrument component names to use as separate groups.\n"
-        "Use / or , to separate multiple groups");
+        "A string of the instrument component names to use as separate groups. "
+        "/ or , can be used to separate multiple groups.");
     }
 
 

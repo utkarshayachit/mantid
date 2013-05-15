@@ -27,6 +27,7 @@ set ( SRC_FILES
 	src/LoadAscii.cpp
 	src/LoadCalFile.cpp
 	src/LoadCanSAS1D.cpp
+	src/LoadCanSAS1D2.cpp
 	src/LoadDAE.cpp
 	src/LoadDAE/idc.cpp
 	src/LoadDAE/idc.h
@@ -40,6 +41,7 @@ set ( SRC_FILES
 	src/LoadEventNexus.cpp
 	src/LoadEventPreNexus.cpp
 	src/LoadEventPreNexus2.cpp
+	src/LoadFullprofResolution.cpp
 	src/LoadGSS.cpp
 	src/LoadILL.cpp
 	src/LoadISISNexus.cpp
@@ -56,6 +58,7 @@ set ( SRC_FILES
 	src/LoadMappingTable.cpp
 	src/LoadMask.cpp
 	src/LoadMaskingFile.cpp
+	src/LoadMcStasNexus.cpp
 	src/LoadMuonLog.cpp
 	src/LoadMuonNexus.cpp
 	src/LoadMuonNexus1.cpp
@@ -94,7 +97,7 @@ set ( SRC_FILES
 	src/ManagedRawFileWorkspace2D.cpp
 	src/MaskDetectors.cpp
 	src/MaskDetectorsInShape.cpp
-	src/Merge2WorkspaceLogs.cpp
+	src/MergeLogs.cpp
 	src/ModifyDetectorDotDatFile.cpp
 	src/MonitorLiveData.cpp
 	src/MoveInstrumentComponent.cpp
@@ -105,12 +108,13 @@ set ( SRC_FILES
 	src/RenameLog.cpp
 	src/RotateInstrumentComponent.cpp
 	src/SNSDataArchive.cpp
-    src/SNSDataArchiveICAT2.cpp
+	src/SNSDataArchiveICAT2.cpp
 	src/SNSLiveEventDataListener.cpp
 	src/SaveAscii.cpp
 	src/SaveCSV.cpp
 	src/SaveCalFile.cpp
 	src/SaveCanSAS1D.cpp
+	src/SaveCanSAS1D2.cpp
 	src/SaveDASC.cpp
 	src/SaveDaveGrp.cpp
 	src/SaveDetectorMasks.cpp
@@ -171,6 +175,7 @@ set ( INC_FILES
 	inc/MantidDataHandling/LoadAscii.h
 	inc/MantidDataHandling/LoadCalFile.h
 	inc/MantidDataHandling/LoadCanSAS1D.h
+	inc/MantidDataHandling/LoadCanSAS1D2.h
 	inc/MantidDataHandling/LoadDAE.h
 	inc/MantidDataHandling/LoadDaveGrp.h
 	inc/MantidDataHandling/LoadDetectorInfo.h
@@ -180,6 +185,7 @@ set ( INC_FILES
 	inc/MantidDataHandling/LoadEventNexus.h
 	inc/MantidDataHandling/LoadEventPreNexus.h
 	inc/MantidDataHandling/LoadEventPreNexus2.h
+	inc/MantidDataHandling/LoadFullprofResolution.h
 	inc/MantidDataHandling/LoadGSS.h
 	inc/MantidDataHandling/LoadILL.h
 	inc/MantidDataHandling/LoadISISNexus.h
@@ -196,6 +202,7 @@ set ( INC_FILES
 	inc/MantidDataHandling/LoadMappingTable.h
 	inc/MantidDataHandling/LoadMask.h
 	inc/MantidDataHandling/LoadMaskingFile.h
+	inc/MantidDataHandling/LoadMcStasNexus.h
 	inc/MantidDataHandling/LoadMuonLog.h
 	inc/MantidDataHandling/LoadMuonNexus.h
 	inc/MantidDataHandling/LoadMuonNexus1.h
@@ -222,14 +229,14 @@ set ( INC_FILES
 	inc/MantidDataHandling/LoadSNSspec.h
 	inc/MantidDataHandling/LoadSPE.h
 	inc/MantidDataHandling/LoadSampleDetailsFromRaw.h
-    inc/MantidDataHandling/LoadSassena.h
+	inc/MantidDataHandling/LoadSassena.h
 	inc/MantidDataHandling/LoadSpec.h
 	inc/MantidDataHandling/LoadSpice2D.h
 	inc/MantidDataHandling/LoadTOFRawNexus.h
 	inc/MantidDataHandling/ManagedRawFileWorkspace2D.h
 	inc/MantidDataHandling/MaskDetectors.h
 	inc/MantidDataHandling/MaskDetectorsInShape.h
-	inc/MantidDataHandling/Merge2WorkspaceLogs.h
+	inc/MantidDataHandling/MergeLogs.h
 	inc/MantidDataHandling/ModifyDetectorDotDatFile.h
 	inc/MantidDataHandling/MonitorLiveData.h
 	inc/MantidDataHandling/MoveInstrumentComponent.h
@@ -240,12 +247,13 @@ set ( INC_FILES
 	inc/MantidDataHandling/RenameLog.h
 	inc/MantidDataHandling/RotateInstrumentComponent.h
 	inc/MantidDataHandling/SNSDataArchive.h
-    inc/MantidDataHandling/SNSDataArchiveICAT2.h
+	inc/MantidDataHandling/SNSDataArchiveICAT2.h
 	inc/MantidDataHandling/SNSLiveEventDataListener.h
 	inc/MantidDataHandling/SaveAscii.h
 	inc/MantidDataHandling/SaveCSV.h
 	inc/MantidDataHandling/SaveCalFile.h
 	inc/MantidDataHandling/SaveCanSAS1D.h
+	inc/MantidDataHandling/SaveCanSAS1D2.h
 	inc/MantidDataHandling/SaveDASC.h
 	inc/MantidDataHandling/SaveDaveGrp.h
 	inc/MantidDataHandling/SaveDetectorMasks.h
@@ -279,7 +287,7 @@ set ( INC_FILES
 )
 
 set ( TEST_FILES
-	#LoadDAETest.h
+  LoadDAETest.h
 	#LoadSNSNexusTest.h # TODO has no active tests in it
 	#Needs fixing to not rely on network. SNSLiveEventDataListenerTest.h
 	ADARAPacketTest.h
@@ -315,6 +323,7 @@ set ( TEST_FILES
 	LoadEventNexusTest.h
 	LoadEventPreNexus2Test.h
 	LoadEventPreNexusTest.h
+	LoadFullprofResolutionTest.h
 	LoadGSSTest.h
 	LoadILLTest.h
 	LoadISISNexusTest.h
@@ -326,6 +335,7 @@ set ( TEST_FILES
 	LoadLogsFromSNSNexusTest.h
 	LoadMappingTableTest.h
 	LoadMaskTest.h
+	LoadMcStasNexusTest.h	
 	LoadMuonLogTest.h
 	LoadMuonNexus1Test.h
 	LoadMuonNexus2Test.h
@@ -333,7 +343,7 @@ set ( TEST_FILES
 	LoadNexusLogsTest.h
 	LoadNexusMonitorsTest.h
 	LoadNexusProcessedTest.h
-	LoadNexusTest.h
+	LoadNexusTest.h	
 	LoadPDFgetNFileTest.h
 	LoadParameterFileTest.h
 	LoadPreNexusMonitorsTest.h
@@ -357,7 +367,7 @@ set ( TEST_FILES
 	ManagedRawFileWorkspace2DTest.h
 	MaskDetectorsInShapeTest.h
 	MaskDetectorsTest.h
-	Merge2WorkspaceLogsTest.h
+	MergeLogsTest.h
 	MonitorLiveDataTest.h
 	MoveInstrumentComponentTest.h
 	NexusTesterTest.h
@@ -365,13 +375,14 @@ set ( TEST_FILES
 	RawFileInfoTest.h
 	RemoveLogsTest.h
 	RenameLogTest.h
-    RotateInstrumentComponentTest.h
+	RotateInstrumentComponentTest.h
 	SNSDataArchiveICAT2Test.h
 	SNSDataArchiveTest.h
 	SaveAsciiTest.h
 	SaveCSVTest.h
 	SaveCalFileTest.h
 	SaveCanSAS1dTest.h
+	SaveCanSAS1dTest2.h
 	SaveDASCTest.h
 	SaveDaveGrpTest.h
 	SaveDetectorsGroupingTest.h
@@ -389,6 +400,7 @@ set ( TEST_FILES
 	SaveRKHTest.h
 	SaveSPETest.h
 	SaveToSNSHistogramNexusTest.h
+        SetSampleMaterialTest.h
 	SetScalingPSDTest.h
 	StartLiveDataTest.h
 	UpdateInstrumentFromFileTest.h

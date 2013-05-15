@@ -69,10 +69,10 @@ void SaveCanSAS1D::init()
   radiation_source.push_back("muon");
   radiation_source.push_back("electron");
   declareProperty("RadiationSource", "Spallation Neutron Source", 
-                  boost::make_shared<Kernel::StringListValidator>(radiation_source));
-  declareProperty("Append", false, "If true the output file is not overwritten but appended to"); 
+                  boost::make_shared<Kernel::StringListValidator>(radiation_source), "The type of radiation used.");
+  declareProperty("Append", false, "Selecting append allows the workspace to be added to an existing canSAS 1-D file as a new SASentry"); 
   declareProperty("Process", "", "Text to append to Process section");
-  declareProperty("DetectorNames","", "Which detectors to store information about, where the name must match the name given for a detector in the instrument definition file");
+  declareProperty("DetectorNames","", "Specify in a comma separated list, which detectors to store information about; \nwhere each name must match a name given for a detector in the [[IDF|instrument definition file (IDF)]]. \nIDFs are located in the instrument sub-directory of the MantidPlot install directory.");
 }
 /** Is called when the input workspace was actually a group, it sets the
  *  for all group members after the first so that the whole group is saved
@@ -461,9 +461,6 @@ void SaveCanSAS1D::createSASDataElement(std::string& sasData)
       sasIData="\n\t\t\t<Idata><Q unit=\"1/A\">";
       sasIData+=x.str();
       sasIData+="</Q>";
-      sasIData+="<Qdev unit=\"1/A\">";
-      sasIData+=dx_str.str();
-      sasIData+="</Qdev>";
       sasIData+="<I unit=";
       sasIData+="\"";
       sasIData+=dataUnit;
@@ -485,6 +482,10 @@ void SaveCanSAS1D::createSASDataElement(std::string& sasData)
 
       sasIData+=e.str();
       sasIData+="</Idev>";
+
+      sasIData+="<Qdev unit=\"1/A\">";
+      sasIData+=dx_str.str();
+      sasIData+="</Qdev>";
 
       sasIData+="</Idata>";
       // outFile<<sasIData;
@@ -533,7 +534,7 @@ void SaveCanSAS1D::createSASSourceElement(std::string& sasSource )
 
 }
 /** This method creates XML elements named "SASdetector". This method
-    appends ot sasDet.
+    appends to sasDet.
  *  @param sasDet :: string for one or more sasdetector elements
  */
 void SaveCanSAS1D::createSASDetectorElement(std::string& sasDet)
@@ -541,7 +542,13 @@ void SaveCanSAS1D::createSASDetectorElement(std::string& sasDet)
   const std::string detectorNames = getProperty("DetectorNames");
 
   if ( detectorNames.empty() )
+  {
+      sasDet += "\n\t\t\t<SASdetector>";
+      std::string sasDetname="\n\t\t\t\t<name/>";
+      sasDet+=sasDetname;
+      sasDet+="\n\t\t\t</SASdetector>";
     return;
+  }
 
   std::list<std::string> detList;
   boost::algorithm::split(detList, detectorNames, std::bind2nd(std::equal_to<char>(), ','));
@@ -626,6 +633,9 @@ void SaveCanSAS1D::createSASProcessElement(std::string& sasProcess)
   sasProcuserfile+="</term>";
   //outFile<<sasProcuserfile;
   sasProcess+=sasProcuserfile;
+
+  sasProcess+="\n\t\t\t<SASprocessnote/>";
+
   sasProcess+="\n\t\t</SASprocess>";
 }
 

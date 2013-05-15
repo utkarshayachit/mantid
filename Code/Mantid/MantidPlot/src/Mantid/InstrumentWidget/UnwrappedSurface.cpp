@@ -147,6 +147,7 @@ void UnwrappedSurface::init()
   m_u_max =  DBL_MAX;
 
   // For each detector in the order of actors
+  // cppcheck-suppress syntaxError
   PRAGMA_OMP( parallel for )
   for(int ii = 0; ii < int(ndet); ++ii)
   {
@@ -368,11 +369,24 @@ void UnwrappedSurface::drawSurface(MantidGLWidget *widget,bool picking)const
 
   glLoadIdentity();
 
-  if ( widget->getLightingState() != 0 )
+  if ( m_isLightingOn && !picking )
   {
-    float lamp_pos[4]={0.0, 0.0, 1.0, 0.0}; // directional light in +z direction (into the screen)
-    if ( isFlippedView() ) lamp_pos[2] = -1.0f;
-    glLightfv(GL_LIGHT0, GL_POSITION, lamp_pos);
+    glShadeModel(GL_SMOOTH);           // Shade model is smooth
+    glEnable(GL_LINE_SMOOTH);          // Set line should be drawn smoothly
+    glEnable(GL_LIGHT0);               // Enable opengl second light
+    float diffuse[4]={1.0f, 1.0f, 1.0f, 1.0f};
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
+    float direction[3]={0.0f, 0.0f, 1.0f};
+    glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, direction);
+
+    glEnable (GL_LIGHTING);            // Enable overall lighting
+  }
+  else
+  {
+    glDisable(GL_LIGHT0);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_LINE_SMOOTH);
+    glShadeModel(GL_FLAT);
   }
 
   for(size_t i=0;i<m_unwrappedDetectors.size();++i)
@@ -822,10 +836,12 @@ void UnwrappedSurface::setPeaksWorkspace(boost::shared_ptr<Mantid::API::IPeaksWo
   }
   PeakOverlay* po = new PeakOverlay( this, pws );
   po->setPrecision(m_peakLabelPrecision);
-  po->setShowRowsFlag(m_showPeakRow);
+  po->setShowRowsFlag(m_showPeakRows);
+  po->setShowLabelsFlag(m_showPeakLabels);
   m_peakShapes.append(po);
   m_startPeakShapes = true;
   connect(po,SIGNAL(executeAlgorithm(Mantid::API::IAlgorithm_sptr)),this,SIGNAL(executeAlgorithm(Mantid::API::IAlgorithm_sptr)));
+  emit peaksWorkspaceAdded();
 }
 
 //-----------------------------------------------------------------------------
@@ -847,6 +863,7 @@ void UnwrappedSurface::createPeakShapes(const QRect& window)const
         QApplication::restoreOverrideCursor();
     }
     m_startPeakShapes = false;
+    setPeakVisibility();
 }
 
 /**

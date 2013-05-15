@@ -6,7 +6,6 @@
 //----------------------------------
 #include "../ApplicationWindow.h"
 #include "../Graph.h"
-#include "MantidLog.h"
 #include "MantidAlgorithmMetatype.h"
 
 #include "MantidAPI/FrameworkManager.h"
@@ -38,10 +37,15 @@ class AlgorithmMonitor;
 class InstrumentWindow;
 namespace MantidQt
 {
-namespace MantidWidgets
-{
-class FitPropertyBrowser;
-}}
+  namespace API
+  {
+    class Message;
+  }
+  namespace MantidWidgets
+  {
+    class FitPropertyBrowser;
+  }
+}
 
 namespace Ui
 {
@@ -86,6 +90,7 @@ namespace Mantid
 /// Required by Qt to use Mantid::API::Workspace_sptr as a parameter type in signals
 Q_DECLARE_METATYPE(Mantid::API::Workspace_sptr)
 Q_DECLARE_METATYPE(Mantid::API::MatrixWorkspace_sptr)
+Q_DECLARE_METATYPE(Mantid::API::MatrixWorkspace_const_sptr)
 Q_DECLARE_METATYPE(std::string)
 
 class MantidUI:public QObject
@@ -288,12 +293,6 @@ signals:
   // a signal for getting the file locations from ICat downloaddatafiles algorithm
   void fileLocations(const std::vector<std::string>&);
 
-private:
-  Mantid::API::IAlgorithm_sptr findAlgorithmPointer(const QString & algName);
-  
-
-  //-----------------------------------
-
 public:
 
 signals:
@@ -324,9 +323,6 @@ public slots:
   // Receives a new X range from a PeakPickerTool and re-emits it.
   void x_range_from_picker(double, double);
   void test();
-
-  // Display a message in QtiPlot's results window. Used by MantidLog class to display Mantid log information.
-  void logMessage(const Poco::Message& msg);
 
   void showSequentialPlot(Ui::SequentialFitDialog* ui, MantidQt::MantidWidgets::FitPropertyBrowser* fitbrowser);
 
@@ -531,9 +527,8 @@ private:
 
   QMdiSubWindow *m_vatesSubWindow; ///< Holder for the Vates interface sub-window
 
-  /// Logger object
-  Mantid::Kernel::Logger & g_log;
-
+  /// Logger
+  static Mantid::Kernel::Logger & g_log;
 };
 
 

@@ -41,7 +41,7 @@ public:
     ws->setName("TOPAZ_peaks");
     double smu = 0.357;
     double amu = 0.011;
-	NeutronAtom *neutron = new NeutronAtom(static_cast<uint16_t>(999), static_cast<uint16_t>(0),
+	NeutronAtom *neutron = new NeutronAtom(static_cast<uint16_t>(EMPTY_DBL()), static_cast<uint16_t>(0),
   			0.0, 0.0, smu, 0.0, smu, amu);
     Material *mat = new Material("SetInSaveHKLTest", *neutron, 1.0);
     ws->mutableSample().setMaterial(*mat);
@@ -88,12 +88,12 @@ public:
     TS_ASSERT_DELTA(p.getWavelength(),1.5, 1e-4 );
     TS_ASSERT_EQUALS(p.getRunNumber(),1000. );
     TS_ASSERT_DELTA(p.getDSpacing(),3.5933, 1e-4 );
-    const Geometry::Material *m_sampleMaterial = &(wsout->sample().getMaterial());
-    if( m_sampleMaterial->totalScatterXSection(1.7982) != 0.0)
+    const Kernel::Material *m_sampleMaterial = &(wsout->sample().getMaterial());
+    if( m_sampleMaterial->totalScatterXSection(NeutronAtom::ReferenceLambda) != 0.0)
     {
   	  double rho =  m_sampleMaterial->numberDensity();
-  	  smu =  m_sampleMaterial->totalScatterXSection(1.7982) * rho;
-  	  amu = m_sampleMaterial->absorbXSection(1.7982) * rho;
+  	  smu =  m_sampleMaterial->totalScatterXSection(NeutronAtom::ReferenceLambda) * rho;
+  	  amu = m_sampleMaterial->absorbXSection(NeutronAtom::ReferenceLambda) * rho;
     }
     else
     {

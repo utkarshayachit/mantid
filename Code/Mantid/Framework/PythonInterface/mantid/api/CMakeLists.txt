@@ -10,6 +10,7 @@ set ( MODULE_TEMPLATE src/api.cpp.in )
 set ( EXPORT_FILES
   src/Exports/IAlgorithm.cpp
   src/Exports/Algorithm.cpp
+  src/Exports/DeprecatedAlgorithmChecker.cpp
   src/Exports/PythonAlgorithmExport.cpp
   src/Exports/AlgorithmFactory.cpp
   src/Exports/AlgorithmManager.cpp
@@ -38,6 +39,7 @@ set ( EXPORT_FILES
   src/Exports/IPeaksWorkspace.cpp
   src/Exports/BinaryOperations.cpp
   src/Exports/WorkspaceGroup.cpp
+  src/Exports/WorkspaceGroupProperty.cpp
   src/Exports/WorkspaceValidators.cpp
   src/Exports/InstrumentValidator.cpp
   src/Exports/Axis.cpp
@@ -50,18 +52,30 @@ set ( EXPORT_FILES
   src/Exports/Run.cpp
   src/Exports/WorkspaceFactory.cpp
   src/Exports/IFunction.cpp
+  src/Exports/IFunction1D.cpp
+  src/Exports/IPeakFunction.cpp
+  src/Exports/Jacobian.cpp
   src/Exports/PropertyManagerDataService.cpp
   src/Exports/FunctionFactory.cpp
+  src/Exports/Progress.cpp
+  src/Exports/FunctionProperty.cpp
+  src/Exports/AlgorithmProperty.cpp
 )  
 
 # Files containing additional helper code that are not related to exporting class/functions
-set ( SRC_FILES 
+set ( SRC_FILES
+  src/FitFunctions/IFunctionAdapter.cpp
+  src/FitFunctions/IFunction1DAdapter.cpp
+  src/FitFunctions/IPeakFunctionAdapter.cpp
   src/PythonAlgorithm/AlgorithmWrapper.cpp
   src/PythonAlgorithm/PythonAlgorithm.cpp
   src/CloneMatrixWorkspace.cpp
 )
 
-set ( INC_FILES 
+set ( INC_FILES
+  ${HEADER_DIR}/api/FitFunctions/IFunctionAdapter.h
+  ${HEADER_DIR}/api/FitFunctions/IFunction1DAdapter.h
+  ${HEADER_DIR}/api/FitFunctions/IPeakFunctionAdapter.h
   ${HEADER_DIR}/api/PythonAlgorithm/AlgorithmWrapper.h
   ${HEADER_DIR}/api/PythonAlgorithm/PythonAlgorithm.h
   ${HEADER_DIR}/api/BinaryOperations.h

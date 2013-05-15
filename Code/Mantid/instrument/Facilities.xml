@@ -9,9 +9,6 @@
   <catalog name="ICat3Catalog">
   </catalog>
 
-  <httpproxy url="http://wwwcache.rl.ac.uk:8080">
-  </httpproxy>
-  
   <soapEndPoint url="https://facilities01.esc.rl.ac.uk:443/ICATService/ICAT">
   </soapEndPoint>
 
@@ -134,6 +131,7 @@
 
   <instrument name="VESUVIO" shortname="EVS">
     <technique>Neutron Compton Scattering</technique>
+    <technique>TOF Indirect Geometry Diffraction</technique>
     <livedata address="NDXVESUVIO:6789" />
   </instrument>
   
@@ -208,13 +206,6 @@
   
   <livedata listener="ISISHistoDataListener"/>
 
-  <instrument name="TESTHISTOLISTENER"> 
-    <zeropadding size="8"/>
-    <zeropadding size="11" startRunNumber="300" prefix="TST"/>
-    <technique>Test ISISHistoDataListener</technique>
-    <livedata address="127.0.0.1:6789" />
-  </instrument>
-   
 </facility>
 
 <facility name="HFIR" FileExtensions=".nxs,.dat,.xml">
@@ -388,6 +379,12 @@
 
 <facility name="ILL" FileExtensions=".nxs,.hdf">
 
+  <instrument name="IN4">
+    <technique>Neutron Spectroscopy</technique> 
+    <technique>Reactor Direct Geometry Spectroscopy</technique>
+    <technique>Disk chopper time-of-flight spectrometer IN5</technique>
+  </instrument>
+
   <instrument name="IN5">
     <technique>Neutron Spectroscopy</technique> 
     <technique>Reactor Direct Geometry Spectroscopy</technique>
@@ -484,6 +481,14 @@
       <technique>Test Neutron Diffraction</technique>
       <livedata address="127.0.0.1:0" />
    </instrument>
+
+  <instrument name="TESTHISTOLISTENER"> 
+    <zeropadding size="8"/>
+    <zeropadding size="11" startRunNumber="300" prefix="TST"/>
+    <technique>Test ISISHistoDataListener</technique>
+    <livedata listener="ISISHistoDataListener" address="127.0.0.1:6789" />
+  </instrument>
+
 </facility>
 
 </facilities>

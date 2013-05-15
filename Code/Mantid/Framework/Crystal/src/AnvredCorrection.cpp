@@ -392,15 +392,15 @@ void AnvredCorrection::retrieveBaseProperties()
   radius = getProperty("Radius"); // in cm
   power_th = getProperty("PowerLambda"); // in cm
   const Material *m_sampleMaterial = &(m_inputWS->sample().getMaterial());
-  if( m_sampleMaterial->totalScatterXSection(1.7982) != 0.0)
+  if( m_sampleMaterial->totalScatterXSection(NeutronAtom::ReferenceLambda) != 0.0)
   {
 	double rho =  m_sampleMaterial->numberDensity();
-	if(smu == EMPTY_DBL()) smu =  m_sampleMaterial->totalScatterXSection(1.7982) * rho;
-	if(amu == EMPTY_DBL()) amu = m_sampleMaterial->absorbXSection(1.7982) * rho;
+	if(smu == EMPTY_DBL()) smu =  m_sampleMaterial->totalScatterXSection(NeutronAtom::ReferenceLambda) * rho;
+	if(amu == EMPTY_DBL()) amu = m_sampleMaterial->absorbXSection(NeutronAtom::ReferenceLambda) * rho;
   }
   else  //Save input in Sample with wrong atomic number and name
   {
-	NeutronAtom *neutron = new NeutronAtom(static_cast<uint16_t>(999), static_cast<uint16_t>(0),
+	NeutronAtom *neutron = new NeutronAtom(static_cast<uint16_t>(EMPTY_DBL()), static_cast<uint16_t>(0),
   			0.0, 0.0, smu, 0.0, smu, amu);
     Material *mat = new Material("SetInAnvredCorrection", *neutron, 1.0);
     m_inputWS->mutableSample().setMaterial(*mat);

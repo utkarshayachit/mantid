@@ -59,11 +59,13 @@ Kernel::Unit_sptr& Axis::unit()
 }
 /**
 * Sets the Unit that is in use on this axis.
-* @param unit :: name of the unit as known to the UnitFactory
+* @param unitName :: name of the unit as known to the UnitFactory
+* @returns The new unit instance
 */
-void Axis::setUnit(const std::string & unit)
+const Kernel::Unit_sptr& Axis::setUnit(const std::string & unitName)
 {
-  m_unit = Mantid::Kernel::UnitFactory::Instance().create(unit);
+  m_unit = Mantid::Kernel::UnitFactory::Instance().create(unitName);
+  return unit();
 }
 
 /**
@@ -83,7 +85,7 @@ double Axis::getValue(const std::size_t& index, const std::size_t& verticalIndex
  *  @return The spectrum number as an int
  *  @throw  domain_error If this method is called on a numeric axis
  */
-const specid_t& Axis::spectraNo(const std::size_t& index) const
+specid_t Axis::spectraNo(const std::size_t& index) const
 {
   UNUSED_ARG(index)
   throw std::domain_error("Cannot call spectraNo() on a non-spectra axis.");

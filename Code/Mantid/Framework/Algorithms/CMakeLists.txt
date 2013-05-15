@@ -30,6 +30,7 @@ set ( SRC_FILES
 	src/ChangePulsetime.cpp
 	src/CheckWorkspacesMatch.cpp
 	src/ChopData.cpp
+	src/ClearMaskFlag.cpp
 	src/CloneWorkspace.cpp
 	src/CommutativeBinaryOperation.cpp
 	src/ConjoinWorkspaces.cpp
@@ -53,6 +54,7 @@ set ( SRC_FILES
 	src/CreateFlatEventWorkspace.cpp
 	src/CreateGroupingWorkspace.cpp
 	src/CreateLogPropertyTable.cpp
+	src/CreateLogTimeCorrection.cpp
 	src/CreatePSDBleedMask.cpp
 	src/CreatePeaksWorkspace.cpp
 	src/CreateSingleValuedWorkspace.cpp
@@ -64,6 +66,7 @@ set ( SRC_FILES
 	src/DeleteWorkspace.cpp
 	src/DetectorDiagnostic.cpp
 	src/DetectorEfficiencyCor.cpp
+	src/DetectorEfficiencyCorUser.cpp
 	src/DetectorEfficiencyVariation.cpp
 	src/DiffractionEventCalibrateDetectors.cpp
 	src/DiffractionFocussing.cpp
@@ -76,6 +79,7 @@ set ( SRC_FILES
 	src/ElasticWindow.cpp
 	src/Exponential.cpp
 	src/ExponentialCorrection.cpp
+	src/ExportTimeSeriesLog.cpp
 	src/ExtractFFTSpectrum.cpp
 	src/ExtractMask.cpp
 	src/ExtractMasking.cpp
@@ -137,7 +141,7 @@ set ( SRC_FILES
 	src/NormaliseToMonitor.cpp
 	src/NormaliseToUnity.cpp
 	src/OneMinusExponentialCor.cpp
-	src/PDFFT.cpp
+	src/PDFFourierTransform.cpp
 	src/Pause.cpp
 	src/PlotAsymmetryByLogValue.cpp
 	src/Plus.cpp
@@ -240,6 +244,7 @@ set ( INC_FILES
 	inc/MantidAlgorithms/ChangePulsetime.h
 	inc/MantidAlgorithms/CheckWorkspacesMatch.h
 	inc/MantidAlgorithms/ChopData.h
+	inc/MantidAlgorithms/ClearMaskFlag.h
 	inc/MantidAlgorithms/CloneWorkspace.h
 	inc/MantidAlgorithms/CommutativeBinaryOperation.h
 	inc/MantidAlgorithms/ConjoinWorkspaces.h
@@ -263,6 +268,7 @@ set ( INC_FILES
 	inc/MantidAlgorithms/CreateFlatEventWorkspace.h
 	inc/MantidAlgorithms/CreateGroupingWorkspace.h
 	inc/MantidAlgorithms/CreateLogPropertyTable.h
+	inc/MantidAlgorithms/CreateLogTimeCorrection.h
 	inc/MantidAlgorithms/CreatePSDBleedMask.h
 	inc/MantidAlgorithms/CreatePeaksWorkspace.h
 	inc/MantidAlgorithms/CreateSingleValuedWorkspace.h
@@ -274,6 +280,7 @@ set ( INC_FILES
 	inc/MantidAlgorithms/DeleteWorkspace.h
 	inc/MantidAlgorithms/DetectorDiagnostic.h
 	inc/MantidAlgorithms/DetectorEfficiencyCor.h
+	inc/MantidAlgorithms/DetectorEfficiencyCorUser.h
 	inc/MantidAlgorithms/DetectorEfficiencyVariation.h
 	inc/MantidAlgorithms/DiffractionEventCalibrateDetectors.h
 	inc/MantidAlgorithms/DiffractionFocussing.h
@@ -286,6 +293,7 @@ set ( INC_FILES
 	inc/MantidAlgorithms/ElasticWindow.h
 	inc/MantidAlgorithms/Exponential.h
 	inc/MantidAlgorithms/ExponentialCorrection.h
+	inc/MantidAlgorithms/ExportTimeSeriesLog.h
 	inc/MantidAlgorithms/ExtractFFTSpectrum.h
 	inc/MantidAlgorithms/ExtractMask.h
 	inc/MantidAlgorithms/ExtractMasking.h
@@ -348,7 +356,7 @@ set ( INC_FILES
 	inc/MantidAlgorithms/NormaliseToMonitor.h
 	inc/MantidAlgorithms/NormaliseToUnity.h
 	inc/MantidAlgorithms/OneMinusExponentialCor.h
-	inc/MantidAlgorithms/PDFFT.h
+	inc/MantidAlgorithms/PDFFourierTransform.h
 	inc/MantidAlgorithms/Pause.h
 	inc/MantidAlgorithms/PlotAsymmetryByLogValue.h
 	inc/MantidAlgorithms/Plus.h
@@ -442,6 +450,7 @@ set ( TEST_FILES
 	AlphaCalcTest.h
 	AnyShapeAbsorptionTest.h
 	AppendSpectraTest.h
+	ApplyCalibrationTest.h
 	ApplyDeadTimeCorrTest.h
 	ApplyDetailedBalanceTest.h
 	ApplyTransmissionCorrectionTest.h
@@ -460,6 +469,7 @@ set ( TEST_FILES
 	ChangePulsetimeTest.h
 	CheckWorkspacesMatchTest.h
 	ChopDataTest.h
+	ClearMaskFlagTest.h
 	CloneWorkspaceTest.h
 	CommutativeBinaryOperationTest.h
 	CompressedRebinTest.h
@@ -473,6 +483,7 @@ set ( TEST_FILES
 	ConvertToMatrixWorkspaceTest.h
 	ConvertToPointDataTest.h
 	ConvertUnitsTest.h
+	CopyInstrumentParametersTest.h
 	CopySampleTest.h
 	CorrectFlightPathsTest.h
 	CorrectKiKfTest.h
@@ -482,6 +493,7 @@ set ( TEST_FILES
 	CreateFlatEventWorkspaceTest.h
 	CreateGroupingWorkspaceTest.h
 	CreateLogPropertyTableTest.h
+	CreateLogTimeCorrectionTest.h
 	CreatePSDBleedMaskTest.h
 	CreatePeaksWorkspaceTest.h
 	CreateSingleValuedWorkspaceTest.h
@@ -491,6 +503,7 @@ set ( TEST_FILES
 	CylinderAbsorptionTest.h
 	DeleteWorkspaceTest.h
 	DetectorEfficiencyCorTest.h
+	DetectorEfficiencyCorUserTest.h
 	DetectorEfficiencyVariationTest.h
 	DiffractionEventCalibrateDetectorsTest.h
 	DiffractionFocussing2Test.h
@@ -500,6 +513,7 @@ set ( TEST_FILES
 	EditInstrumentGeometryTest.h
 	ExponentialCorrectionTest.h
 	ExponentialTest.h
+	ExportTimeSeriesLogTest.h
 	ExtractFFTSpectrumTest.h
 	ExtractMaskTest.h
 	ExtractSingleSpectrumTest.h
@@ -552,7 +566,7 @@ set ( TEST_FILES
 	NormaliseByDetectorTest.h
 	NormaliseToMonitorTest.h
 	OneMinusExponentialCorTest.h
-	PDFFTTest.h
+	PDFFourierTransformTest.h
 	PauseTest.h
 	PlotAsymmetryByLogValueTest.h
 	PlusTest.h

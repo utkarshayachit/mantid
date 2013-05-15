@@ -8,7 +8,7 @@ You can load the workspace as a [[MDWorkspace#File-Backed MDWorkspaces|file-back
 by checking the FileBackEnd option. This will load the box structure
 (allowing for some visualization with no speed penalty) but leave the
 events on disk until requested. Processing file-backed MDWorkspaces
-is signficantly slower than in-memory workspaces due to frequeny file access!
+is significantly slower than in-memory workspaces due to frequency file access!
 
 For file-backed workspaces, the Memory option allows you to specify a cache
 size, in MB, to keep events in memory before caching to disk.
@@ -33,10 +33,20 @@ and used by other algorithms, they should not be needed in daily use.
 #include "MantidMDAlgorithms/LoadMD.h"
 #include "MantidMDEvents/MDEventFactory.h"
 #include "MantidMDEvents/MDBoxFlatTree.h"
+#include "MantidMDEvents/MDHistoWorkspace.h"
+#include "MantidMDEvents/BoxControllerNeXusIO.h"
+#include "MantidMDEvents/CoordTransformAffine.h"
 #include <nexus/NeXusException.hpp>
 #include <boost/algorithm/string.hpp>
 #include <vector>
-#include "MantidMDEvents/MDHistoWorkspace.h"
+
+#if defined (__INTEL_COMPILER)
+ typedef std::auto_ptr< Mantid::API::IBoxControllerIO>  file_holder_type;
+#else 
+typedef std::unique_ptr< Mantid::API::IBoxControllerIO>  file_holder_type;
+#endif
+
+
 
 using namespace Mantid::Kernel;
 using namespace Mantid::API;
@@ -272,7 +282,7 @@ namespace Mantid
         IMDEventWorkspace_sptr ws = MDEventFactory::CreateMDWorkspace(m_numDims, eventType);
 
         // Now the ExperimentInfo
-        loadExperimentInfos(ws);
+        MDBoxFlatTree::loadExperimentInfos(file,ws);
 
         // Wrapper to cast to MDEventWorkspace then call the function
         CALL_MDEVENT_FUNCTION(this->doLoad, ws);
@@ -285,10 +295,9 @@ namespace Mantid
         // MDHistoWorkspace case.
         this->loadHisto();
       }
-      if(!fileBacked)
-      {
-        delete file;
-      }
+
+      delete file;
+
     }
 
     /**
@@ -322,10 +331,12 @@ namespace Mantid
       MDHistoWorkspace_sptr ws(new MDHistoWorkspace(m_dims));
 
       // Now the ExperimentInfo
-      loadExperimentInfos(ws);
+      MDBoxFlatTree::loadExperimentInfos(file,ws);
 
       // Load the WorkspaceHistory "process"
       ws->history().loadNexus(file);
+
+      this->loadAffineMatricies(boost::dynamic_pointer_cast<IMDWorkspace>(ws));
 
       // Load each data slab
       this->loadSlab("signal", ws->getSignalArray(), ws, ::NeXus::FLOAT64);
@@ -390,6 +401,10 @@ namespace Mantid
       // Load the WorkspaceHistory "process"
       ws->history().loadNexus(file);
 
+      this->loadAffineMatricies(boost::dynamic_pointer_cast<IMDWorkspace>(ws));
+
+      file->closeGroup();
+      file->close();
       // Add each of the dimension
       for (size_t d=0; d<nd; d++)
         ws->addDimension(m_dims[d]);
@@ -397,66 +412,64 @@ namespace Mantid
       bool bMetadataOnly = getProperty("MetadataOnly");
 
       // ----------------------------------------- Box Structure ------------------------------
-      MDBoxFlatTree FlatBoxTree(m_filename);
-      FlatBoxTree.loadBoxStructure(file);
+      MDBoxFlatTree FlatBoxTree;
+      FlatBoxTree.loadBoxStructure(m_filename,nd,MDE::getTypeName());
 
       BoxController_sptr bc = ws->getBoxController();
       bc->fromXMLString(FlatBoxTree.getBCXMLdescr());
 
-      std::vector<MDBoxBase<MDE,nd> *> boxTree;
-      uint64_t totalNumEvents = FlatBoxTree.restoreBoxTree<MDE,nd>(boxTree,bc,FileBackEnd,bMetadataOnly);
+      std::vector<API::IMDNode *> boxTree;
+   //   uint64_t totalNumEvents = FlatBoxTree.restoreBoxTree<MDE,nd>(boxTree,bc,FileBackEnd,bMetadataOnly);
+      FlatBoxTree.restoreBoxTree<MDE,nd>(boxTree,bc,FileBackEnd,bMetadataOnly);
       size_t numBoxes = boxTree.size();
 
-      // open data group for usage
-      file->openGroup("event_data", "NXdata");
-      totalNumEvents = API::BoxController::openEventNexusData(file);
-      // ---------------------------------------- MEMORY FOR CACHE ------------------------------------
-
+    // ---------------------------------------- DEAL WITH BOXES  ------------------------------------
       if (FileBackEnd)
-      {
+      { // TODO:: call to the file format factory
+          auto loader = boost::shared_ptr<API::IBoxControllerIO>(new MDEvents::BoxControllerNeXusIO(bc.get()));
+          loader->setDataType(sizeof(coord_t),MDE::getTypeName());
+          bc->setFileBacked(loader,m_filename);
+          // boxes have been already made file-backed when restoring the boxTree;
       // How much memory for the cache?
         {
         // TODO: Clean up, only a write buffer now
           double mb = getProperty("Memory");
        
           // Defaults have changed, defauld disk buffer size should be 10 data chunks TODO: find optimal, 100 may be better. 
-          if (mb <= 0) mb = double(10*bc->getDataChunk()* sizeof(MDE)*1024*1024);
+          if (mb <= 0) mb = double(10*loader->getDataChunk()* sizeof(MDE))/double(1024*1024);
 
           // Express the cache memory in units of number of events.
-          uint64_t cacheMemory = (uint64_t(mb) * 1024 * 1024) / sizeof(MDE);
-
-          double writeBufferMB = mb;
-          uint64_t writeBufferMemory = (uint64_t(writeBufferMB) * 1024 * 1024) / sizeof(MDE);
-
+          uint64_t cacheMemory = static_cast<uint64_t>((mb * 1024. * 1024.) / sizeof(MDE))+1;
+              
           // Set these values in the diskMRU
-          bc->setCacheParameters(sizeof(MDE), writeBufferMemory);
+          bc->getFileIO()->setWriteBufferSize(cacheMemory);
 
           g_log.information() << "Setting a DiskBuffer cache size of " << mb << " MB, or " << cacheMemory << " events." << std::endl;
-        }
-
-        // Leave the file open in the box controller
-        bc->setFile(file, m_filename, totalNumEvents);
-
+        }   
       } // Not file back end
       else
       {
         // ---------------------------------------- READ IN THE BOXES ------------------------------------
+       // TODO:: call to the file format factory
+        auto loader = file_holder_type(new MDEvents::BoxControllerNeXusIO(bc.get()));
+        loader->setDataType(sizeof(coord_t),MDE::getTypeName());
+
+        loader->openFile(m_filename,"r");
+
+        const std::vector<uint64_t> &BoxEventIndex = FlatBoxTree.getEventIndex();
         prog->setNumSteps(numBoxes);
+
         for (size_t i=0; i<numBoxes; i++)
         {
           prog->report();
           MDBox<MDE,nd> * box = dynamic_cast<MDBox<MDE,nd> *>(boxTree[i]);
           if(!box)continue;
 
-          if(box->getFileSize()>0) // Load in memory NOT using the file as the back-end,
-            box->loadNexus(file,false);
+          if(BoxEventIndex[2*i+1]>0) // Load in memory NOT using the file as the back-end,
+              boxTree[i]->loadAndAddFrom(loader.get(),BoxEventIndex[2*i],static_cast<size_t>(BoxEventIndex[2*i+1]));
+
         }
-        // Done reading in all the events.
-        file->closeData();
-        file->closeGroup();
-        file->close();
-        // Make sure no back-end is used
-        bc->setFile(NULL, "", 0);
+        loader->closeFile();
       }
 
       g_log.debug() << tim << " to create all the boxes and fill them with events." << std::endl;
@@ -477,6 +490,64 @@ namespace Mantid
       delete prog;
     }
 
+  /**
+   * Load all of the affine matricies from the file, create the
+   * appropriate coordinate transform and set those on the workspace.
+   * @param ws : workspace to set the coordinate transforms on
+   */
+  void LoadMD::loadAffineMatricies(IMDWorkspace_sptr ws)
+  {
+    std::map<std::string, std::string> entries;
+    file->getEntries(entries);
+
+    if (entries.find("transform_to_orig") != entries.end())
+    {
+      CoordTransform *transform = this->loadAffineMatrix("transform_to_orig");
+      ws->setTransformToOriginal(transform);
+    }
+    if (entries.find("transform_from_orig") != entries.end())
+    {
+      CoordTransform *transform = this->loadAffineMatrix("transform_from_orig");
+      ws->setTransformFromOriginal(transform);
+    }
+  }
+
+  /**
+   * Do that actual loading and manipulating of the read data to create
+   * the affine matrix and then the appropriate transformation. This is
+   * currently limited to CoordTransformAffine transforms.
+   * @param entry_name : the entry point in the NeXus file to read
+   * @return the coordinate transform object
+   */
+  CoordTransform *LoadMD::loadAffineMatrix(std::string entry_name)
+  {
+    file->openData(entry_name);
+    std::vector<coord_t> vec;
+    file->getData<coord_t>(vec);
+    std::string type;
+    int inD(0);
+    int outD(0);
+    file->getAttr("type", type);
+    file->getAttr<int>("rows", outD);
+    file->getAttr<int>("columns", inD);
+    file->closeData();
+    // Adjust dimensions
+    inD--;
+    outD--;
+    Matrix<coord_t> mat(vec);
+    CoordTransform *transform = NULL;
+    if ("CoordTransformAffine" == type)
+    {
+      CoordTransformAffine *affine = new CoordTransformAffine(inD, outD);
+      affine->setMatrix(mat);
+      transform = affine;
+    }
+    else
+    {
+      g_log.information("Do not know how to process coordinate transform " + type);
+    }
+    return transform;
+  }
 
   } // namespace Mantid
 } // namespace MDEvents

@@ -61,7 +61,7 @@ void testInit(){
     TS_ASSERT_THROWS_NOTHING( pAlg->initialize() )
     TS_ASSERT( pAlg->isInitialized() )
 
-    TSM_ASSERT_EQUALS("algortithm should have 19 propeties",19,(size_t)(pAlg->getProperties().size()));
+    TSM_ASSERT_EQUALS("algortithm should have 20 propeties",20,(size_t)(pAlg->getProperties().size()));
 }
 
 
@@ -159,7 +159,7 @@ void testExecQ3D()
     checkHistogramsHaveBeenStored("WS5DQ3D");
 
     auto outWS = AnalysisDataService::Instance().retrieveWS<IMDWorkspace>("WS5DQ3D");
-    TS_ASSERT_EQUALS(Mantid::API::QSample, outWS->getSpecialCoordinateSystem());
+    TS_ASSERT_EQUALS(Mantid::API::HKL, outWS->getSpecialCoordinateSystem());
 
     AnalysisDataService::Instance().remove("WS5DQ3D");
 }
@@ -268,7 +268,7 @@ static void destroySuite(ConvertToMDTestPerformance * suite) { delete suite; }
 
 void test_EventNoUnitsConv()
 {
-
+   
 
     NumericAxis *pAxis0 = new NumericAxis(2); 
     pAxis0->setUnit("DeltaE");
@@ -282,6 +282,8 @@ void test_EventNoUnitsConv()
 
     WSD.m_PreprDetTable =pDetLoc_events;
     WSD.m_RotMatrix = Rot;
+    // this one comes from ticket #6852 and would not exist in clear branch.
+    WSD.addProperty("RUN_INDEX",static_cast<uint16_t>(10),true);
 
     // create new target MD workspace
     pTargWS->releaseWorkspace();   
@@ -302,6 +304,8 @@ void test_EventNoUnitsConv()
 
 void test_EventFromTOFConv()
 {
+   
+
     NumericAxis *pAxis0 = new NumericAxis(2); 
     pAxis0->setUnit("TOF");
     inWsEv->replaceAxis(0,pAxis0);
@@ -313,6 +317,9 @@ void test_EventFromTOFConv()
 
     WSD.m_PreprDetTable =pDetLoc_events;
     WSD.m_RotMatrix = Rot;
+    // this one comes from ticket #6852 and would not exist in clear branch.
+    WSD.addProperty("RUN_INDEX",static_cast<uint16_t>(10),true);
+
     // create new target MD workspace
     pTargWS->releaseWorkspace();   
     pTargWS->createEmptyMDWS(WSD);
@@ -333,7 +340,6 @@ void test_EventFromTOFConv()
 }
 void test_HistoFromTOFConv()
 {
-  
 
     NumericAxis *pAxis0 = new NumericAxis(2); 
     pAxis0->setUnit("TOF");
@@ -347,6 +353,9 @@ void test_HistoFromTOFConv()
 
     WSD.m_PreprDetTable =pDetLoc_histo;
     WSD.m_RotMatrix = Rot;
+    // this one comes from ticket #6852 and would not exist in clear branch.
+    WSD.addProperty("RUN_INDEX",static_cast<uint16_t>(10),true);
+
     // create new target MD workspace
     pTargWS->releaseWorkspace();   
     pTargWS->createEmptyMDWS(WSD);
@@ -371,6 +380,7 @@ void test_HistoFromTOFConv()
 void test_HistoNoUnitsConv()
 {
 
+  
 
     NumericAxis *pAxis0 = new NumericAxis(2); 
     pAxis0->setUnit("DeltaE");
@@ -384,6 +394,9 @@ void test_HistoNoUnitsConv()
 
     WSD.m_PreprDetTable =pDetLoc_histo;
     WSD.m_RotMatrix = Rot;
+    // this one comes from ticket #6852 and would not exist in clear branch.
+    WSD.addProperty("RUN_INDEX",static_cast<uint16_t>(10),true);
+
     // create new target MD workspace
     pTargWS->releaseWorkspace();   
     pTargWS->createEmptyMDWS(WSD);

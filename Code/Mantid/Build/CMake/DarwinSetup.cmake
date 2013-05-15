@@ -48,9 +48,10 @@ endif()
 set ( CMAKE_INSTALL_PREFIX /Applications )
 set ( INBUNDLE MantidPlot.app/ )
 # We know exactly where this has to be on Darwin
-set ( PARAVIEW_APP_DIR "/Applications/ParaView 3.10.1.app" )
+set ( PARAVIEW_APP_DIR "/Applications/${OSX_PARAVIEW_APP}" )
 set ( PARAVIEW_APP_BIN_DIR "${PARAVIEW_APP_DIR}/Contents/MacOS" )
 set ( PARAVIEW_APP_LIB_DIR "${PARAVIEW_APP_DIR}/Contents/Libraries" )
+set ( PARAVIEW_APP_PLUGIN_DIR "${PARAVIEW_APP_DIR}/Contents/Plugins" )
 
 set ( BIN_DIR MantidPlot.app/Contents/MacOS )
 set ( LIB_DIR MantidPlot.app/Contents/MacOS )
@@ -117,7 +118,6 @@ message (STATUS "Operating System: Mac OS X ${OSX_VERSION} (${OSX_CODENAME})")
 string (REPLACE " " "" CPACK_SYSTEM_NAME ${OSX_CODENAME})
 set ( CPACK_OSX_PACKAGE_VERSION 10.6 )
 set ( CPACK_PREFLIGHT_SCRIPT ${CMAKE_SOURCE_DIR}/Installers/MacInstaller/installer_hooks/preflight )
-set ( CPACK_POSTFLIGHT_SCRIPT ${CMAKE_SOURCE_DIR}/Installers/MacInstaller/installer_hooks/postflight )
 
 set ( CPACK_GENERATOR PackageMaker )
 
