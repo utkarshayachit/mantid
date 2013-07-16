@@ -89,6 +89,8 @@ private slots:
   void changeTreeData(BinaryTreeWidgetItem* item, int data);
   /// Update the object within the 3D widget
   void update3DView();
+  /// The ok button overridden to validate data for this custom dialog
+  void accept();
 
 private:
   /// Initialize the layout
@@ -101,6 +103,8 @@ private:
   ShapeDetails* createDetailsWidget(const QString & shapename) const;
   /// Construct the XML from the current tree
   QString constructShapeXML() const;
+  /// validation for the shapes
+  bool validate() const;
 
 private:
   /// The form generated with Qt Designer

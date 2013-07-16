@@ -97,7 +97,36 @@ void PointGroupBox::changeToSpherical()
 
   m_icoord = 1;
 }
-
+/**
+ * make sure the point is valid
+ */
+bool PointGroupBox::valid()
+{
+  if (m_midx->text().isEmpty() || m_midy->text().isEmpty() || m_midz->text().isEmpty() )
+  {
+    return false;
+  }
+  else
+  {
+    bool isnumber = true;
+    m_midx->text().toDouble(& isnumber);
+    if (!isnumber)
+    {
+      return false;
+    }
+    m_midy->text().toDouble(& isnumber);
+    if (!isnumber)
+    {
+      return false;
+    }
+    m_midz->text().toDouble(& isnumber);
+    if (!isnumber)
+    {
+      return false;
+    }
+  }
+  return true;
+}
 /**
  * Write the element tag for a 3D point.
  * elem_name The name of the element
@@ -275,7 +304,24 @@ QString SphereDetails::writeXML() const
     "</sphere>\n";
   return xmldef;
 }
-
+bool SphereDetails::valid()
+{
+  if( !m_radius_box->text().isEmpty() )
+  {
+    return false;
+  }
+  bool isnumber = true;
+  m_radius_box->text().toDouble(& isnumber);
+  if (!isnumber)
+  {
+    return false;
+  }
+  if( !m_centre->valid())
+  {
+    return false;
+  }
+  return true;
+}
 //--------------------------------------------------------//
 //                Cylinder
 //--------------------------------------------------------//
@@ -343,6 +389,29 @@ QString CylinderDetails::writeXML() const
   return xmldef;
 }
 
+bool CylinderDetails::valid()
+{
+  if( !m_radius_box->text().isEmpty() || !m_height_box->text().isEmpty() )
+  {
+    return false;
+  }
+  bool isnumber = true;
+  m_radius_box->text().toDouble(& isnumber);
+  if (!isnumber)
+  {
+    return false;
+  }
+  m_height_box->text().toDouble(& isnumber);
+  if (!isnumber)
+  {
+    return false;
+  }
+  if( !m_lower_centre->valid() || !m_axis->valid())
+  {
+    return false;
+  }
+  return true;
+}
 //--------------------------------------------------------//
 //                InfiniteCylinder
 //--------------------------------------------------------//
@@ -396,6 +465,24 @@ QString InfiniteCylinderDetails::writeXML() const
   return xmldef;
 }
 
+bool InfiniteCylinderDetails::valid()
+{
+  if( !m_radius_box->text().isEmpty() )
+  {
+    return false;
+  }
+  bool isnumber = true;
+  m_radius_box->text().toDouble(& isnumber);
+  if (!isnumber)
+  {
+    return false;
+  }
+  if( !m_centre->valid() || !m_axis->valid())
+  {
+    return false;
+  }
+  return true;
+}
 //--------------------------------------------------------//
 //                SliceOfCylinderRing
 //--------------------------------------------------------//
@@ -480,6 +567,35 @@ QString SliceOfCylinderRingDetails::writeXML() const
   return xmldef;
 }
 
+bool SliceOfCylinderRingDetails::valid()
+{
+  if( !m_rinner_box->text().isEmpty() || !m_router_box->text().isEmpty() || !m_depth_box->text().isEmpty() || !m_arc_box->text().isEmpty())
+  {
+    return false;
+  }
+  bool isnumber = true;
+  m_rinner_box->text().toDouble(& isnumber);
+  if (!isnumber)
+  {
+    return false;
+  }
+  m_router_box->text().toDouble(& isnumber);
+  if (!isnumber)
+  {
+    return false;
+  }
+  m_depth_box->text().toDouble(& isnumber);
+  if (!isnumber)
+  {
+    return false;
+  }
+  m_arc_box->text().toDouble(& isnumber);
+  if (!isnumber)
+  {
+    return false;
+  }
+  return true;
+}
 //--------------------------------------------------------//
 //                Cone
 //--------------------------------------------------------//
@@ -548,6 +664,29 @@ QString ConeDetails::writeXML() const
   return xmldef;
 }
 
+bool ConeDetails::valid()
+{
+  if( !m_height_box->text().isEmpty() || !m_angle_box->text().isEmpty() )
+  {
+    return false;
+  }
+  bool isnumber = true;
+  m_height_box->text().toDouble(& isnumber);
+  if (!isnumber)
+  {
+    return false;
+  }
+  m_angle_box->text().toDouble(& isnumber);
+  if (!isnumber)
+  {
+    return false;
+  }
+  if( !m_tippoint->valid() || !m_axis->valid())
+  {
+    return false;
+  }
+  return true;
+}
 //--------------------------------------------------------//
 //                InfiniteCone
 //--------------------------------------------------------//
@@ -602,6 +741,24 @@ QString InfiniteConeDetails::writeXML() const
   return xmldef;
 }
 
+bool InfiniteConeDetails::valid()
+{
+  if(!m_angle_box->text().isEmpty() )
+  {
+    return false;
+  }
+  bool isnumber = true;
+  m_angle_box->text().toDouble(& isnumber);
+  if (!isnumber)
+  {
+    return false;
+  }
+  if( !m_tippoint->valid() || !m_axis->valid())
+  {
+    return false;
+  }
+  return true;
+}
 //--------------------------------------------------------//
 //                InfinitePlane
 //--------------------------------------------------------//
@@ -642,6 +799,14 @@ QString InfinitePlaneDetails::writeXML() const
   return xmldef;
 }
 
+bool InfinitePlaneDetails::valid()
+{
+  if( !m_plane->valid() || !m_normal->valid())
+  {
+    return false;
+  }
+  return true;
+}
 //--------------------------------------------------------//
 //                Cuboid
 //--------------------------------------------------------//
@@ -692,6 +857,14 @@ QString CuboidDetails::writeXML() const
   return xmldef;
 }
 
+bool CuboidDetails::valid()
+{
+  if( !m_left_frt_bot->valid() || !m_left_frt_top->valid() || !m_left_bck_bot->valid() || !m_right_frt_bot->valid())
+  {
+    return false;
+  }
+  return true;
+}
 //--------------------------------------------------------//
 //                Hexahedron
 //--------------------------------------------------------//
@@ -762,6 +935,15 @@ QString HexahedronDetails::writeXML() const
   return xmldef;
 }
 
+bool HexahedronDetails::valid()
+{
+  if( !m_left_bck_bot->valid() || !m_left_frt_bot->valid() || !m_right_frt_bot->valid() || !m_right_bck_bot->valid()
+    || !m_left_bck_top->valid() || !m_left_frt_top->valid() || !m_right_frt_top->valid() || !m_right_bck_top->valid())
+  {
+    return false;
+  }
+  return true;
+}
 // This is not implemented in OpenCascade yet 
 
 //--------------------------------------------------------//

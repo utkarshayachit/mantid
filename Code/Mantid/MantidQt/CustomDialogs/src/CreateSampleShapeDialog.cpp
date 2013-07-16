@@ -157,66 +157,127 @@ void CreateSampleShapeDialog::parseInput()
 }
 
 /**
+ * Validates all the shapes in the 3d space to see if thay have enough information to render
+ * @return boolean : true if sucessful, false if one or more shapes failed to validate.
+ */
+bool CreateSampleShapeDialog::validate() const
+{
+  //Look through all the shapes to check if they all have details
+  QMapIterator<BinaryTreeWidgetItem*, ShapeDetails*> itr(m_details_map);
+  while (itr.hasNext())
+  {
+    itr.next();
+    if (!itr.value()->valid())
+    {
+      return false;
+    }
+  }
+  return true;
+}
+/**
+ * A slot that can be used to connect a button that accepts the dialog if
+ * all of the properties are valid
+ */
+void CreateSampleShapeDialog::accept()
+{
+  //Specific validation for the shapes
+  if (validate())
+  {
+    // Get property values
+    parse();
+  
+    //Try and set and validate the properties and 
+    if( setPropertyValues() )
+    {
+      //Store input for next time
+      saveInput();
+      QDialog::accept();
+    }
+    else
+    {
+      QMessageBox::critical(this, "", 
+                "One or more properties are invalid. The invalid properties are\n"
+          "marked with a *, hold your mouse over the * for more information." );
+    }
+  }
+  else
+  {
+    QMessageBox::critical(this, "", 
+              "One or more shapes are invalid so the model cannot be rendered.\n"
+              "Please check all shapes in the model for any missing or invalid data." );
+  }
+}
+/**
  * Update the 3D widget with a new object 
  */
 void CreateSampleShapeDialog::update3DView()
 {
-  std::string shapexml = constructShapeXML().toStdString();
-  if( m_shapeTree->topLevelItemCount() > 0 && shapexml.empty() )
+  //Specific validation for the shapes
+  if (validate())
   {
-    QMessageBox::information(this, "CreateSampleShapeDialog", 
-			     "An error occurred while parsing the shape tree.\n"
-			     "Please check that each node has two children and the lowest elements are primitive shapes.");
-    return;
+    std::string shapexml = constructShapeXML().toStdString();
+    if( m_shapeTree->topLevelItemCount() > 0 && shapexml.empty() )
+    {
+      QMessageBox::information(this, "CreateSampleShapeDialog", 
+			       "An error occurred while parsing the shape tree.\n"
+			       "Please check that each node has two children and the lowest elements are primitive shapes.");
+      return;
     
+    }
+
+    // Testing a predefined complex shape PLEASE LEAVE FOR THE MOMENT
+  //   std::string shapexml = "<cuboid id=\"cuboid_1\" >\n"
+  //     "<left-front-bottom-point x=\"-0.02\" y=\"-0.02\" z= \"0.0\" />\n"
+  //     "<left-front-top-point x=\"-0.02\" y=\"0.05\" z= \"0.0\" />\n"
+  //     "<left-back-bottom-point x=\"-0.02\" y=\"-0.02\" z= \"0.07\" />\n"
+  //     "<right-front-bottom-point x=\"0.05\" y=\"-0.02\" z= \"0.0\" />\n"
+  //     "</cuboid>\n"
+  //     "<infinite-cylinder id=\"infcyl_1\" >"
+  //     "<radius val=\"0.025\" />"
+  //     "<centre x=\"0.015\" y=\"0.015\" z= \"0.07\" />"
+  //     "<axis x=\"0.0\" y=\"0.0\" z= \"-0.001\" />"
+  //     "</infinite-cylinder>\n"
+  //     "<sphere id=\"sphere_1\">"
+  //     "<centre x=\"0.015\" y=\"0.015\" z= \"0.035\" />"
+  //     "<radius val=\"0.04\" />"
+  //     "</sphere>\n"
+  //     "<infinite-cylinder id=\"infcyl_3\" >"
+  //     "<radius val=\"0.025\" />"
+  //     "<centre x=\"0.015\" y=\"-0.02\" z= \"0.035\" />"
+  //     "<axis x=\"0.0\" y=\"0.001\" z= \"0.0\" />"
+  //     "</infinite-cylinder>\n"
+  //     "<infinite-cylinder id=\"infcyl_2\" >"
+  //     "<radius val=\"0.025\" />"
+  //     "<centre x=\"-0.02\" y=\"0.015\" z= \"0.035\" />"
+  //     "<axis x=\"0.001\" y=\"0.0\" z= \"0.0\" />"
+  //     "</infinite-cylinder>\n"
+  //     "<algebra val=\"((cuboid_1 sphere_1) (# (infcyl_1:(infcyl_2:infcyl_3))))\" />\n";
+
+
+    Mantid::Geometry::ShapeFactory sFactory;
+    boost::shared_ptr<Mantid::Geometry::Object> shape_sptr = sFactory.createShape(shapexml);
+    //  std::cerr << "\n--------- XML String -----------\n" << shapexml << "\n---------------------\n";
+    if( shape_sptr == boost::shared_ptr<Mantid::Geometry::Object>() ) return;
+    try 
+    {
+      shape_sptr->initDraw();
+    }
+    catch( ... )
+    {
+      QMessageBox::information(this,"Create sample shape", 
+			       QString("An error occurred while attempting to initialize the shape.\n") +
+			       "Please check that all objects intersect each other.");
+      return;
+    }
+
+    m_object_viewer->setDisplayObject(shape_sptr);
   }
-
-  // Testing a predefined complex shape PLEASE LEAVE FOR THE MOMENT
-//   std::string shapexml = "<cuboid id=\"cuboid_1\" >\n"
-//     "<left-front-bottom-point x=\"-0.02\" y=\"-0.02\" z= \"0.0\" />\n"
-//     "<left-front-top-point x=\"-0.02\" y=\"0.05\" z= \"0.0\" />\n"
-//     "<left-back-bottom-point x=\"-0.02\" y=\"-0.02\" z= \"0.07\" />\n"
-//     "<right-front-bottom-point x=\"0.05\" y=\"-0.02\" z= \"0.0\" />\n"
-//     "</cuboid>\n"
-//     "<infinite-cylinder id=\"infcyl_1\" >"
-//     "<radius val=\"0.025\" />"
-//     "<centre x=\"0.015\" y=\"0.015\" z= \"0.07\" />"
-//     "<axis x=\"0.0\" y=\"0.0\" z= \"-0.001\" />"
-//     "</infinite-cylinder>\n"
-//     "<sphere id=\"sphere_1\">"
-//     "<centre x=\"0.015\" y=\"0.015\" z= \"0.035\" />"
-//     "<radius val=\"0.04\" />"
-//     "</sphere>\n"
-//     "<infinite-cylinder id=\"infcyl_3\" >"
-//     "<radius val=\"0.025\" />"
-//     "<centre x=\"0.015\" y=\"-0.02\" z= \"0.035\" />"
-//     "<axis x=\"0.0\" y=\"0.001\" z= \"0.0\" />"
-//     "</infinite-cylinder>\n"
-//     "<infinite-cylinder id=\"infcyl_2\" >"
-//     "<radius val=\"0.025\" />"
-//     "<centre x=\"-0.02\" y=\"0.015\" z= \"0.035\" />"
-//     "<axis x=\"0.001\" y=\"0.0\" z= \"0.0\" />"
-//     "</infinite-cylinder>\n"
-//     "<algebra val=\"((cuboid_1 sphere_1) (# (infcyl_1:(infcyl_2:infcyl_3))))\" />\n";
-
-
-  Mantid::Geometry::ShapeFactory sFactory;
-  boost::shared_ptr<Mantid::Geometry::Object> shape_sptr = sFactory.createShape(shapexml);
-  //  std::cerr << "\n--------- XML String -----------\n" << shapexml << "\n---------------------\n";
-  if( shape_sptr == boost::shared_ptr<Mantid::Geometry::Object>() ) return;
-  try 
+  else
   {
-    shape_sptr->initDraw();
+    QMessageBox::critical(this, "", 
+              "One or more shapes are invalid so the model cannot be rendered.\n"
+              "Please check all shapes in the model for any missing or invalid data." );
   }
-  catch( ... )
-  {
-    QMessageBox::information(this,"Create sample shape", 
-			     QString("An error occurred while attempting to initialize the shape.\n") +
-			     "Please check that all objects intersect each other.");
-    return;
-  }
-
-  m_object_viewer->setDisplayObject(shape_sptr);
 }
 
 /**
@@ -532,7 +593,7 @@ QString CreateSampleShapeDialog::constructShapeXML() const
       QString shapeID = shape->getShapeID();
       if( shape->getComplementFlag() )
       {
-	shapeID = QString("#(") + shapeID + QString(")");
+	      shapeID = QString("#(") + shapeID + QString(")");
       }
       inter_results.append(shapeID);
     }

@@ -43,6 +43,9 @@ public:
   ///Write the element tag for a 3D point
   QString write3DElement(const QString & elem_name) const;
 
+  ///make sure the point is valid
+  bool valid();
+
 private slots:
   // Switch to cartesian coordinates
   void changeToCartesian();
@@ -152,6 +155,8 @@ public:
   /// Get complement flag
   bool getComplementFlag() const;
   
+  /// Validate this shape
+  virtual bool valid() {return true;}
 protected:
   /// ID string of this object
   QString m_idvalue;
@@ -182,7 +187,9 @@ public:
 
   //Write the XML definition of a sphere
   QString writeXML() const;
-
+  
+  /// Validate this shape
+  bool valid();
 private:
   /// Line edit for radius value
   QLineEdit *m_radius_box;
@@ -212,7 +219,9 @@ public:
 
   //Write the XML definition of a sphere
   QString writeXML() const;
-
+  
+  /// Validate this shape
+  bool valid();
 private:
   /// Line edits to enter values
   QLineEdit *m_radius_box, *m_height_box;
@@ -242,7 +251,9 @@ public:
 
   //Write the XML definition of a sphere
   QString writeXML() const;
-
+  
+  /// Validate this shape
+  bool valid();
 private:
   /// Line edits to enter values
   QLineEdit *m_radius_box;
@@ -272,7 +283,9 @@ public:
 
   /// Write the XML definition of a sphere
   QString writeXML() const;
-
+  
+  /// Validate this shape
+  bool valid();
 private:
   /// Line edits to enter values
   QLineEdit *m_rinner_box, *m_router_box, *m_depth_box, *m_arc_box;
@@ -300,7 +313,9 @@ public:
 
   /// Write the XML definition of a sphere
   QString writeXML() const;
-
+  
+  /// Validate this shape
+  bool valid();
 private:
   /// Line edits to enter values
   QLineEdit *m_height_box, *m_angle_box;
@@ -330,7 +345,9 @@ public:
 
   /// Write the XML definition of a sphere
   QString writeXML() const;
-
+  
+  /// Validate this shape
+  bool valid();
 private:
   /// Line edits to enter values
   QLineEdit *m_angle_box;
@@ -358,7 +375,9 @@ public:
 
   /// Write the XML definition of a sphere
   QString writeXML() const;
-
+  
+  /// Validate this shape
+  bool valid();
 private:
   /// Centre and axis point boxes
   PointGroupBox *m_plane, *m_normal;
@@ -384,7 +403,9 @@ public:
 
   /// Write the XML definition of a sphere
   QString writeXML() const;
-
+  
+  /// Validate this shape
+  bool valid();
 private:
   /// Corner points
   PointGroupBox *m_left_frt_bot, *m_left_frt_top, *m_left_bck_bot, *m_right_frt_bot;
@@ -410,7 +431,9 @@ public:
 
   /// Write the XML definition of a sphere
   QString writeXML() const;
-
+  
+  /// Validate this shape
+  bool valid();
 private:
   /// Corner points
   PointGroupBox *m_left_bck_bot, *m_left_frt_bot, *m_right_frt_bot, *m_right_bck_bot,
@@ -437,7 +460,9 @@ private:
 
 //   /// Write the XML definition of a sphere
 //   QString writeXML() const;
-
+//   
+//   /// Validate this shape
+//   bool valid();
 // private:
 //   /// Radius values
 //   QLineEdit *m_tube_rad, *m_inner_rad;
