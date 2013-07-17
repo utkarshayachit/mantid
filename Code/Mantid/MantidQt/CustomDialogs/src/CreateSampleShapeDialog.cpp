@@ -5,6 +5,7 @@
 #include "MantidQtAPI/AlgorithmInputHistory.h"
 #include "MantidQtCustomDialogs/SampleShapeHelpers.h"
 #include "MantidQtCustomDialogs/MantidGLWidget.h"
+#include "MantidAPI/AlgorithmManager.h"
 
 #include "MantidGeometry/Objects/ShapeFactory.h"
 #include "MantidGeometry/Objects/Object.h"
@@ -30,7 +31,8 @@ namespace CustomDialogs
 
 // Just to save writing this everywhere 
 using namespace MantidQt::CustomDialogs;
-
+using namespace Mantid::API;
+using namespace Mantid::Geometry;
 //---------------------------------------
 // Public member functions
 //---------------------------------------
@@ -129,10 +131,24 @@ void CreateSampleShapeDialog::initLayout()
   {
     m_uiForm.wksp_opt->addItem(QString::fromStdString(*itr));
   }
+
+  // populate the tree with the selected workspace's shape data if possible
+  populateTree(m_uiForm.wksp_opt->currentText().toStdString());
+
   tie(m_uiForm.wksp_opt, "InputWorkspace", m_uiForm.bottomlayout);
 
   //Connect the help button
   connect(m_uiForm.helpButton, SIGNAL(clicked()), this, SLOT(helpClicked()));
+}
+
+void CreateSampleShapeDialog::populateTree(std::string workspace)
+{
+  auto ws = AnalysisDataService::Instance().retrieveWS<MatrixWorkspace>(workspace);
+  const Object * shape = &(ws->sample().getShape());
+  if (shape->hasValidShape())
+  {
+    int u = 6;
+  }
 }
 
 /**
@@ -196,8 +212,8 @@ void CreateSampleShapeDialog::accept()
     else
     {
       QMessageBox::critical(this, "", 
-                "One or more properties are invalid. The invalid properties are\n"
-          "marked with a *, hold your mouse over the * for more information." );
+              "One or more shapes are invalid so the model cannot be rendered.\n"
+              "Please check all shapes in the model for any missing or invalid data." );
     }
   }
   else

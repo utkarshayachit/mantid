@@ -245,6 +245,9 @@ QLabel* AlgorithmDialog::getValidatorMarker(const QString & propname)
 void AlgorithmDialog::storePropertyValue(const QString & name, const QString & value)
 {
   if( name.isEmpty() ) return;
+  std::string stdname = name.toStdString();
+  std::string stdval = value.toStdString();
+//  std::string testpoint = m_propertyValueMap.find(name)->toStdString();
   m_propertyValueMap.insert(name, value);
 }
 

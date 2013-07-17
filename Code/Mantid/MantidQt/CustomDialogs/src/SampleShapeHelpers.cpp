@@ -306,7 +306,7 @@ QString SphereDetails::writeXML() const
 }
 bool SphereDetails::valid()
 {
-  if( !m_radius_box->text().isEmpty() )
+  if( m_radius_box->text().isEmpty() )
   {
     return false;
   }
@@ -391,7 +391,7 @@ QString CylinderDetails::writeXML() const
 
 bool CylinderDetails::valid()
 {
-  if( !m_radius_box->text().isEmpty() || !m_height_box->text().isEmpty() )
+  if( m_radius_box->text().isEmpty() || m_height_box->text().isEmpty() )
   {
     return false;
   }
@@ -467,7 +467,7 @@ QString InfiniteCylinderDetails::writeXML() const
 
 bool InfiniteCylinderDetails::valid()
 {
-  if( !m_radius_box->text().isEmpty() )
+  if( m_radius_box->text().isEmpty() )
   {
     return false;
   }
@@ -569,7 +569,7 @@ QString SliceOfCylinderRingDetails::writeXML() const
 
 bool SliceOfCylinderRingDetails::valid()
 {
-  if( !m_rinner_box->text().isEmpty() || !m_router_box->text().isEmpty() || !m_depth_box->text().isEmpty() || !m_arc_box->text().isEmpty())
+  if( m_rinner_box->text().isEmpty() || m_router_box->text().isEmpty() || m_depth_box->text().isEmpty() || m_arc_box->text().isEmpty())
   {
     return false;
   }
@@ -666,7 +666,7 @@ QString ConeDetails::writeXML() const
 
 bool ConeDetails::valid()
 {
-  if( !m_height_box->text().isEmpty() || !m_angle_box->text().isEmpty() )
+  if( m_height_box->text().isEmpty() || m_angle_box->text().isEmpty() )
   {
     return false;
   }
@@ -743,7 +743,7 @@ QString InfiniteConeDetails::writeXML() const
 
 bool InfiniteConeDetails::valid()
 {
-  if(!m_angle_box->text().isEmpty() )
+  if(m_angle_box->text().isEmpty() )
   {
     return false;
   }

@@ -105,6 +105,8 @@ private:
   QString constructShapeXML() const;
   /// validation for the shapes
   bool validate() const;
+  /// populate the tree from stored data
+  void populateTree (std::string workspace);
 
 private:
   /// The form generated with Qt Designer
