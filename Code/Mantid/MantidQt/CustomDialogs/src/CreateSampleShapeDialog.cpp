@@ -10,6 +10,17 @@
 #include "MantidGeometry/Objects/ShapeFactory.h"
 #include "MantidGeometry/Objects/Object.h"
 
+#include <Poco/DOM/Document.h>
+#include <Poco/DOM/DOMParser.h>
+#include <Poco/DOM/DOMWriter.h>
+#include <Poco/DOM/Element.h>
+#include <Poco/DOM/NodeFilter.h>
+#include <Poco/DOM/NodeIterator.h>
+#include <Poco/DOM/NodeList.h>
+#include <Poco/Exception.h>
+#include <Poco/File.h>
+#include <Poco/Path.h>
+
 #include <QMenu>
 #include <QLabel>
 #include <QLineEdit>
@@ -19,6 +30,7 @@
 #include <QCloseEvent>
 
 #include <iostream>
+#include <exception>
 
 //Add this class to the list of specialised dialogs in this namespace
 namespace MantidQt
@@ -33,6 +45,14 @@ namespace CustomDialogs
 using namespace MantidQt::CustomDialogs;
 using namespace Mantid::API;
 using namespace Mantid::Geometry;
+using namespace Mantid::Kernel;
+using Poco::XML::DOMParser;
+using Poco::XML::Document;
+using Poco::XML::Element;
+using Poco::XML::Node;
+using Poco::XML::NodeList;
+using Poco::XML::NodeIterator;
+using Poco::XML::NodeFilter;
 //---------------------------------------
 // Public member functions
 //---------------------------------------
@@ -78,7 +98,7 @@ void CreateSampleShapeDialog::initLayout()
   //The main setup function
   m_uiForm.setupUi(this);
   
-  // Create the map of instantiators. The keys defined here are used to generate the shape 
+  // Create the map of instantiaters. The keys defined here are used to generate the shape 
   // menu items
   m_setup_map.clear();
   m_setup_map["sphere"] = new ShapeDetailsInstantiator<SphereDetails>;
@@ -132,21 +152,75 @@ void CreateSampleShapeDialog::initLayout()
     m_uiForm.wksp_opt->addItem(QString::fromStdString(*itr));
   }
 
-  // populate the tree with the selected workspace's shape data if possible
-  populateTree(m_uiForm.wksp_opt->currentText().toStdString());
-
   tie(m_uiForm.wksp_opt, "InputWorkspace", m_uiForm.bottomlayout);
 
   //Connect the help button
   connect(m_uiForm.helpButton, SIGNAL(clicked()), this, SLOT(helpClicked()));
+  
+  //populate the tree with the selected workspace's shape data if possible
+  populateTree(m_uiForm.wksp_opt->currentText().toStdString());
 }
 
-void CreateSampleShapeDialog::populateTree(std::string workspace)
+void CreateSampleShapeDialog::populateTree(const std::string &workspace)
 {
   auto ws = AnalysisDataService::Instance().retrieveWS<MatrixWorkspace>(workspace);
   const Object * shape = &(ws->sample().getShape());
   if (shape->hasValidShape())
   {
+
+    //parse the XML and get the shapes from it
+
+    //Get the XML
+    std::string shapeXML = shape->getShapeXML();
+
+    DOMParser pParser;
+    try
+    {
+      m_pDoc = pParser.parseString(shapeXML);
+    }
+    catch(Poco::Exception& exc)
+    {
+      throw std::runtime_error(exc.displayText() + ". Unable to parse shape XML");
+    }
+    catch(...)
+    {
+      throw std::runtime_error("Unable to parse shape XML");
+    }
+    //get the root element
+    m_pRootElem = m_pDoc->documentElement();
+    if ( !m_pRootElem->hasChildNodes() )
+    {
+      throw std::runtime_error("No root element in XML");
+    }
+    //get the algebra equasion ready to parse the tree from
+    Element* algElement = m_pRootElem->getChildElement("algebra");
+    if (algElement != NULL)
+    {
+      throw std::runtime_error("No shape algebra definition");
+    }
+    std::string equasion = algElement->getAttribute("val");
+    if (equasion == "")
+    {
+      throw std::runtime_error("No shape algebra definition");
+    }
+
+    //Parse the algera function looking for [space], #, :, (, and )
+
+    //look at position 1 on the string, if it's not a ( or # then the first opperand is most likley a straight shape, so look for the opperator
+
+
+    NodeList* pNL_type = m_pRootElem->getElementsByTagName("algebra");
+    if ( pNL_type->length() == 0 )
+    {
+      throw std::runtime_error("No type elements in XML instrument file");
+    }
+    Poco::XML::NodeIterator it(m_pDoc, NodeFilter::SHOW_ELEMENT);
+    Poco::XML::Node* pNode = it.nextNode();
+    while (pNode)
+    {
+     std::cout<<pNode->nodeName()<<":"<< pNode->nodeValue()<<std::endl;
+     pNode = it.nextNode();
+    }
     int u = 6;
   }
 }
@@ -157,6 +231,7 @@ void CreateSampleShapeDialog::populateTree(std::string workspace)
 void CreateSampleShapeDialog::parseInput()
 {
   QString xml = constructShapeXML();
+
   if( m_shapeTree->topLevelItemCount() > 0 && xml.isEmpty() )
   {
     QMessageBox::information(this, "CreateSampleShapeDialog", 
@@ -165,7 +240,6 @@ void CreateSampleShapeDialog::parseInput()
     return;
   }
 
-
   storePropertyValue("ShapeXML", xml);
     
   // Get workspace value
@@ -173,8 +247,8 @@ void CreateSampleShapeDialog::parseInput()
 }
 
 /**
- * Validates all the shapes in the 3d space to see if thay have enough information to render
- * @return boolean : true if sucessful, false if one or more shapes failed to validate.
+ * Validates all the shapes in the 3d space to see if they have enough information to render
+ * @return Boolean : true if successful, false if one or more shapes failed to validate.
  */
 bool CreateSampleShapeDialog::validate() const
 {

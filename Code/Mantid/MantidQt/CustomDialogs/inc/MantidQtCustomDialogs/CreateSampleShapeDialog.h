@@ -106,7 +106,7 @@ private:
   /// validation for the shapes
   bool validate() const;
   /// populate the tree from stored data
-  void populateTree (std::string workspace);
+  void populateTree (const std::string &workspace);
 
 private:
   /// The form generated with Qt Designer
@@ -121,6 +121,10 @@ private:
   QMap<BinaryTreeWidgetItem*, Operation*> m_ops_map;
   ///The 3D object viewer
   MantidGLWidget *m_object_viewer;
+  /// XML document loaded
+  Poco::XML::Document* m_pDoc;
+  /// Root element of the parsed XML
+  Poco::XML::Element* m_pRootElem;
 };
 
 /**
