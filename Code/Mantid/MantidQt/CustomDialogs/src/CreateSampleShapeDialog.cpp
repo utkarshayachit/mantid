@@ -210,27 +210,87 @@ void CreateSampleShapeDialog::populateTree(const std::string &workspace)
       throw std::runtime_error("No shape algebra definition");
     }
 
+    int rootTreeNodeKey = parseEquation(&equation);
     
-    //Parse the algera function looking for [space], #, :, (, and )
-    int operations = equation.count(QRegExp("[ :]"));
-    if (operations == 0)
-    {
-      //there was only a shape or a complement of a shape, so we can deal with that as is, no messing about required
-    }
-    //look at position 1 on the string, if it's not a ( or # then the first opperand is most likley a straight shape, so look for the opperator
-    if (equation.at(0) == QChar('(') && equation.at(equation.length()- 1) == QChar(')'))
-    {
-      //the equasion is surronded in brackets but check to see if they match
-      int openBrackets = equation.count(QChar('('));
-
-    }
-
-    int u = 6;
   }
 }
 
-void parseEquation(QString eq)
+int CreateSampleShapeDialog::parseEquation(QString* eq)
 {
+  
+    //Parse the algebra function looking for [space], #, :, (, and )
+    int operations = eq->count(QRegExp("[ :]"));
+    if (operations == 0)
+    {
+      //there was only a shape or a complement of a shape, so we can deal with that as is, no messing about required or at the very most i have to remove some parentheses
+      //strip out any stray parentheses
+      eq->remove(QChar('('));
+      eq->remove(QChar(')'));
+      //check if the complement - it would contian a #
+      int hashes = eq->count(QChar('#'));
+      if (hashes == 1)
+      {
+      }
+      else if (hashes > 1 || hashes < 0)
+      {
+        //if there wasn't jsut one hash or there was somethign wierd back from count, throw
+
+      }
+      else
+      {
+        //there weren't any hashes, create an antry for a normal shape
+      }
+    }
+    else if (operations == 1)
+    {
+      //there is only one opperation there, so that's the parent at this level
+      //split it at either side and pass it on
+      //there's no need to mess about with parentheses as these are single opperands and the above case will deal with them
+      QString eqL;
+      QString eqR;
+      int opPos = eq->indexOf(QRegExp("[ :]"));
+      eqL = eq->left(opPos);
+      eqR = eq->right(eq->length() - (opPos + 1));
+      int leftInd = parseEquation(&eqL);
+      int rightInd = parseEquation(&eqR);
+      //add the info to the vector in the format [0] = L, [1] = shape/operation, [2] = R
+      //then add that to the map
+
+    }
+    else
+    {
+      //there is more than one operation, i need to find the central one in order to split this further
+
+      //i could find this out a different way by itterating ove the entire string incrementing a counter for each open and decrementing for each close. it should be >0 if there are more opens, <0 if there are mroe closes and 0 if they're equal
+      int openBrackets = eq->count(QChar('('));
+      int closeBrackets = eq->count(QChar(')'));
+      if (openBrackets > closeBrackets)
+      {
+        //there's an unpaired open bracket, persumably at the start, left from splitting
+      }
+      else if (openBrackets < closeBrackets)
+      {
+        //there's an unpaired close bracket, persumably at the end, left from splitting
+
+      }
+      else
+      {
+        //there is an equal amount of opens and close brackets so it's assumed that they match up
+        //count opens until the first close, then count the same number of closes, the central operator should be the next character 
+      }
+      /*
+      //look at position 1 on the string, if it's not a ( or # then the first operand is most likely a straight shape, so look for the operator
+      if (eq->at(0) == QChar('(') && eq->at(eq->length()- 1) == QChar(')'))
+      {
+        //the equasion is surronded in brackets but check to see if they match
+        int openBrackets = eq->count(QChar('('));
+
+      }*/
+    }
+
+    
+
+    int u = 6;
 }
 
 /**

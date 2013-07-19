@@ -107,7 +107,8 @@ private:
   bool validate() const;
   /// populate the tree from stored data
   void populateTree (const std::string &workspace);
-
+  /// Recursivly parses teh supplied equaison inot a 
+  int parseEquation(QString* eq);
 private:
   /// The form generated with Qt Designer
   Ui::CreateSampleShapeDialog m_uiForm;
@@ -125,6 +126,8 @@ private:
   Poco::XML::Document* m_pDoc;
   /// Root element of the parsed XML
   Poco::XML::Element* m_pRootElem;
+  /// Map holding the layout of the tree ready for construction.
+  QHash<QString,QVector<QString>> m_binaryTreeMap;
 };
 
 /**
