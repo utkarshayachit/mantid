@@ -17,6 +17,7 @@
 #include <Poco/DOM/NodeFilter.h>
 #include <Poco/DOM/NodeIterator.h>
 #include <Poco/DOM/NodeList.h>
+#include <Poco/DOM/NamedNodeMap.h>
 #include <Poco/Exception.h>
 #include <Poco/File.h>
 #include <Poco/Path.h>
@@ -53,6 +54,7 @@ using Poco::XML::Node;
 using Poco::XML::NodeList;
 using Poco::XML::NodeIterator;
 using Poco::XML::NodeFilter;
+using Poco::XML::NamedNodeMap;
 //---------------------------------------
 // Public member functions
 //---------------------------------------
@@ -193,36 +195,42 @@ void CreateSampleShapeDialog::populateTree(const std::string &workspace)
       throw std::runtime_error("No root element in XML");
     }
     //get the algebra equasion ready to parse the tree from
-    Element* algElement = m_pRootElem->getChildElement("algebra");
-    if (algElement != NULL)
+    NodeList* algebraNL = m_pRootElem->getElementsByTagName("algebra");
+    if ( algebraNL->length() == 0 )
     {
-      throw std::runtime_error("No shape algebra definition");
+      throw std::runtime_error("No shape algebra definiton");
     }
-    std::string equasion = algElement->getAttribute("val");
-    if (equasion == "")
+    NamedNodeMap* alg = algebraNL->item(0)->attributes();
+    algebraNL->release();
+    Node* algVal = alg->getNamedItem("val");
+    alg->release();
+    QString equation(algVal->getNodeValue().c_str());
+    if (equation == "")
     {
       throw std::runtime_error("No shape algebra definition");
     }
 
+    
     //Parse the algera function looking for [space], #, :, (, and )
-
+    int operations = equation.count(QRegExp("[ :]"));
+    if (operations == 0)
+    {
+      //there was only a shape or a complement of a shape, so we can deal with that as is, no messing about required
+    }
     //look at position 1 on the string, if it's not a ( or # then the first opperand is most likley a straight shape, so look for the opperator
-
-
-    NodeList* pNL_type = m_pRootElem->getElementsByTagName("algebra");
-    if ( pNL_type->length() == 0 )
+    if (equation.at(0) == QChar('(') && equation.at(equation.length()- 1) == QChar(')'))
     {
-      throw std::runtime_error("No type elements in XML instrument file");
+      //the equasion is surronded in brackets but check to see if they match
+      int openBrackets = equation.count(QChar('('));
+
     }
-    Poco::XML::NodeIterator it(m_pDoc, NodeFilter::SHOW_ELEMENT);
-    Poco::XML::Node* pNode = it.nextNode();
-    while (pNode)
-    {
-     std::cout<<pNode->nodeName()<<":"<< pNode->nodeValue()<<std::endl;
-     pNode = it.nextNode();
-    }
+
     int u = 6;
   }
+}
+
+void parseEquation(QString eq)
+{
 }
 
 /**
