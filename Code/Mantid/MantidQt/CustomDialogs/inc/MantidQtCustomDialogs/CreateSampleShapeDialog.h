@@ -109,6 +109,10 @@ private:
   void populateTree (const std::string &workspace);
   /// Recursivly parses teh supplied equaison inot a 
   int parseEquation(QString* eq);
+  /// add entries to the map and return the calling function's data id
+  int addToBinaryTreeMap(QString l, QString data, QString r);
+  /// use the key to get the values from the map to create the shapes and add to the tree recursively
+  void addToQTreeWidget(QString k);
 private:
   /// The form generated with Qt Designer
   Ui::CreateSampleShapeDialog m_uiForm;
@@ -128,6 +132,8 @@ private:
   Poco::XML::Element* m_pRootElem;
   /// Map holding the layout of the tree ready for construction.
   QHash<QString,QVector<QString>> m_binaryTreeMap;
+  /// integer makrer for the layout fo the tree, to be incremented after each new addition to the map
+  int m_mapID;
 };
 
 /**

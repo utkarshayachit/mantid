@@ -210,9 +210,107 @@ void CreateSampleShapeDialog::populateTree(const std::string &workspace)
       throw std::runtime_error("No shape algebra definition");
     }
 
-    //int rootTreeNodeKey = parseEquation(&equation);
+    int rootTreeNodeKey = parseEquation(&equation);
     
   }
+}
+void CreateSampleShapeDialog::addToQTreeWidget(QString k, const BinaryTreeWidgetItem* parent)
+{
+  m_binaryTreeMap[k];
+  BinaryTreeWidgetItem *child = new BinaryTreeWidgetItem();
+  QFont font = child->font(0);
+  font.setBold(true);
+  operation->setFont(0, font);
+  operation->setData(0, Qt::DisplayRole, opt->text());
+  //Shape code
+
+  /*
+  
+  // Get the selected item
+  BinaryTreeWidgetItem *parent = getSelectedItem();
+  if( parent && parent->childCount() == 2 ) return;
+
+  BinaryTreeWidgetItem *child = new BinaryTreeWidgetItem(QStringList(shape->text()));
+  child->setFlags(child->flags() & ~Qt::ItemIsEditable);
+
+  if( m_shapeTree->topLevelItemCount() == 0 )
+  {
+    m_shapeTree->insertTopLevelItem(0, child);
+  }
+  else
+  {
+    parent->addChildItem(child);
+  }
+
+  // This calls setupDetails
+  m_shapeTree->setCurrentItem(child);
+  m_shapeTree->expandAll();
+  */
+
+  
+  // operator code
+  /*
+  //Get the selected item
+  BinaryTreeWidgetItem *selected = getSelectedItem();
+  if( selected && selected->childCount() == 2 ) return;
+
+  BinaryTreeWidgetItem *operation = new BinaryTreeWidgetItem;
+  QFont font = operation->font(0);
+  font.setBold(true);
+  operation->setFont(0, font);
+  operation->setData(0, Qt::DisplayRole, opt->text());
+  int opcode(0);
+  if( opt->text().startsWith("u") ) opcode = 1;
+  else if( opt->text().startsWith("d") ) opcode = 2;
+  else opcode = 0;
+
+  operation->setData(0, Qt::UserRole, opcode);
+  operation->setFlags(operation->flags() | Qt::ItemIsEditable);
+  
+  if( m_shapeTree->topLevelItemCount() == 0 )
+  {
+    m_shapeTree->insertTopLevelItem(0, operation);
+  }
+  else
+  { 
+    if( m_ops_map.contains(selected) )
+    {
+      selected->addChildItem(operation);
+    }
+    else if( selected->parent() )
+    {
+      int index  = selected->parent()->indexOfChild(selected);
+      selected->parent()->insertChild(index, operation);
+      selected->parent()->removeChild(selected);
+      operation->addChildItem(selected);
+    }
+    else
+    {
+      m_shapeTree->takeTopLevelItem(m_shapeTree->indexOfTopLevelItem(selected));
+      m_shapeTree->insertTopLevelItem(0, operation);
+      operation->addChildItem(selected);
+    }
+  }
+
+  m_ops_map.insert(operation, new Operation(opcode));
+  // This calls setupDetails if necessary
+  m_shapeTree->setCurrentItem(operation);
+  m_shapeTree->expandAll();
+
+  */
+}
+
+int CreateSampleShapeDialog::addToBinaryTreeMap(QString l, QString data, QString r)
+{
+  //add the info to the vector in the format [0] = L, [1] = shape/operation, [2] = R
+  //then add that to the map
+  QVector<QString> val;
+  val.push_back(l);
+  val.push_back(data);
+  val.push_back(r);
+  int mID = m_mapID++;
+  m_binaryTreeMap[QString::number(mID)] = val;
+  return mID;
 }
 
 int CreateSampleShapeDialog::parseEquation(QString* eq)
@@ -227,9 +325,9 @@ int CreateSampleShapeDialog::parseEquation(QString* eq)
     //strip out any stray parentheses
     eq->remove(QChar('('));
     eq->remove(QChar(')'));
-
     //add the info to the vector in the format [0] = L, [1] = shape/operation, [2] = R
     //then add that to the map
+    return addToBinaryTreeMap("", *eq, "");
   }
   else if (operations == 1)
   {
@@ -244,6 +342,18 @@ int CreateSampleShapeDialog::parseEquation(QString* eq)
     int rightInd = parseEquation(&eqR);
     //add the info to the vector in the format [0] = L, [1] = shape/operation, [2] = R
     //then add that to the map
+    if (eq->at(opPos) == QChar(' '))
+    {
+      return addToBinaryTreeMap(QString::number(leftInd), " ", QString::number(rightInd));
+    }
+    else if (eq->at(opPos) == QChar(':'))
+    {
+      return addToBinaryTreeMap(QString::number(leftInd), ":", QString::number(rightInd));
+    }
+    else
+    {
+      throw std::runtime_error("Problem determining operation");
+    }
   }
   else
   {
@@ -255,7 +365,7 @@ int CreateSampleShapeDialog::parseEquation(QString* eq)
       int closeBrackets = eq->count(QChar(')'));
       if (openBrackets == 0 || closeBrackets == 0)
       {
-        //if there aren't any brackets of one type or another resolve the opperations left to right
+        //if there aren't any brackets of one type or another, resolve the opperations left to right
         //this isn't really well formatted but i'll parse it anyway
         QString eqL;
         QString eqR;
@@ -267,6 +377,18 @@ int CreateSampleShapeDialog::parseEquation(QString* eq)
         int rightInd = parseEquation(&eqR);
         //add the info to the vector in the format [0] = L, [1] = shape/operation, [2] = R
         //then add that to the map
+        if (eq->at(opPos) == QChar(' '))
+        {
+          return addToBinaryTreeMap(QString::number(leftInd), " ", QString::number(rightInd));
+        }
+        else if (eq->at(opPos) == QChar(':'))
+        {
+          return addToBinaryTreeMap(QString::number(leftInd), ":", QString::number(rightInd));
+        }
+        else
+        {
+          throw std::runtime_error("Problem determining operation");
+        }
       }
       else if (openBrackets > closeBrackets)
       {
@@ -352,6 +474,18 @@ int CreateSampleShapeDialog::parseEquation(QString* eq)
           int rightInd = parseEquation(&eqR);
           //add the info to the vector in the format [0] = L, [1] = shape/operation, [2] = R
           //then add that to the map
+          if (eq->at(i) == QChar(' '))
+          {
+            return addToBinaryTreeMap(QString::number(leftInd), " ", QString::number(rightInd));
+          }
+          else if (eq->at(i) == QChar(':'))
+          {
+            return addToBinaryTreeMap(QString::number(leftInd), ":", QString::number(rightInd));
+          }
+          else
+          {
+            throw std::runtime_error("Problem determining operation");
+          }
         }
         else
         {
@@ -360,6 +494,7 @@ int CreateSampleShapeDialog::parseEquation(QString* eq)
       }
     }
   }
+   throw std::runtime_error("Shape algebra definition not properly formatted");
 }
 
 /**
