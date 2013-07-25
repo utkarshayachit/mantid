@@ -112,7 +112,9 @@ private:
   /// add entries to the map and return the calling function's data id
   int addToBinaryTreeMap(QString l, QString data, QString r);
   /// use the key to get the values from the map to create the shapes and add to the tree recursively
-  void addToQTreeWidget(QString k);
+  void addToQTreeWidget(QString& k, BinaryTreeWidgetItem* parent = NULL);
+  /// goes through the binary tree form the root instanciating the list
+  void traverseBinaryTreeMap(QVector<QString>& bNode);
 private:
   /// The form generated with Qt Designer
   Ui::CreateSampleShapeDialog m_uiForm;
@@ -132,6 +134,8 @@ private:
   Poco::XML::Element* m_pRootElem;
   /// Map holding the layout of the tree ready for construction.
   QHash<QString,QVector<QString>> m_binaryTreeMap;
+  /// Holds the shape object and corresponding ID for use in buildign the tree
+ //{}QHash<QString, BinaryTreeWidgetItem*> m_treeObjectMap;
   /// integer makrer for the layout fo the tree, to be incremented after each new addition to the map
   int m_mapID;
 };

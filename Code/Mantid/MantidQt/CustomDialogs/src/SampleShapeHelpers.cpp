@@ -8,8 +8,20 @@
 #include <QComboBox>
 #include <QGridLayout>
 #include <QRadioButton>
+#include <Poco/DOM/Document.h>
+#include <Poco/DOM/DOMParser.h>
+#include <Poco/DOM/DOMWriter.h>
+#include <Poco/DOM/Element.h>
+#include <Poco/DOM/NodeFilter.h>
+#include <Poco/DOM/NodeIterator.h>
+#include <Poco/DOM/NodeList.h>
+#include <Poco/DOM/NamedNodeMap.h>
 
 using namespace MantidQt::CustomDialogs;
+using Poco::XML::Element;
+using Poco::XML::NodeList;
+using Poco::XML::Node;
+using Poco::XML::NamedNodeMap;
 
 //--------------------------------------------------------//
 //         PointGroupBox helper class
@@ -147,7 +159,7 @@ QString PointGroupBox::write3DElement(const QString & elem_name) const
     else 
     {
       valy = m_midy->text();
-    }      
+    }
   }
   if( !m_midz->text().isEmpty() )
   {
@@ -158,7 +170,7 @@ QString PointGroupBox::write3DElement(const QString & elem_name) const
     else 
     {
       valz = m_midz->text();
-    }      
+    }
   }
   QString tag;
   if( m_icoord == 0 )
@@ -241,6 +253,23 @@ QString ShapeDetails::convertToMetres(const QString & value, Unit start_unit)
   return converted;
 }
 
+QString ShapeDetails::convertToMillimeters(const QString & value, Unit start_unit)
+{
+  QString converted;
+  switch( start_unit )
+  {
+  case ShapeDetails::centimetre: 
+    converted = QString::number(value.toDouble() * 10.0);
+    break;
+  case ShapeDetails::metre: 
+    converted = QString::number(value.toDouble() * 1000.0);
+    break;
+  default: 
+    converted = value;
+  }
+  return converted;
+}
+
 /**
  * Set the complement flag
  * @param flag :: The value of the flag
@@ -267,6 +296,32 @@ int SphereDetails::g_nspheres = 0;
 
 /// Default constructor
 SphereDetails::SphereDetails(QWidget *parent) : ShapeDetails(parent)
+{
+  init();
+}
+
+/// xml constructor
+SphereDetails::SphereDetails(const Element& xml, QWidget *parent) : ShapeDetails(parent)
+{
+  init();
+  //{}parse the XML
+  m_idvalue = xml.attributes()->getNamedItem("id")->getNodeValue().c_str();
+  NodeList* radList = xml.getElementsByTagName("radius");
+  NamedNodeMap* radAtr = radList->item(0)->attributes();
+  m_radius_box->setText(convertToMillimeters(radAtr->getNamedItem("val")->getNodeValue().c_str(), Unit::metre));
+  radAtr->release();
+  radList->release();
+  NodeList* centreList = xml.getElementsByTagName("centre");
+  NamedNodeMap* centreAtr = centreList->item(0)->attributes();
+  if (centreAtr->length() == 3)
+  {
+    centreAtr->getNamedItem("val")->getNodeValue().c_str();
+  }
+  //if (xml.getElementsByTagName("centre")->item(0)->attributes.
+    //getNodeValue().c_str()
+}
+
+void SphereDetails::init()
 {
   //Update number of sphere objects and the set the ID of this one
   ++g_nspheres;
@@ -330,6 +385,19 @@ int CylinderDetails::g_ncylinders = 0;
 
 /// Default constructor
 CylinderDetails::CylinderDetails(QWidget *parent) : ShapeDetails(parent)
+{
+  init();
+}
+
+/// xml constructor
+CylinderDetails::CylinderDetails(const Element& xml, QWidget *parent) : ShapeDetails(parent)
+{
+  init();
+  //{}parse the XML
+}
+
+/// intialise the shape
+void CylinderDetails::init()
 {
   /// Update number of sphere objects and the set the ID of this one
   ++g_ncylinders;
@@ -421,6 +489,19 @@ int InfiniteCylinderDetails::g_ninfcyls = 0;
 /// Default constructor
 InfiniteCylinderDetails::InfiniteCylinderDetails(QWidget *parent) : ShapeDetails(parent)
 {
+  init();
+}
+
+/// xml constructor
+InfiniteCylinderDetails::InfiniteCylinderDetails(const Element& xml, QWidget *parent) : ShapeDetails(parent)
+{
+  init();
+  //{}parse the XML
+}
+
+/// intialise the shape
+void InfiniteCylinderDetails::init()
+{
   /// Update number of sphere objects and the set the ID of this one
   ++g_ninfcyls;
   m_idvalue = "infcyl_" + QString::number(g_ninfcyls);
@@ -492,6 +573,20 @@ int SliceOfCylinderRingDetails::g_ncylrings = 0;
 /// Default constructor
 SliceOfCylinderRingDetails::SliceOfCylinderRingDetails(QWidget *parent) : ShapeDetails(parent)
 {
+  init();
+}
+
+/// xml constructor
+SliceOfCylinderRingDetails::SliceOfCylinderRingDetails(const Element& xml, QWidget *parent) : ShapeDetails(parent)
+{
+  init();
+  //{}parse the XML
+}
+
+/// intialise the shape
+void SliceOfCylinderRingDetails::init()
+{
+  
   /// Update number of sphere objects and the set the ID of this one
   ++g_ncylrings;
   m_idvalue = "cylslice_" + QString::number(g_ncylrings);
@@ -530,7 +625,6 @@ SliceOfCylinderRingDetails::SliceOfCylinderRingDetails(QWidget *parent) : ShapeD
   main_layout->addLayout(rad2_layout);
   main_layout->addLayout(dep_layout);
   main_layout->addLayout(arc_layout);
-
 }
 
 /**
@@ -604,6 +698,19 @@ int ConeDetails::g_ncones = 0;
 
 /// Default constructor
 ConeDetails::ConeDetails(QWidget *parent) : ShapeDetails(parent)
+{
+  init();
+}
+
+/// xml constructor
+ConeDetails::ConeDetails(const Element& xml, QWidget *parent) : ShapeDetails(parent)
+{
+  init();
+  //{}parse the XML
+}
+
+/// intialise the shape
+void ConeDetails::init()
 {
   /// Update number of sphere objects and the set the ID of this one
   ++g_ncones;
@@ -696,6 +803,19 @@ int InfiniteConeDetails::g_ninfcones = 0;
 /// Default constructor
 InfiniteConeDetails::InfiniteConeDetails(QWidget *parent) : ShapeDetails(parent)
 {
+  init();
+}
+
+/// xml constructor
+InfiniteConeDetails::InfiniteConeDetails(const Element& xml, QWidget *parent) : ShapeDetails(parent)
+{
+  init();
+  //{}parse the XML
+}
+
+/// intialise the shape
+void InfiniteConeDetails::init()
+{
   /// Update number of sphere objects and the set the ID of this one
   ++g_ninfcones;
   m_idvalue = "infcone_" + QString::number(g_ninfcones);
@@ -768,6 +888,19 @@ int InfinitePlaneDetails::g_ninfplanes = 0;
 /// Default constructor
 InfinitePlaneDetails::InfinitePlaneDetails(QWidget *parent) : ShapeDetails(parent)
 {
+  init();
+}
+
+/// xml constructor
+InfinitePlaneDetails::InfinitePlaneDetails(const Element& xml, QWidget *parent) : ShapeDetails(parent)
+{
+  init();
+  //{}parse the XML
+}
+
+/// intialise the shape
+void InfinitePlaneDetails::init()
+{
   /// Update number of sphere objects and the set the ID of this one
   ++g_ninfplanes;
   m_idvalue = "infplane_" + QString::number(g_ninfplanes);
@@ -816,6 +949,19 @@ int CuboidDetails::g_ncuboids = 0;
 /// Default constructor
 CuboidDetails::CuboidDetails(QWidget *parent) : ShapeDetails(parent)
 {
+  init();
+}
+
+/// xml constructor
+CuboidDetails::CuboidDetails(const Element& xml, QWidget *parent) : ShapeDetails(parent)
+{
+  init();
+  //{}parse the XML
+}
+
+/// intialise the shape
+void CuboidDetails::init()
+{
   /// Update number of sphere objects and the set the ID of this one
   ++g_ncuboids;
   m_idvalue = "cuboid_" + QString::number(g_ncuboids);
@@ -839,7 +985,6 @@ CuboidDetails::CuboidDetails(QWidget *parent) : ShapeDetails(parent)
   main_layout->addWidget(m_left_frt_top);
   main_layout->addWidget(m_left_bck_bot);
   main_layout->addWidget(m_right_frt_bot);
-
 }
 
 /**
@@ -873,6 +1018,20 @@ int HexahedronDetails::g_nhexahedrons = 0;
 
 /// Default constructor
 HexahedronDetails::HexahedronDetails(QWidget *parent) : ShapeDetails(parent)
+{
+  init();
+}
+
+/// xml constructor
+HexahedronDetails::HexahedronDetails(const Element& xml, QWidget *parent) : ShapeDetails(parent)
+{
+  init();
+  //{}parse the XML
+}
+
+
+/// intialise the shape
+void HexahedronDetails::init()
 {
   /// Update number of sphere objects and the set the ID of this one
   ++g_nhexahedrons;

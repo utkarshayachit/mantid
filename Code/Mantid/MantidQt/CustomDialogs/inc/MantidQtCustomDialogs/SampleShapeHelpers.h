@@ -6,7 +6,14 @@
 //--------------------------------------
 #include <QWidget>
 #include <QGroupBox>
-
+#include <Poco/DOM/Document.h>
+#include <Poco/DOM/DOMParser.h>
+#include <Poco/DOM/DOMWriter.h>
+#include <Poco/DOM/Element.h>
+#include <Poco/DOM/NodeFilter.h>
+#include <Poco/DOM/NodeIterator.h>
+#include <Poco/DOM/NodeList.h>
+#include <Poco/DOM/NamedNodeMap.h>
 //--------------------------------------
 // Qt forward declarations
 //--------------------------------------
@@ -93,6 +100,7 @@ struct BaseInstantiator
   virtual ~BaseInstantiator() {}
   ///Create an instance
   virtual ShapeDetails* createInstance() const = 0;
+  virtual ShapeDetails* createInstanceFromXML(const Poco::XML::Element& xml) const = 0;
 private:
   /// Private copy constructor
   BaseInstantiator(const BaseInstantiator&);
@@ -112,6 +120,10 @@ struct ShapeDetailsInstantiator : public BaseInstantiator
   ShapeDetails* createInstance() const
   {
     return static_cast<ShapeDetails*>(new T);
+  }
+  ShapeDetails* createInstanceFromXML(const Poco::XML::Element& xml) const
+  {
+    return static_cast<ShapeDetails*>(new T(xml));
   }
 
 private:
@@ -137,6 +149,7 @@ public:
   ///Write out the XML definition for this shape
   virtual QString writeXML() const = 0;
 
+
   /// Get the id string
   QString getShapeID() const
   { 
@@ -149,6 +162,8 @@ public:
   enum Unit { millimetre = 0, centimetre = 1, metre = 2 };
   // Convert a string value from the given unit to metres
   static QString convertToMetres(const QString & value, Unit start_unit);
+  // Convert a string value from the given unit to millimeters
+  static QString convertToMillimeters(const QString & value, Unit start_unit);
 
   /// Set the complement flag
   void setComplementFlag(bool flag);
@@ -161,6 +176,8 @@ protected:
   /// ID string of this object
   QString m_idvalue;
 
+  ///intialise the shape
+  virtual void init() = 0;
 private:
   /// Take the complement of the shape
   bool m_isComplement;
@@ -182,6 +199,9 @@ public:
   ///Default constructor
   SphereDetails(QWidget *parent = 0);
 
+  ///XML constructor
+  SphereDetails(const Poco::XML::Element& xml, QWidget *parent = 0);
+
   ///Default destructor 
   ~SphereDetails() { --g_nspheres; }
 
@@ -197,6 +217,8 @@ private:
   QComboBox *m_runits;
   /// Centre point group box
   PointGroupBox *m_centre;
+  /// intialise the shape
+  void init();
 };
 
 /**
@@ -213,6 +235,8 @@ private:
 public:
   ///Default constructor
   CylinderDetails(QWidget *parent = 0);
+  ///XML constructor
+  CylinderDetails(const Poco::XML::Element& xml, QWidget *parent = 0);
 
   ///Default destructor 
   ~CylinderDetails() { --g_ncylinders; }
@@ -229,6 +253,8 @@ private:
   QComboBox *m_runits, *m_hunits;
   /// Centre and axis point boxes
   PointGroupBox *m_lower_centre, *m_axis;
+  /// intialise the shape
+  void init();
 };
 
 /**
@@ -245,6 +271,8 @@ private:
 public:
   ///Default constructor
   InfiniteCylinderDetails(QWidget *parent = 0);
+  ///XML constructor
+  InfiniteCylinderDetails(const Poco::XML::Element& xml, QWidget *parent = 0);
 
   ///Default destructor 
   ~InfiniteCylinderDetails() { --g_ninfcyls; }
@@ -261,6 +289,8 @@ private:
   QComboBox *m_runits;
   /// Centre and axis point boxes
   PointGroupBox *m_centre, *m_axis;
+  /// intialise the shape
+  void init();
 };
 
 /**
@@ -277,6 +307,8 @@ private:
 public:
   ///Default constructor
   SliceOfCylinderRingDetails(QWidget *parent = 0);
+  ///XML constructor
+  SliceOfCylinderRingDetails(const Poco::XML::Element& xml, QWidget *parent = 0);
 
   ///Default destructor 
   ~SliceOfCylinderRingDetails() { --g_ncylrings; }
@@ -291,6 +323,8 @@ private:
   QLineEdit *m_rinner_box, *m_router_box, *m_depth_box, *m_arc_box;
   //Unit choice boxes
   QComboBox *m_iunits, *m_ounits, *m_dunits;
+  /// intialise the shape
+  void init();
 };
 
 /**
@@ -307,6 +341,8 @@ private:
 public:
   ///Default constructor
   ConeDetails(QWidget *parent = 0);
+  ///XML constructor
+  ConeDetails(const Poco::XML::Element& xml, QWidget *parent = 0);
 
   ///Default destructor 
   ~ConeDetails() { --g_ncones; }
@@ -323,6 +359,8 @@ private:
   QComboBox *m_hunits;
   /// Centre and axis point boxes
   PointGroupBox *m_tippoint, *m_axis;
+  /// intialise the shape
+  void init();
 };
 
 /**
@@ -339,6 +377,8 @@ private:
 public:
   ///Default constructor
   InfiniteConeDetails(QWidget *parent = 0);
+  ///XML constructor
+  InfiniteConeDetails(const Poco::XML::Element& xml, QWidget *parent = 0);
 
   ///Default destructor 
   ~InfiniteConeDetails() { --g_ninfcones; }
@@ -353,6 +393,8 @@ private:
   QLineEdit *m_angle_box;
   /// Centre and axis point boxes
   PointGroupBox *m_tippoint, *m_axis;
+  /// intialise the shape
+  void init();
 };
 
 /**
@@ -369,6 +411,8 @@ private:
 public:
   ///Default constructor
   InfinitePlaneDetails(QWidget *parent = 0);
+  ///XML constructor
+  InfinitePlaneDetails(const Poco::XML::Element& xml, QWidget *parent = 0);
 
   ///Default destructor 
   ~InfinitePlaneDetails() { --g_ninfplanes; }
@@ -381,6 +425,8 @@ public:
 private:
   /// Centre and axis point boxes
   PointGroupBox *m_plane, *m_normal;
+  /// intialise the shape
+  void init();
 };
 
 /**
@@ -397,6 +443,8 @@ private:
 public:
   ///Default constructor
   CuboidDetails(QWidget *parent = 0);
+  ///XML constructor
+  CuboidDetails(const Poco::XML::Element& xml, QWidget *parent = 0);
 
   ///Default destructor 
   ~CuboidDetails() { --g_ncuboids; }
@@ -409,6 +457,8 @@ public:
 private:
   /// Corner points
   PointGroupBox *m_left_frt_bot, *m_left_frt_top, *m_left_bck_bot, *m_right_frt_bot;
+  /// intialise the shape
+  void init();
 };
 
 /**
@@ -425,6 +475,8 @@ private:
 public:
   ///Default constructor
   HexahedronDetails(QWidget *parent = 0);
+  ///XML constructor
+  HexahedronDetails(const Poco::XML::Element& xml, QWidget *parent = 0);
 
   ///Default destructor 
   ~HexahedronDetails() { --g_nhexahedrons; }
@@ -438,6 +490,8 @@ private:
   /// Corner points
   PointGroupBox *m_left_bck_bot, *m_left_frt_bot, *m_right_frt_bot, *m_right_bck_bot,
     *m_left_bck_top, *m_left_frt_top, *m_right_frt_top, *m_right_bck_top;
+  /// intialise the shape
+  void init();
 };
 
 // /**

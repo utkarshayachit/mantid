@@ -106,7 +106,7 @@ void CreateSampleShapeDialog::initLayout()
   m_setup_map["sphere"] = new ShapeDetailsInstantiator<SphereDetails>;
   m_setup_map["cylinder"] = new ShapeDetailsInstantiator<CylinderDetails>;
   m_setup_map["infinite cylinder"] = new ShapeDetailsInstantiator<InfiniteCylinderDetails>();
-  m_setup_map["cylinder ring slice"] = new ShapeDetailsInstantiator<SliceOfCylinderRingDetails>();
+  //m_setup_map["cylinder ring slice"] = new ShapeDetailsInstantiator<SliceOfCylinderRingDetails>();
   m_setup_map["cone"] = new ShapeDetailsInstantiator<ConeDetails>();
   m_setup_map["infinite cone"] = new ShapeDetailsInstantiator<InfiniteConeDetails>();
   m_setup_map["infinite plane"] = new ShapeDetailsInstantiator<InfinitePlaneDetails>();
@@ -211,27 +211,102 @@ void CreateSampleShapeDialog::populateTree(const std::string &workspace)
     }
 
     int rootTreeNodeKey = parseEquation(&equation);
-    
+    traverseBinaryTreeMap(*m_binaryTreeMap.find(QString(rootTreeNodeKey)));
+
+
+    //get shape name
+    //obj = createDetailsWidget(shapename);
+   // obj->
+    //set parameters
+    //m_details_map.insert(child, obj);
   }
 }
-void CreateSampleShapeDialog::addToQTreeWidget(QString k, const BinaryTreeWidgetItem* parent)
+
+void CreateSampleShapeDialog::traverseBinaryTreeMap(QVector<QString>& bNode)
 {
-  m_binaryTreeMap[k];
-  BinaryTreeWidgetItem *child = new BinaryTreeWidgetItem();
-  QFont font = child->font(0);
-  font.setBold(true);
-  operation->setFont(0, font);
-  operation->setData(0, Qt::DisplayRole, opt->text());
-  //Shape code
+  QString shapeID = bNode.at(1);
+  addToQTreeWidget(shapeID);
+}
 
-  /*
-  
-  // Get the selected item
-  BinaryTreeWidgetItem *parent = getSelectedItem();
-  if( parent && parent->childCount() == 2 ) return;
+void CreateSampleShapeDialog::addToQTreeWidget(QString& k, BinaryTreeWidgetItem* parent)
+{
+  if( parent && parent->childCount() == 2 )
+  {
+    throw std::runtime_error("Error parsing algebra. Too namy children on a single node");
+  }
+  int operations = k.count(QRegExp("[ :]"));
+  if (operations > 1 || operations < 0)
+  {
+    throw std::runtime_error("Error parsing algebra. Too many opperations to add to a single tree node");
+  }
+ // m_binaryTreeMap[k];
+  BinaryTreeWidgetItem* child = new BinaryTreeWidgetItem();
+  if (operations == 1)
+  {
+    //it was an operator
+    int opcode(0);
+    QFont font = child->font(0);
+    font.setBold(true);
+    child->setFont(0, font);
+    if (k.at(0) == QChar(':'))
+    {
+      child->setData(0, Qt::DisplayRole, "union");
+      opcode = 1;
+    }
+    else if (k.at(0) == QChar(' '))
+    {
+      child->setData(0, Qt::DisplayRole, "intersection");
+      opcode = 0;
+    }
+    //the parsing function can't parse difference opperations directly, it interprets them as their base intersection and complement operators
+    else
+    {
+      throw std::runtime_error("Error parsing algebra. unknown opperation");
+    }
 
-  BinaryTreeWidgetItem *child = new BinaryTreeWidgetItem(QStringList(shape->text()));
-  child->setFlags(child->flags() & ~Qt::ItemIsEditable);
+    child->setData(0, Qt::UserRole, opcode);
+    m_ops_map.insert(child, new Operation(opcode));
+    child->setFlags(child->flags() | Qt::ItemIsEditable);
+  }
+  else
+  {
+    //it was a shape or a complement of a shape
+    bool complement = false;
+    if (k.count(QRegExp("#")) == 1)
+    {
+      //shape was the compliment
+      bool complement = true;
+    }
+    else if (k.count(QRegExp("#")) > 1)
+    {
+      throw std::runtime_error("Error parsing algebra. multiple complement marks on single operand.");
+    }
+    //just in case, remove any parseable tokens that slipped through
+    k.remove(QRegExp("[ :#]"));
+    Element* Shape = m_pRootElem->getElementById(k.toStdString(),"id");
+    ShapeDetails *obj = NULL;
+    //get shape name
+    QString shapename = Shape->attributes()->getNamedItem("id")->getNodeValue().c_str();
+    //obj = createDetailsWidget(shapename);
+
+    
+    if( m_setup_map.contains(shapename) )
+    {
+      obj =  m_setup_map.value(shapename)->createInstanceFromXML(*Shape);
+    }
+
+    obj->setComplementFlag(complement);
+    if(complement)
+    {
+      child->setText(0, QString("# ") + *k);
+    }
+    else
+    {
+      child->setText(0, k);
+    }
+    child->setFlags(child->flags() & ~Qt::ItemIsEditable);
+    m_details_map.insert(child, obj);
+  }
 
   if( m_shapeTree->topLevelItemCount() == 0 )
   {
@@ -243,61 +318,10 @@ void CreateSampleShapeDialog::addToQTreeWidget(QString k, const BinaryTreeWidget
   }
 
   // This calls setupDetails
-  m_shapeTree->setCurrentItem(child);
-  m_shapeTree->expandAll();
-  */
-
+  //m_shapeTree->setCurrentItem(child);
+  // This needs replaced with an instanciator for a specific shape so i can reference it and set up the parameters
   
-  // operator code
-  /*
-  //Get the selected item
-  BinaryTreeWidgetItem *selected = getSelectedItem();
-  if( selected && selected->childCount() == 2 ) return;
-
-  BinaryTreeWidgetItem *operation = new BinaryTreeWidgetItem;
-  QFont font = operation->font(0);
-  font.setBold(true);
-  operation->setFont(0, font);
-  operation->setData(0, Qt::DisplayRole, opt->text());
-  int opcode(0);
-  if( opt->text().startsWith("u") ) opcode = 1;
-  else if( opt->text().startsWith("d") ) opcode = 2;
-  else opcode = 0;
-
-  operation->setData(0, Qt::UserRole, opcode);
-  operation->setFlags(operation->flags() | Qt::ItemIsEditable);
-  
-  if( m_shapeTree->topLevelItemCount() == 0 )
-  {
-    m_shapeTree->insertTopLevelItem(0, operation);
-  }
-  else
-  { 
-    if( m_ops_map.contains(selected) )
-    {
-      selected->addChildItem(operation);
-    }
-    else if( selected->parent() )
-    {
-      int index  = selected->parent()->indexOfChild(selected);
-      selected->parent()->insertChild(index, operation);
-      selected->parent()->removeChild(selected);
-      operation->addChildItem(selected);
-    }
-    else
-    {
-      m_shapeTree->takeTopLevelItem(m_shapeTree->indexOfTopLevelItem(selected));
-      m_shapeTree->insertTopLevelItem(0, operation);
-      operation->addChildItem(selected);
-    }
-  }
-
-  m_ops_map.insert(operation, new Operation(opcode));
-  // This calls setupDetails if necessary
-  m_shapeTree->setCurrentItem(operation);
   m_shapeTree->expandAll();
-
-  */
 }
 
 int CreateSampleShapeDialog::addToBinaryTreeMap(QString l, QString data, QString r)
