@@ -286,8 +286,6 @@ public:
   /// find method to get the index of  Mantid::Kernel::V3D cell value in a table workspace
   virtual void find(Mantid::Kernel::V3D value,size_t& row,const size_t & col)=0;
 
-  void modified();
-
 protected:
 
   virtual InfoNode *createInfoNode() const;
