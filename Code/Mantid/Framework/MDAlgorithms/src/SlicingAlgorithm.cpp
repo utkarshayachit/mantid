@@ -615,7 +615,7 @@ namespace MDAlgorithms
       if (!m_inWS->getTransformToOriginal())
         throw std::runtime_error("SlicingAlgorithm::createTransform(): Cannot propagate "
             "a transformation. There is no transformation saved from "
-            + m_inWS->getName() + " back to " + m_originalWS->getName() + ".");
+            + m_inWS->name() + " back to " + m_originalWS->name() + ".");
 
       // Fail if the MDHistoWorkspace was modified by binary operation
       MDEvents::MDHistoWorkspace_sptr inHisto = boost::dynamic_pointer_cast<MDEvents::MDHistoWorkspace>(m_inWS);
@@ -643,7 +643,8 @@ namespace MDAlgorithms
         }
       }
 
-      g_log.notice() << "Performing " << this->name() << " on the original workspace, '" << m_originalWS->getName() << "'" << std::endl;
+      if(g_log.is(Logger::Priority::PRIO_DEBUG)) g_log.debug() << "Performing " << this->name() << " on the original workspace, '" 
+                                                               << m_originalWS->name() << "'" << std::endl;
     }
 
     // Create the coordinate transformation

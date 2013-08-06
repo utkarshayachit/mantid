@@ -239,10 +239,11 @@ namespace Algorithms
       // iii. percentage
       Kernel::TimeSeriesProperty<double>* tlog = dynamic_cast<Kernel::TimeSeriesProperty<double>* >(
           eventWS->run().getProperty(logname));
-      if (!tlog){
-        g_log.error() << "TimeSeriesProperty Log " << logname << " does not exist in workspace " <<
-            eventWS->getName() << std::endl;
-        throw std::invalid_argument("TimeSeriesProperty log cannot be found");
+      if (!tlog)
+      {
+        std::ostringstream msg;
+        msg << "TimeSeriesProperty Log " << logname << " does not exist in workspace " << eventWS->name() << std::endl;
+        throw std::invalid_argument(msg.str());
       }
 
       if (t0r < 0.0){
@@ -281,7 +282,6 @@ namespace Algorithms
       this->processTimeLog(logname);
     } else
     {
-      g_log.error() << "Log name is not give!" << std::endl;
       throw std::invalid_argument("Log name is not given!");
     }
 
@@ -295,7 +295,6 @@ namespace Algorithms
     filterEvents();
 
     // 6. Set output
-    g_log.debug() << "Trying to set Output Workspace: " << outputWS->getName() << std::endl;
     this->setProperty("OutputWorkspace", outputWS);
     g_log.debug() << "Output Workspace is set!" << " Number of Events in Spectrum 0 = " << outputWS->getEventList(0).getNumberEvents() << std::endl;
 

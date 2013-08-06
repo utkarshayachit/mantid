@@ -360,7 +360,7 @@ namespace Mantid
               && std::find(m_writeLockedWorkspaces.begin(), m_writeLockedWorkspaces.end(), ws) == m_writeLockedWorkspaces.end())
           {
             // Write-lock it if not already
-            g_log.debug() << "Write-locking " << ws->getName() << std::endl;
+            if(g_log.is(Logger::Priority::PRIO_DEBUG)) g_log.debug() << "Write-locking " << ws->name() << std::endl;
             ws->getLock()->writeLock();
             m_writeLockedWorkspaces.push_back(ws);
           }
@@ -379,7 +379,7 @@ namespace Mantid
               && std::find(m_writeLockedWorkspaces.begin(), m_writeLockedWorkspaces.end(), ws) == m_writeLockedWorkspaces.end())
           {
             // Read-lock it if not already write-locked
-            g_log.debug() << "Read-locking " << ws->getName() << std::endl;
+            if(g_log.is(Logger::Priority::PRIO_DEBUG)) g_log.debug() << "Read-locking " << ws->name() << std::endl;
             ws->getLock()->readLock();
             m_readLockedWorkspaces.push_back(ws);
           }
@@ -402,7 +402,7 @@ namespace Mantid
         Workspace_sptr ws = m_writeLockedWorkspaces[i];
         if (ws)
         {
-          g_log.debug() << "Unlocking " << ws->getName() << std::endl;
+          if(g_log.is(Logger::Priority::PRIO_DEBUG)) g_log.debug() << "Unlocking " << ws->name() << std::endl;
           ws->getLock()->unlock();
         }
       }
@@ -411,7 +411,7 @@ namespace Mantid
         Workspace_sptr ws = m_readLockedWorkspaces[i];
         if (ws)
         {
-          g_log.debug() << "Unlocking " << ws->getName() << std::endl;
+          if(g_log.is(Logger::Priority::PRIO_DEBUG)) g_log.debug() << "Unlocking " << ws->name() << std::endl;
           ws->getLock()->unlock();
         }
       }

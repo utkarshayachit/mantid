@@ -122,7 +122,7 @@ namespace Mantid
       }
 
       IMDHistoWorkspace_sptr outWS = inputWS; // Shallow copy
-      if (outWSName != inputWS->getName())
+      if (outWSName != this->getPropertyValue("InputWorkspace"))
       {
         g_log.debug("Deep copy input workspace as output workspace.");
         IAlgorithm_sptr alg = createChildAlgorithm("CloneMDWorkspace");

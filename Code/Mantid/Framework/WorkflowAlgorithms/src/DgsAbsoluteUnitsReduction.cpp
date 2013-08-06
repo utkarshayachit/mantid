@@ -107,6 +107,7 @@ namespace Mantid
 
       // Gather all of the input workspaces
       MatrixWorkspace_sptr absSampleWS = this->getProperty("InputWorkspace");
+      const std::string absSampleWSName = this->getPropertyValue("InputWorkspace");
       MatrixWorkspace_sptr absSampleMonWS = this->getProperty("InputMonitorWorkspace");
       MatrixWorkspace_sptr absDetVanWS = this->getProperty("DetectorVanadiumWorkspace");
       MatrixWorkspace_sptr absDetVanMonWS = this->getProperty("DetectorVanadiumMonitorWorkspace");
@@ -138,7 +139,7 @@ namespace Mantid
         absIdetVanWS = absDetVanWS;
       }
 
-      const std::string absWsName = absSampleWS->getName() + "_absunits";
+      const std::string absWsName = absSampleWSName + "_absunits";
       IAlgorithm_sptr etConv = this->createChildAlgorithm("DgsConvertToEnergyTransfer");
       etConv->setProperty("InputWorkspace", absSampleWS);
       etConv->setProperty("InputMonitorWorkspace", absSampleMonWS);

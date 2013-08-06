@@ -675,11 +675,12 @@ DataObjects::TableWorkspace_const_sptr ConvertToMD::preprocessDetectorsPositions
 DataObjects::TableWorkspace_sptr  ConvertToMD::runPreprocessDetectorsToMDChildUpdatingMasks(Mantid::API::MatrixWorkspace_const_sptr InWS2D,
                                                                                                   const std::string &OutWSName,const std::string &dEModeRequested,Kernel::DeltaEMode::Type &Emode)
 {
+    UNUSED_ARG(OutWSName);
    // prospective result
     DataObjects::TableWorkspace_sptr TargTableWS;
 
     // if input workspace does not exist in analysis data service, we have to add it there to work with the Child Algorithm 
-    std::string InWSName = InWS2D->getName();
+    std::string InWSName = this->getPropertyValue("InputWorkspace");
     if(!API::AnalysisDataService::Instance().doesExist(InWSName))
     {
        if(InWSName.empty())InWSName = "ImputMatrixWS";
@@ -690,11 +691,9 @@ DataObjects::TableWorkspace_sptr  ConvertToMD::runPreprocessDetectorsToMDChildUp
 
     Mantid::API::Algorithm_sptr childAlg = createChildAlgorithm("PreprocessDetectorsToMD",0.,1.);
     if(!childAlg)throw(std::runtime_error("Can not create child ChildAlgorithm to preprocess detectors"));
-    childAlg->setProperty("InputWorkspace",InWSName);
-    childAlg->setProperty("OutputWorkspace",OutWSName);
+    childAlg->setProperty("InputWorkspace",InWS2D);
     childAlg->setProperty("GetMaskState",true);
     childAlg->setProperty("UpdateMasksInfo",true);
-    childAlg->setProperty("OutputWorkspace",OutWSName);
 
  // check and get energy conversion mode to define additional ChildAlgorithm parameters
     Emode = Kernel::DeltaEMode().fromString(dEModeRequested);

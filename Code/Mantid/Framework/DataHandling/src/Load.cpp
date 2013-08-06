@@ -428,7 +428,8 @@ namespace Mantid
       for(; filenames != allFilenames.end(); ++filenames, ++wsName)
       {
         std::vector<std::string>::const_iterator filename = filenames->begin();
-        Workspace_sptr sumWS = loadFileToWs(*filename, *wsName);
+        const std::string & rootName = *wsName;
+        Workspace_sptr sumWS = loadFileToWs(*filename, rootName);
 
         ++filename;
         for(; filename != filenames->end(); ++filename)
@@ -446,9 +447,8 @@ namespace Mantid
           for( ; childWsName != childWsNames.end(); ++childWsName, ++count )
           {
             Workspace_sptr childWs = group->getItem(*childWsName);
-            const std::string childName = group->getName() + "_" + boost::lexical_cast<std::string>(count);
+            const std::string childName = rootName + "_" + boost::lexical_cast<std::string>(count);
             API::AnalysisDataService::Instance().addOrReplace(childName, childWs);
-            //childWs->setName(group->getName() + "_" + boost::lexical_cast<std::string>(count));
           }
         }
         // Add the sum to the list of loaded workspace names.
@@ -470,11 +470,11 @@ namespace Mantid
         size_t count = 1;
         for(auto childWsName = childWsNames.begin(); childWsName != childWsNames.end(); ++childWsName )
         {
+          const std::string & childsName = *childWsName;
           if( *childWsName == outputWsName )
           {
-            Mantid::API::Workspace_sptr child = group->getItem(*childWsName);
-            //child->setName(child->getName() + "_" + boost::lexical_cast<std::string>(count));
-            const std::string childName = child->getName() + "_" + boost::lexical_cast<std::string>(count);
+            Mantid::API::Workspace_sptr child = group->getItem(childsName);
+            const std::string childName = childsName + "_" + boost::lexical_cast<std::string>(count);
             API::AnalysisDataService::Instance().addOrReplace(childName, child);
             count++;
           }

@@ -67,7 +67,7 @@ void EQSANSQ2D::exec()
   std::string outputWSName = getPropertyValue("OutputWorkspace");
   if (outputWSName.size()==0)
   {
-    outputWSName = inputWS->getName();
+    outputWSName = getPropertyValue("InputWorkspace");
   }
 
   // Determine whether we need frame skipping or not by checking the chopper speed

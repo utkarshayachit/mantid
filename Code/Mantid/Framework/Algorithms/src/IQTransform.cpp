@@ -192,7 +192,7 @@ void IQTransform::subtractBackgroundValue(MantidVec& Y, const double value)
  */
 API::MatrixWorkspace_sptr IQTransform::subtractBackgroundWS(API::MatrixWorkspace_sptr ws, API::MatrixWorkspace_sptr background)
 {
-  g_log.debug() << "Subtracting the workspace " << background->getName() << " from the input workspace.\n";
+  if(g_log.is(Logger::Priority::PRIO_DEBUG)) g_log.debug() << "Subtracting the workspace " << background->name() << " from the input workspace.\n";
   return ws - background;
 }
 

@@ -124,7 +124,7 @@ FindDetectorsPar::exec()
           return;
      }else{
           g_log.warning()<<" number of parameters in the file: "<<fileName<<"  not equal to the number of histograms in the workspace"
-                              << inputWS->getName()<<std::endl;
+                         << this->getPropertyValue("InputWorkspace") <<std::endl;
           g_log.warning()<<" calculating detector parameters algorithmically\n";
      }
   

@@ -58,20 +58,6 @@ TableConstColumnHelper ITableWorkspace::getVector(const std::string& name) const
 }
 
 /**
- * If the workspace is the AnalysisDataService sends AfterReplaceNotification.
- */
-void ITableWorkspace::modified()
-{
-  if (!AnalysisDataService::Instance().doesExist(this->getName())) return;
-  Workspace_sptr ws =  AnalysisDataService::Instance().retrieve(this->getName());
-  if (!ws) return;
-  ITableWorkspace_sptr tws = boost::dynamic_pointer_cast<ITableWorkspace>(ws);
-  if (!tws) return;
-  AnalysisDataService::Instance().notificationCenter.postNotification(
-              new Kernel::DataService<API::Workspace>::AfterReplaceNotification(this->getName(),tws));
-}
-
-/**
  * Implement Workspace's virtual method to fill the info node with info
  * descriding this table workspace.
  *

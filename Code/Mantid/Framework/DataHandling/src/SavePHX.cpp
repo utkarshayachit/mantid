@@ -82,7 +82,6 @@ void SavePHX::exec() {
   std::ofstream outPHX_file(filename.c_str());
 
   if (!outPHX_file) {
-    g_log.error("Failed to open (PHX) file:" + filename);
     throw Kernel::Exception::FileError("Failed to open (PHX) file:",
         filename);
   }
@@ -90,7 +89,7 @@ void SavePHX::exec() {
    // execute the ChildAlgorithm to calculate the detector's parameters;
        IAlgorithm_sptr   spCalcDetPar = this->createChildAlgorithm("FindDetectorsPar", 0, 1, true, 1);
        spCalcDetPar->initialize();
-       spCalcDetPar->setPropertyValue("InputWorkspace", inputWorkspace->getName());
+       spCalcDetPar->setProperty("InputWorkspace", inputWorkspace);
        spCalcDetPar->setPropertyValue("ReturnLinearRanges", "0");
        // in test mode, request the ChildAlgortithm to create output workspace and add it to dataservice
        if(!det_par_ws_name.empty()){

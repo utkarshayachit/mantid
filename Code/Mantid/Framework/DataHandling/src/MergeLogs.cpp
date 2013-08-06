@@ -113,12 +113,8 @@ namespace DataHandling
     bool launch1 = true;;
     bool nocomparison = false;
 
-    std::cout << "Merging!!" << std::endl;
-
     while (icont)
     {
-      // std::cout << "index1 = " << index1 << ", index2 = " << index2 << ", launch1 = " << launch1 << ", nocomparison = " << nocomparison << std::endl;
-
       // i. Determine which log to work on
       if (!nocomparison){
         if (times1[index1] < times2[index2]){
@@ -198,17 +194,21 @@ namespace DataHandling
 
     // 1. Get property
     Kernel::Property *prop = matrixWS->run().getLogData(logname);
-    if (!prop){
-      g_log.error() << "Unable to find log " << logname << " of workspace " << matrixWS->getName() << std::endl;
-      throw;
+    if (!prop)
+    {
+      std::ostringstream os;
+      os << "Unable to find log " << logname << " of workspace " << matrixWS->name() << std::endl;
+      throw std::invalid_argument(os.str());
     }
 
     // 2. Convert to TimeSeries
 
     Kernel::TimeSeriesProperty<double> *timeprop = dynamic_cast<Kernel::TimeSeriesProperty<double>* >(prop);
-    if (!timeprop){
-      g_log.error() << "Property (log) " << logname << " is not of class TimeSeriesProperty!" << std::endl;
-      throw;
+    if (!timeprop)
+    {
+      std::ostringstream os;
+      os << "Property (log) " << logname << " is not of class TimeSeriesProperty!" << std::endl;
+      throw std::invalid_argument(os.str());
     }
 
     return timeprop;

@@ -116,11 +116,12 @@ namespace Mantid
       }
 
       MatrixWorkspace_sptr inputWS = this->getProperty("InputWorkspace");
+      const std::string inputWSName = this->getPropertyValue("InputWorkspace");
       MatrixWorkspace_sptr outputWS = this->getProperty("OutputWorkspace");
       MatrixWorkspace_sptr monWS = this->getProperty("InputMonitorWorkspace");
 
       // Make a monitor workspace name for SNS data
-      std::string monWsName = inputWS->getName() + "_monitors";
+      std::string monWsName = inputWSName + "_monitors";
       bool preserveEvents = false;
 
       // Calculate the initial energy and time zero

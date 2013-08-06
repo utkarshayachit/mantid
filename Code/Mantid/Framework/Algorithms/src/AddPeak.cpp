@@ -147,7 +147,6 @@ namespace Algorithms
     
     peaksWS->addPeak(*peak);
     delete peak;
-    //peaksWS->modified();
   }
 
 

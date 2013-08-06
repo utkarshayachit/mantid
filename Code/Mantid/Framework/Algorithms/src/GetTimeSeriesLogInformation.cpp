@@ -115,8 +115,7 @@ namespace Algorithms
     if (!log)
     {
       stringstream errmsg;
-      errmsg << "Property " << logname << " does not exit in sample of workspace " << m_dataWS->getName() << ".";
-      g_log.error(errmsg.str());
+      errmsg << "Log " << logname << " does not exist on input workspace";
       throw std::invalid_argument(errmsg.str());
     }
     else
@@ -126,7 +125,6 @@ namespace Algorithms
       {
         stringstream errmsg;
         errmsg << "Log " << logname << " is found, but is not a double type time series log";
-        g_log.error(errmsg.str());
         throw std::invalid_argument(errmsg.str());
       }
     }

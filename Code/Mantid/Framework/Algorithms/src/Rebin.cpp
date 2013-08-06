@@ -183,7 +183,7 @@ namespace Mantid
         else
         {
           //--------- Different output, OR you're inplace but not preserving Events --- create a Workspace2D -------
-          g_log.information() << "Creating a Workspace2D from the EventWorkspace " << eventInputWS->getName() << ".\n";
+          g_log.information() << "Creating a Workspace2D from the input EventWorkspace.\n";
 
           //Create a Workspace2D
           // This creates a new Workspace2D through a torturous route using the WorkspaceFactory.

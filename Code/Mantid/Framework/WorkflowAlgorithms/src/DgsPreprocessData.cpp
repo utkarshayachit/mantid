@@ -105,6 +105,7 @@ namespace Mantid
       const std::string doneLog = "DirectInelasticReductionNormalisedBy";
 
       MatrixWorkspace_sptr inputWS = this->getProperty("InputWorkspace");
+      const std::string inputWSName = this->getPropertyValue("InputWorkspace");
       MatrixWorkspace_sptr outputWS = this->getProperty("OutputWorkspace");
 
       std::string incidentBeamNorm = reductionManager->getProperty("IncidentBeamNormalisation");
@@ -172,7 +173,7 @@ namespace Mantid
       {
         if (normAlreadyDone)
         {
-          g_log.information() << "Preprocessing already done on " << inputWS->getName() << std::endl;
+          g_log.information() << "Preprocessing already done on " << inputWSName << std::endl;
         }
         outputWS = inputWS;
       }

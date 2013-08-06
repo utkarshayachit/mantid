@@ -76,7 +76,7 @@ namespace Algorithms
     }
     else
     {
-      g_log.debug() << "DB5244 InputWorkspace Name = " << inWS->getName() << std::endl;
+      g_log.debug() << "DB5244 InputWorkspace Name = " << this->getPropertyValue("InputWorkspace") << std::endl;
     }
 
     double starttime = this->getProperty("StartTime");
@@ -112,7 +112,7 @@ namespace Algorithms
 
     API::Algorithm_sptr genfilter = createChildAlgorithm("GenerateEventsFilter", 0.0, 20.0, true, 1);
     genfilter->initialize();
-    genfilter->setPropertyValue("InputWorkspace", inWS->getName());
+    genfilter->setProperty("InputWorkspace", inWS);
     genfilter->setPropertyValue("OutputWorkspace", "FilterWS");
     genfilter->setProperty("StartTime", start);
     genfilter->setProperty("StopTime", stop);
@@ -132,7 +132,6 @@ namespace Algorithms
     DataObjects::SplittersWorkspace_sptr filterWS = genfilter->getProperty("OutputWorkspace");
     if (!filterWS)
     {
-      g_log.error() << "Unable to retrieve generated SplittersWorkspace object from AnalysisDataService." << std::endl;
       throw std::runtime_error("Unable to retrieve Splittersworkspace. ");
     }
     // AnalysisDataService::Instance().addOrReplace("FilterWS", filterWS);
@@ -142,7 +141,7 @@ namespace Algorithms
 
     API::Algorithm_sptr filter = createChildAlgorithm("FilterEvents", 20.0, 100.0, true, 1);
     filter->initialize();
-    filter->setPropertyValue("InputWorkspace", inWS->getName());
+    filter->setProperty("InputWorkspace", inWS);
     filter->setPropertyValue("OutputWorkspaceBaseName", "ResultWS");
     filter->setProperty("SplitterWorkspace", filterWS);
     filter->setProperty("FilterByPulseTime", true);

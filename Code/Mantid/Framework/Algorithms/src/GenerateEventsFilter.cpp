@@ -173,13 +173,11 @@ namespace Algorithms
     {
       std::stringstream errss;
       errss << "GenerateEventsFilter does not get input workspace as an EventWorkspace.";
-      g_log.error(errss.str());
       throw std::runtime_error(errss.str());
     }
     else
     {
-      g_log.debug() << "DB9441 GenerateEventsFilter() Input Event WS = " << m_dataWS->getName()
-                    << ", Events = " << m_dataWS->getNumberEvents() << std::endl;
+      g_log.debug() << "DB9441 GenerateEventsFilter(), Events = " << m_dataWS->getNumberEvents() << std::endl;
     }
 
     Kernel::DateAndTime runstart = m_dataWS->run().startTime();

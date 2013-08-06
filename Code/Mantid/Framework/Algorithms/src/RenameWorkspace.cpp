@@ -48,11 +48,11 @@ void RenameWorkspace::exec()
   // Get the input workspace
   Workspace_sptr inputWS = getProperty("InputWorkspace");
   // get the workspace name
-  std::string inputwsName = inputWS->getName();
+  std::string inputwsName = getPropertyValue("InputWorkspace");
   // get the output workspace name
   std::string outputwsName = getPropertyValue("OutputWorkspace");
 
-  if (getPropertyValue("InputWorkspace") == getPropertyValue("OutputWorkspace"))
+  if (inputwsName == outputwsName)
   {
     throw std::invalid_argument("The input and output workspace names must be different");
   }
