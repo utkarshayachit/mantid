@@ -63,9 +63,9 @@ public:
     TS_ASSERT( svc.doesExist("one"));
     TS_ASSERT( svc.retrieve("one") == one);
 
-    // Same object can go in with different name
-    svc.add("anotherOne", one);
-    TS_ASSERT_EQUALS( svc.retrieve("anotherOne"), one );
+    // Same object can be added under a different name
+    TS_ASSERT_THROWS_NOTHING(svc.add("sameOne", one));
+    TS_ASSERT(svc.doesExist("sameOne"))
 
     // Can't re-add the same name
     TS_ASSERT_THROWS( svc.add("one", one), std::runtime_error );
@@ -77,6 +77,9 @@ public:
     svc.add("__hidden", boost::make_shared<int>(99));
     TS_ASSERT_EQUALS( notificationFlag, 3 )
     svc.notificationCenter.removeObserver(observer);
+    svc.remove("one");
+    svc.remove("sameOne");
+    svc.remove("__hidden");
   }
 
   void handlePreDeleteNotification(const Poco::AutoPtr<FakeDataService::PreDeleteNotification>& notification)
@@ -210,6 +213,27 @@ public:
     TS_ASSERT( svc.doesExist("one") );
     TSM_ASSERT( "doesExist should be case-insensitive", svc.doesExist("oNE") );
     TS_ASSERT( ! svc.doesExist("NOTone") );
+  }
+
+  void test_nameOfObject_Returns_Correct_String_When_Object_Exists()
+  {
+    auto one = boost::make_shared<int>(1);
+    const std::string testName = "test_nameOfObject_Returns_Correct_String_When_Object_Exists";
+    svc.add(testName, one);
+
+    std::string svcName;
+    TS_ASSERT_THROWS_NOTHING(svcName = svc.nameOfObject(*one));
+    TS_ASSERT_EQUALS(testName,svcName);
+
+    svc.remove(testName);
+  }
+
+  void test_nameOfObject_Throws_NotFoundError_When_Object_Does_Not_Exist()
+  {
+    auto one = boost::make_shared<int>(1);
+
+    std::string svcName;
+    TS_ASSERT_THROWS(svcName = svc.nameOfObject(*one), Mantid::Kernel::Exception::NotFoundError);
   }
 
   void test_size()

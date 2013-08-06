@@ -180,25 +180,18 @@ public:
     // Make DataService access thread-safe
     m_mutex.lock();
 
-    // At the moment, you can't overwrite a workspace (i.e. pass in a name
-    // that's already in the map with a pointer to a different workspace).
-    // Also, there's nothing to stop the same workspace from being added
-    // more than once with different names.
+    // If the name already exists then stop
     if ( ! datamap.insert(typename svcmap::value_type(name, Tobject)).second)
     {
-      std::string error=" add : Unable to insert Data Object : '"+name+"'";
-      g_log.error(error);
       m_mutex.unlock();
-      throw std::runtime_error(error);
+      throw std::runtime_error("DataService::add(): Unable to insert data object. Name already exists='"+name+"'");
     }
     else
     {
-      g_log.debug() << "Add Data Object " << name << " successful" << std::endl;
       m_mutex.unlock();
-
+      g_log.debug() << "Add Data Object " << name << " successful" << std::endl;
       notificationCenter.postNotification(new AddNotification(name,Tobject));
     }
-    return;
   }
 
   //--------------------------------------------------------------------------
@@ -363,6 +356,38 @@ public:
         return true;
     return false;
   }
+
+  /**
+   * Returns the name of an existing object in the data service if the object
+   * is only attached to a single name.
+   * @param object A reference to the object that should be checked for
+   * @returns The string name of the given object if it is in the service
+   * @throws Exception::NotFoundError if the item is not managed by the data service
+   * @throws std::runtime_error if the item is attached to more than 1 name
+   */
+  std::string nameOfObject(const T & object) const
+  {
+    // Make DataService access thread-safe. The map may mutate while the question
+    // is being asked
+    Poco::Mutex::ScopedLock _lock(m_mutex);
+
+    auto iend = datamap.end();
+    svc_constit foundIt;
+    size_t count(0);
+    for(auto it = datamap.begin(); it != iend; ++it)
+    {
+      const T & item = *(it->second);
+      if(&item == &object)
+      {
+        foundIt = it;
+        count += 1;
+      }
+    }
+    if(count == 1) return foundIt->first;
+    else if(count == 0) throw Kernel::Exception::NotFoundError("DataService","Unknown object");
+    else throw std::runtime_error("DataService::nameOfObject() - Object is attached to more than 1 name.");
+  }
+
 
   /// Return the number of objects stored by the data service
   size_t size() const
