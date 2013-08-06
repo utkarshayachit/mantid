@@ -161,25 +161,6 @@ public:
     AnalysisDataService::Instance().clear();
 }
 
-  void test_removeItem()
-  {
-    WorkspaceGroup_sptr group1 = makeGroup();
-    TS_ASSERT_THROWS( group1->removeItem(1), std::runtime_error );
-
-    WorkspaceGroup_sptr group(new WorkspaceGroup());
-    Workspace_sptr ws1(new WorkspaceTester());
-    group->addWorkspace( ws1 );
-    Workspace_sptr ws2(new WorkspaceTester());
-    group->addWorkspace( ws2 );
-
-    TS_ASSERT_EQUALS( group->size(), 2 );
-    TS_ASSERT_THROWS_NOTHING( group->removeItem(1) );
-    TS_ASSERT_EQUALS( group->size(), 1 );
-    TS_ASSERT_EQUALS( group->getItem(0), ws1 );
-
-    AnalysisDataService::Instance().clear();
-  }
-
   void test_removeAll()
   {
     WorkspaceGroup_sptr group = makeGroup();

@@ -55,7 +55,7 @@ namespace Mantid
     }
 
     /**
-     * Overwridden add member to attach the name to the workspace when a workspace object is added to the service
+     * Overridden add member to attach the name to the workspace when a workspace object is added to the service
      * If the name already exists then this throws a std::runtime_error. If a workspace group is added adds the
      * members which are not in the ADS yet.
      * @param name The name of the object
@@ -63,109 +63,20 @@ namespace Mantid
      */
     void AnalysisDataServiceImpl::add( const std::string& name, const boost::shared_ptr<API::Workspace>& workspace)
     {
-      verifyName(name);
-      //Attach the name to the workspace
-      if( workspace ) workspace->setName(name);
-      Kernel::DataService<API::Workspace>::add(name, workspace);
-      
-      // if a group is added add its members as well
-      auto group = boost::dynamic_pointer_cast<WorkspaceGroup>( workspace );
-      if ( !group ) return;
-      group->observeADSNotifications( true );
-      for(size_t i = 0; i < group->size(); ++i)
-      {
-        auto ws = group->getItem( i );
-        std::string wsName = ws->name();
-        // if anonymous make up a name and add
-        if ( wsName.empty() )
-        {
-          wsName = name + "_" + boost::lexical_cast<std::string>( i + 1 );
-        }
-        else if ( doesExist( wsName ) )
-        {// if ws is already there do nothing
-          wsName.clear();
-        }
-        // add member workspace if needed
-        if ( !wsName.empty() )
-        {
-          add( wsName, ws );
-        }
-      }
+      const bool replaceWS(false);
+      addToService(name, workspace, replaceWS);
     }
 
    /**
-     * Overwridden addOrReplace member to attach the name to the workspace when a workspace object is added to the service.
+     * Overridden addOrReplace member to attach the name to the workspace when a workspace object is added to the service.
      * This will overwrite one of the same name. If the workspace is group adds or replaces its members.
      * @param name The name of the object
      * @param workspace The shared pointer to the workspace to store
      */
     void AnalysisDataServiceImpl::addOrReplace( const std::string& name, const boost::shared_ptr<API::Workspace>& workspace)
     {
-      verifyName(name);
-
-      //Attach the name to the workspace
-      if( workspace ) workspace->setName(name);
-      Kernel::DataService<API::Workspace>::addOrReplace(name, workspace);
-
-      // if a group is added add its members as well
-      auto group = boost::dynamic_pointer_cast<WorkspaceGroup>( workspace );
-      if ( !group ) return;
-      group->observeADSNotifications( true );
-      for(size_t i = 0; i < group->size(); ++i)
-      {
-        auto ws = group->getItem( i );
-        std::string wsName = ws->name();
-        // make up a name for an anonymous workspace
-        if ( wsName.empty() )
-        {
-          wsName = name + "_" + boost::lexical_cast<std::string>( i + 1 );
-        }
-        else if ( doesExist( wsName ) )
-        {// if ws is already there do nothing
-          wsName.clear();
-        }
-        // add member workspace if needed
-        if ( !wsName.empty() )
-        {
-          addOrReplace( wsName, ws );
-        }
-      }
-    }
-
-    /**
-     * Overridden rename member to attach the new name to the workspace when a workspace object is renamed
-     * @param oldName The old name of the object
-     * @param newName The new name of the object
-     */
-    void AnalysisDataServiceImpl::rename( const std::string& oldName, const std::string& newName)
-    {
-      Kernel::DataService<API::Workspace>::rename( oldName, newName );
-      //Attach the new name to the workspace
-      auto ws = retrieve( newName );
-      ws->setName( newName );
-    }
-
-    /**
-     * Overridden remove member to delete its name held by the workspace itself. 
-     * It is important to do if the workspace isn't deleted after removal.
-     * @param name The name of a workspace to remove.
-     */
-    void AnalysisDataServiceImpl::remove( const std::string& name )
-    {
-      Workspace_sptr ws;
-      try
-      {
-        ws = retrieve( name );
-      }
-      catch(Kernel::Exception::NotFoundError)
-      {
-        // do nothing - remove will do what's needed
-      }
-      Kernel::DataService<API::Workspace>::remove( name );
-      if ( ws )
-      {
-        ws->setName( "" );
-      }
+      const bool replaceWS(true);
+      addToService(name, workspace, replaceWS);
     }
 
     /**
@@ -254,7 +165,7 @@ namespace Mantid
         }
 
         // build the tree
-        Workspace::InfoNode *root = new Workspace::InfoNode(this);
+        Workspace::InfoNode *root = new Workspace::InfoNode;
         for( auto ws = workspaces.begin(); ws != workspaces.end(); ++ws )
         {
             if ( !rootGroup.isInChildGroup(**ws) )
@@ -319,6 +230,36 @@ namespace Mantid
       }
     }
 
+    /**
+     * If replace=false, a group is being added & member already exists in the service then this will throw and that member will have no name
+     * @param name The name to attach to the workspace
+     * @param workspace The pointer to be added
+     * @param replace If true then addOrReplace is called, else just add
+     */
+    void AnalysisDataServiceImpl::addToService(const std::string & name, const boost::shared_ptr<API::Workspace> & workspace,
+                                               const bool replace)
+    {
+      verifyName(name);
+      if(replace) Kernel::DataService<API::Workspace>::addOrReplace(name, workspace);
+      else Kernel::DataService<API::Workspace>::add(name, workspace);
+
+      // if a group is added add its members as well
+      auto group = boost::dynamic_pointer_cast<WorkspaceGroup>( workspace );
+      if ( !group ) return;
+      group->observeADSNotifications( true );
+      for(size_t i = 0; i < group->size(); ++i)
+      {
+        auto ws = group->getItem( i );
+        std::string wsName = ws->name();
+        // if anonymous make up a name and add
+        if ( wsName.empty() )
+        {
+          wsName = name + "_" + boost::lexical_cast<std::string>( i + 1 );
+        }
+        if(replace) addOrReplace(wsName, ws); // Always replace to be sure the object is up to date
+        else add(wsName, ws);
+      }
+    }
 
   } // Namespace API
 } // Namespace Mantid

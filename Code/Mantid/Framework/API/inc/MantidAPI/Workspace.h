@@ -7,7 +7,6 @@
 #include "MantidKernel/DataItem.h"
 #include "MantidAPI/WorkspaceHistory.h"
 #include "MantidAPI/DllConfig.h"
-#include "MantidKernel/Exception.h"
 
 namespace Mantid
 {
@@ -25,7 +24,6 @@ namespace API
 //----------------------------------------------------------------------
 // Forward Declaration
 //----------------------------------------------------------------------
-class AnalysisDataServiceImpl;
 
 /** Base Workspace Abstract Class.
 
@@ -65,10 +63,10 @@ public:
     {
     public:
         enum IconType {Default = 0, Matrix, Group, MD, Table};
+        /// Default constructor
+        InfoNode();
         /// Constructor
         InfoNode(const Workspace& workspace);
-        /// Constructor
-        InfoNode(const AnalysisDataServiceImpl*);
         /// Destructor
         ~InfoNode();
         /// Add a new line
@@ -105,8 +103,8 @@ public:
     virtual ~Workspace();
 
     // DataItem interface
-    /// Name
-    virtual const std::string name() const { return this->getName(); }
+    /// Returns a string giving the name of the workspace if it has been stored in the ADS
+    virtual const std::string name() const;
     /** Marks the workspace as safe for multiple threads to edit data simutaneously.
      * Workspace creation is always considered to be a single threaded operation.
      * @return true if the workspace is suitable for multithreaded operations, otherwise false.
@@ -119,7 +117,8 @@ public:
     void setComment(const std::string&);
     virtual const std::string getTitle() const;
     const std::string& getComment() const;
-    const std::string& getName() const;
+    /// Here for backwards-compatability with old code
+    const std::string getName() const;
     bool isDirty(const int n=1) const;
     /// Get the footprint in memory in bytes.
     virtual size_t getMemorySize() const = 0;
@@ -137,18 +136,12 @@ protected:
     virtual InfoNode* createInfoNode() const;
 
 private:
-    void setName(const std::string&);
     /// The title of the workspace
     std::string m_title;
     /// A user-provided comment that is attached to the workspace
     std::string m_comment;
-    /// The name associated with the object within the ADS (This is required for workspace algebra
-    std::string m_name;
     /// The history of the workspace, algorithm and environment
     WorkspaceHistory m_history;
-
-    friend class AnalysisDataServiceImpl;
-
 };
 
 

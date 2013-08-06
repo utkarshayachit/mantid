@@ -110,10 +110,6 @@ class DLLExport AnalysisDataServiceImpl : public Kernel::DataService<API::Worksp
    virtual void add( const std::string& name, const boost::shared_ptr<API::Workspace>& workspace);
    /// Overridden addOrReplace member to attach the name to the workspace when a workspace object is added to the service
    virtual void addOrReplace( const std::string& name, const boost::shared_ptr<API::Workspace>& workspace);
-   /// Overridden rename member to attach the new name to the workspace when a workspace object is renamed
-   virtual void rename( const std::string& oldName, const std::string& newName);
-   /// Overridden remove member to delete its name held by the workspace itself
-   virtual void remove( const std::string& name);
 
    /** Retrieve a workspace and cast it to the given WSTYPE
     *
@@ -132,11 +128,9 @@ class DLLExport AnalysisDataServiceImpl : public Kernel::DataService<API::Worksp
 
    /** @name Methods to work with workspace groups */
    //@{
-
    void addToGroup(const std::string& groupName, const std::string& wsName);
    void deepRemoveGroup(const std::string& name);
    void removeFromGroup(const std::string& groupName, const std::string& wsName);
-
    //@}
 
    /// Create an info tree out of InfoNodes to describe the current state of the ADS.
@@ -145,6 +139,8 @@ class DLLExport AnalysisDataServiceImpl : public Kernel::DataService<API::Worksp
 private:
    /// Checks the name is valid, throwing if not
    void verifyName(const std::string & name);
+   /// Add workspace to the service with the given name
+   void addToService(const std::string &name, const boost::shared_ptr<API::Workspace> & ws, const bool replace);
 
   friend struct Mantid::Kernel::CreateUsingNew<AnalysisDataServiceImpl>;
   /// Constructor

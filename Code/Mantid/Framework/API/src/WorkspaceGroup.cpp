@@ -80,18 +80,18 @@ bool WorkspaceGroup::isInChildGroup(const Workspace &workspace) const
  * Adds a workspace to the group. The workspace does not have to be in the ADS
  * @param workspace :: A shared pointer to a workspace to add. If the workspace already exists give a warning.
  */
-void WorkspaceGroup::addWorkspace(Workspace_sptr workspace)
+void WorkspaceGroup::addWorkspace(const Workspace_sptr & workspace)
 {
   Poco::Mutex::ScopedLock _lock(m_mutex);
   // check it's not there already
   auto it = std::find(m_workspaces.begin(), m_workspaces.end(), workspace);
   if ( it == m_workspaces.end() )
   {
-    m_workspaces.push_back( workspace );
+    m_workspaces.push_back(workspace);
   }
   else
   {
-    g_log.warning() << "Workspace already exists in a WorkspaceGroup" << std::endl;;
+    g_log.warning() << "Workspace already exists in a WorkspaceGroup" << std::endl;
   }
 }
 
@@ -117,10 +117,12 @@ bool WorkspaceGroup::contains(const std::string & wsName) const
 std::vector<std::string> WorkspaceGroup::getNames() const
 {
   Poco::Mutex::ScopedLock _lock(m_mutex);
-  std::vector<std::string> out;
+  std::vector<std::string> out(m_workspaces.size(), "");
+  size_t index(0);
   for(auto it = m_workspaces.begin(); it != m_workspaces.end(); ++it)
   {
-    out.push_back( (**it).name() );
+    out[index] = (*it)->name();
+    ++index;
   }
   return out;
 }
@@ -162,7 +164,7 @@ Workspace_sptr WorkspaceGroup::getItem(const size_t index) const
  * @param wsName The name of the workspace
  * @throws an out_of_range error if the workspace'sname not contained in the group's list of workspace names
  */
-Workspace_sptr WorkspaceGroup::getItem(const std::string wsName) const
+Workspace_sptr WorkspaceGroup::getItem(const std::string & wsName) const
 {
   Poco::Mutex::ScopedLock _lock(m_mutex);
   for(auto it = m_workspaces.begin(); it != m_workspaces.end(); ++it)
@@ -195,6 +197,23 @@ void WorkspaceGroup::removeByADS(const std::string& wsName)
   }
 }
 
+/**
+ * Remove a given pointer from the group, if it exists. If it does not exist do nothing
+ * @param object A pointer to an object that could be in the group
+ */
+void WorkspaceGroup::removeItem(const Workspace_sptr & object)
+{
+  Poco::Mutex::ScopedLock _lock(m_mutex);
+  for(auto it = m_workspaces.begin(); it != m_workspaces.end(); ++it)
+  {
+    if(*it == object)
+    {
+      m_workspaces.erase(it);
+      break;
+    }
+  }
+}
+
 /// Print the names of all the workspaces in this group to the logger (at debug level)
 void WorkspaceGroup::print() const
 {
@@ -205,51 +224,22 @@ void WorkspaceGroup::print() const
   }
 }
 
-/**
- * Remove a workspace pointed to by an index. The workspace remains in the ADS if it was there
- *
- * @param index :: Index of a workspace to delete.
- */
-void WorkspaceGroup::removeItem(const size_t index)
-{
-    Poco::Mutex::ScopedLock _lock(m_mutex);
-    // do not allow this way of removing for groups in the ADS
-    if ( ! name().empty() )
-    {
-        throw std::runtime_error("AnalysisDataService must be used to remove a workspace from group.");
-    }
-    if( index >= this->size() )
-    {
-      std::ostringstream os;
-      os << "WorkspaceGroup - index out of range. Requested=" << index << ", current size=" << this->size();
-      throw std::out_of_range(os.str());
-    }
-    auto it = m_workspaces.begin() + index;
-    m_workspaces.erase( it );
-}
-
 /** Callback for a workspace delete notification
  *
  * Removes any deleted entries from the group.
- * This also deletes the workspace group when the last member of it gets deteleted.
+ * This also deletes the workspace group when the last member of it gets deleted.
  *
- * @param notice :: A pointer to a workspace delete notificiation object
+ * @param notice :: A pointer to a workspace delete notification object. This notification arrives before the workspace is deleted
  */
-void WorkspaceGroup::workspaceDeleteHandle(Mantid::API::WorkspacePostDeleteNotification_ptr notice)
+void WorkspaceGroup::workspaceDeleteHandle(Mantid::API::WorkspacePreDeleteNotification_ptr notice)
 {
   Poco::Mutex::ScopedLock _lock(m_mutex);
-  const std::string deletedName = notice->object_name();
-  if( !this->contains(deletedName)) return;
-
-  if( deletedName != this->getName() )
+  this->removeItem(notice->object());
+  if(isEmpty())
   {
-    this->removeByADS(deletedName);
-    if(isEmpty())
-    {
-      //We are about to get deleted so we don't want to recieve any notifications
-      observeADSNotifications(false);
-      AnalysisDataService::Instance().remove(this->getName());
-    }
+    //We are about to get deleted so we don't want to receive any notifications
+    observeADSNotifications(false);
+    AnalysisDataService::Instance().remove(this->name());
   }
 }
 

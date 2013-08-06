@@ -1,4 +1,6 @@
 #include "MantidAPI/Workspace.h"
+
+#include "MantidAPI/AnalysisDataService.h"
 #include "MantidAPI/ITableWorkspace.h"
 #include "MantidAPI/IMDWorkspace.h"
 #include "MantidAPI/WorkspaceGroup.h"
@@ -17,7 +19,7 @@ namespace API
 /// Default constructor
 Workspace::Workspace()
 : DataItem(),
-  m_title(), m_comment(), m_name(), m_history()
+  m_title(), m_comment(), m_history()
 {}
 
 /** Copy constructor
@@ -25,7 +27,7 @@ Workspace::Workspace()
  */
 Workspace::Workspace(const Workspace & other)
 : DataItem(other),
-  m_title(other.m_title), m_comment(other.m_comment), m_name(other.m_name), m_history(other.m_history)
+  m_title(other.m_title), m_comment(other.m_comment), m_history(other.m_history)
 {
 }
 
@@ -35,6 +37,22 @@ Workspace::~Workspace()
 {
 }
 
+/**
+ * This does a lookup for the object's name in the AnalysisDataService. It is NOT a stored
+ * cached value of the workspace
+ * @return The name or an empty string if the workspace does not exist in the ADS
+ */
+const std::string Workspace::name() const
+{
+  try
+  {
+    return AnalysisDataService::Instance().nameOfObject(*this);
+  }
+  catch(Kernel::Exception::NotFoundError&)
+  {
+    return "";
+  }
+}
 
 /** Set the title of the workspace
  *
@@ -52,15 +70,6 @@ void Workspace::setTitle(const std::string& t)
 void Workspace::setComment(const std::string& c)
 {
   m_comment=c;
-}
-
-/** Set the name field of the workspace
- *
- *  @param name :: The name
- */
-void Workspace::setName(const std::string& name)
-{
-  m_name = name;
 }
 
 /** Get the workspace title
@@ -81,14 +90,15 @@ const std::string& Workspace::getComment() const
   return m_comment;
 }
 
-/** Get the workspace name
- *
- *  @return The name
+/**
+ * Returns the name of the workspace if it is in the data service
+ * @return
  */
-const std::string& Workspace::getName() const
+const std::string Workspace::getName() const
 {
-  return m_name;
+  return this->name();
 }
+
 
 /**
  * Check whether other algorithms have been applied to the
@@ -128,7 +138,7 @@ Workspace::InfoNode *Workspace::createInfoNode() const
 /**
  * Construct an empty instance of InfoNode. Intended to be used by the ADS.
  */
-Workspace::InfoNode::InfoNode(const AnalysisDataServiceImpl *)
+Workspace::InfoNode::InfoNode()
     :m_icon(Default)
 {
 }

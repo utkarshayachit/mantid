@@ -216,7 +216,7 @@ public:
     group->addWorkspace( work2 );
     // ADS must have 2 workspaces
     TS_ASSERT_EQUALS( ads.size(), 2 );
-    ads.add( "Group", group );
+    TS_ASSERT_THROWS(ads.add( "Group", group ), std::runtime_error);
     // there must be 4 workspaces in the ADS
     TS_ASSERT_EQUALS( ads.size(), 4 );
     TS_ASSERT(   ads.doesExist( "Group" ) );
@@ -229,6 +229,7 @@ public:
     TS_ASSERT_EQUALS( names.size(), 2 );
     TS_ASSERT_EQUALS( names[0], "Group_1" );
     TS_ASSERT_EQUALS( names[1], "work2" );
+
   }
 
   void test_addOrReplace_workspace_group_replaces_existing_workspaces()
@@ -287,8 +288,8 @@ public:
 
     auto names = group->getNames();
     TS_ASSERT_EQUALS( names.size(), 2 );
-    TS_ASSERT_EQUALS( names[0], "Group_1" );
-    TS_ASSERT_EQUALS( names[1], "Group_2" );
+    TS_ASSERT_EQUALS( names[0], "Group_1" ); //successfully added
+    TS_ASSERT_EQUALS( names[1], "" ); //not successfully added
   }
 
   // Test base DataService class methods to make sure behaviour w.r.t. hidden objects
@@ -496,5 +497,7 @@ private:
   }
 
 };
+
+
 
 #endif /*ANALYSISDATASERVICETEST_H_*/

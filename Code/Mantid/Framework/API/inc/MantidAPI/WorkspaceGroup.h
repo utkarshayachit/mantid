@@ -68,7 +68,7 @@ public:
   /// The collection itself is considered to take up no space
   virtual size_t getMemorySize() const { return 0; }
   /// Adds a workspace to the group.
-  void addWorkspace(Workspace_sptr workspace);
+  void addWorkspace(const Workspace_sptr & workspace);
   /// Return the number of entries within the group
   int getNumberOfEntries() const { return static_cast<int>(this->size()); }
   /// Return the size of the group, so it is more like a container
@@ -76,13 +76,12 @@ public:
   /// Return the ith workspace
   Workspace_sptr getItem(const size_t index) const;
   /// Return the workspace by name
-  Workspace_sptr getItem(const std::string wsName) const;
-  /// Remove a workspace from the group
-  void removeItem(const size_t index);
-  /// Remove all names from the group but do not touch the ADS
+  Workspace_sptr getItem(const std::string &wsName) const;
+  /// Drop all of the references to the workspaces contained within this group
   void removeAll();
   /// This method returns true if the group is empty (no member workspace)
   bool isEmpty() const;
+  /// Returns true all of the names have the same prefix
   bool areNamesSimilar() const;
   /// Inidicates that the workspace group can be treated as multiperiod.
   bool isMultiperiod() const;
@@ -116,14 +115,16 @@ private:
   const WorkspaceGroup& operator=(const WorkspaceGroup&);
   /// ADS removes a member of this group using this method. It doesn't send notifications in contrast to remove(name).
   void removeByADS(const std::string& name);
+  /// Remove a given pointer from the group
+  void removeItem(const Workspace_sptr & object);
   /// Turn ADS observations on/off
   void observeADSNotifications(const bool observeADS);
   /// Check if a workspace is included in any child groups and groups in them.
   bool isInChildGroup( const Workspace& workspace ) const;
   /// Callback when a delete notification is received
-  void workspaceDeleteHandle(Mantid::API::WorkspacePostDeleteNotification_ptr notice);
+  void workspaceDeleteHandle(Mantid::API::WorkspacePreDeleteNotification_ptr notice);
   /// Observer for workspace delete notfications
-  Poco::NObserver<WorkspaceGroup, Mantid::API::WorkspacePostDeleteNotification> m_deleteObserver;
+  Poco::NObserver<WorkspaceGroup, Mantid::API::WorkspacePreDeleteNotification> m_deleteObserver;
   /// Callback when a before-replace notification is received
   void workspaceReplaceHandle(Mantid::API::WorkspaceBeforeReplaceNotification_ptr notice);
   /// Observer for workspace before-replace notfications
