@@ -243,21 +243,10 @@ namespace Mantid
       if(replace) Kernel::DataService<API::Workspace>::addOrReplace(name, workspace);
       else Kernel::DataService<API::Workspace>::add(name, workspace);
 
-      // if a group is added add its members as well
-      auto group = boost::dynamic_pointer_cast<WorkspaceGroup>( workspace );
-      if ( !group ) return;
-      group->observeADSNotifications( true );
-      for(size_t i = 0; i < group->size(); ++i)
+      // if a group is added, turn on ADS observers
+      if( auto group = boost::dynamic_pointer_cast<WorkspaceGroup>(workspace) )
       {
-        auto ws = group->getItem( i );
-        std::string wsName = ws->name();
-        // if anonymous make up a name and add
-        if ( wsName.empty() )
-        {
-          wsName = name + "_" + boost::lexical_cast<std::string>( i + 1 );
-        }
-        if(replace) addOrReplace(wsName, ws); // Always replace to be sure the object is up to date
-        else add(wsName, ws);
+        group->observeADSNotifications(true);
       }
     }
 

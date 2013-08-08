@@ -180,17 +180,27 @@ public:
     // Make DataService access thread-safe
     m_mutex.lock();
 
-    // If the name already exists then stop
-    if ( ! datamap.insert(typename svcmap::value_type(name, Tobject)).second)
+    // already here under different name?
+    if(!objectExists(*Tobject))
     {
-      m_mutex.unlock();
-      throw std::runtime_error("DataService::add(): Unable to insert data object. Name already exists='"+name+"'");
+      // If the name already exists then stop
+      if ( ! datamap.insert(typename svcmap::value_type(name, Tobject)).second)
+      {
+        m_mutex.unlock();
+        throw std::runtime_error("DataService::add(): Unable to insert data object. Name already exists='"+name+"'");
+      }
+      else
+      {
+        m_mutex.unlock();
+        g_log.debug() << "Add Data Object " << name << " successful" << std::endl;
+        notificationCenter.postNotification(new AddNotification(name,Tobject));
+      }
     }
     else
     {
       m_mutex.unlock();
-      g_log.debug() << "Add Data Object " << name << " successful" << std::endl;
-      notificationCenter.postNotification(new AddNotification(name,Tobject));
+      throw std::runtime_error("DataService::add(): Unable to insert data object with name '" + name
+          + "'. It is already stored under the name '" + nameOfObject(*Tobject) + "'.");
     }
   }
 
@@ -388,6 +398,28 @@ public:
     else throw std::runtime_error("DataService::nameOfObject() - Object is attached to more than 1 name.");
   }
 
+  /**
+   * Returns the true if the object is already stored in the service
+   * @param object A reference to the object that should be checked for
+   * @returns A boolean indicating if the object is already stored
+   */
+  bool objectExists(const T & object) const
+  {
+    // Make DataService access thread-safe. The map may mutate while the question
+    // is being asked
+    Poco::Mutex::ScopedLock _lock(m_mutex);
+
+    auto iend = datamap.end();
+    for(auto it = datamap.begin(); it != iend; ++it)
+    {
+      const T & item = *(it->second);
+      if(&item == &object)
+      {
+        return true;
+      }
+    }
+    return false;
+  }
 
   /// Return the number of objects stored by the data service
   size_t size() const

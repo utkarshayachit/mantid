@@ -19,9 +19,12 @@ namespace
   {
     const std::vector<std::string> wsNames = group->getNames();
     std::vector<std::string>::const_iterator it = wsNames.begin();
+    std::cerr << "Final remove of " <<wsNames.size() << "  group address=" <<group<< "\n";
     AnalysisDataService::Instance().remove(group->name());
+    std::cerr << "Member item removal\n";
     for(; it != wsNames.end(); ++it)
     {
+      std::cerr << "wsname= " << *it << "\n";
       AnalysisDataService::Instance().remove(*it);
     }
   }
@@ -30,6 +33,11 @@ namespace
 class LoadTest : public CxxTest::TestSuite
 {
 public:
+
+  void setUp()
+  {
+    AnalysisDataService::Instance().clear();
+  }
 
   void testViaProxy()
   {

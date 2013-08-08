@@ -31,7 +31,7 @@ WorkspaceGroup::~WorkspaceGroup()
 }
 
 /**
- * Turn on/off observing delete and rename notifications to update the group accordingly
+ * Turn on/off observing delete and replace notifications to update the group accordingly
  * It can be useful to turn them off when constructing the group.
  * @param observeADS :: If true observe the ADS notifications, otherwise disable them
  */
@@ -198,20 +198,24 @@ void WorkspaceGroup::removeByADS(const std::string& wsName)
 }
 
 /**
- * Remove a given pointer from the group, if it exists. If it does not exist do nothing
+ * Remove a given pointer from the group. If it succeeds, return true otherwise do nothing
+ * and return false
  * @param object A pointer to an object that could be in the group
  */
-void WorkspaceGroup::removeItem(const Workspace_sptr & object)
+bool WorkspaceGroup::removeItem(const Workspace_sptr & object)
 {
   Poco::Mutex::ScopedLock _lock(m_mutex);
+  bool removed(false);
   for(auto it = m_workspaces.begin(); it != m_workspaces.end(); ++it)
   {
     if(*it == object)
     {
       m_workspaces.erase(it);
+      removed = true;
       break;
     }
   }
+  return removed;
 }
 
 /// Print the names of all the workspaces in this group to the logger (at debug level)
@@ -234,9 +238,12 @@ void WorkspaceGroup::print() const
 void WorkspaceGroup::workspaceDeleteHandle(Mantid::API::WorkspacePreDeleteNotification_ptr notice)
 {
   Poco::Mutex::ScopedLock _lock(m_mutex);
-  this->removeItem(notice->object());
-  if(isEmpty())
+  const auto & objectPtr = notice->object();
+  const auto & objectRef = *objectPtr;
+  if(&objectRef == this) return;
+  if(this->removeItem(objectPtr) && this->isEmpty()) 
   {
+    // Item was applicable to this group and we are now empty
     //We are about to get deleted so we don't want to receive any notifications
     observeADSNotifications(false);
     AnalysisDataService::Instance().remove(this->name());
@@ -254,12 +261,14 @@ void WorkspaceGroup::workspaceReplaceHandle(Mantid::API::WorkspaceBeforeReplaceN
   bool isObserving = m_observingADS;
   if ( isObserving )
     observeADSNotifications( false );
-  const std::string replacedName = notice->object_name();
-  for(auto citr=m_workspaces.begin(); citr!=m_workspaces.end(); ++citr)
+  const auto & oldPtr = notice->object();
+  const auto & oldObject = *oldPtr;
+  for(auto itr=m_workspaces.begin(); itr!=m_workspaces.end(); ++itr)
   {
-    if ( (**citr).name() == replacedName )
+    const auto & item = **itr;
+    if ( &item == &oldObject )
     {
-      *citr = notice->new_object();
+      (*itr) = notice->new_object();
       break;
     }
   }

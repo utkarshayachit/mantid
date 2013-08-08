@@ -87,12 +87,17 @@ public:
     ws_child->getSpectrum(0)->setSpectrumNo(123);
     ws_child->getSpectrum(1)->setDetectorID(456);
     ws_child->getSpectrum(2)->dataY()[0]=789;
+
+    ws_child->mutableRun().addProperty("Ei", 12.0);
+
     MatrixWorkspace_sptr child;
     TS_ASSERT_THROWS_NOTHING( child = WorkspaceFactory::Instance().create(ws_child) );
     TS_ASSERT_EQUALS( child->id(), "Workspace1DTest");
     TS_ASSERT_EQUALS( child->getSpectrum(0)->getSpectrumNo(), 123);
     TS_ASSERT_EQUALS( *child->getSpectrum(1)->getDetectorIDs().begin(), 456);
     TS_ASSERT_DIFFERS( child->getSpectrum(2)->dataY()[0], 789)
+
+    TS_ASSERT(child.run().hasProperty("Ei"));
 
     MatrixWorkspace_sptr ws2D(new Workspace2DTest);
     ws2D->initialize(3,1,1);

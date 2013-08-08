@@ -116,7 +116,7 @@ private:
   /// ADS removes a member of this group using this method. It doesn't send notifications in contrast to remove(name).
   void removeByADS(const std::string& name);
   /// Remove a given pointer from the group
-  void removeItem(const Workspace_sptr & object);
+  bool removeItem(const Workspace_sptr & object);
   /// Turn ADS observations on/off
   void observeADSNotifications(const bool observeADS);
   /// Check if a workspace is included in any child groups and groups in them.
