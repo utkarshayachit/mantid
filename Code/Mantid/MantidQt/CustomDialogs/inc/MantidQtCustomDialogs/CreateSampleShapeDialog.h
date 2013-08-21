@@ -112,7 +112,7 @@ private:
   /// add entries to the map and return the calling function's data id
   int addToBinaryTreeMap(QString l, QString data, QString r);
   /// use the key to get the values from the map to create the shapes and add to the tree recursively
-  void addToQTreeWidget(QString& k, BinaryTreeWidgetItem* parent = NULL);
+  void addToQTreeWidget(const QString& mapkey, BinaryTreeWidgetItem* parent = NULL);
   /// goes through the binary tree form the root instanciating the list
   void traverseBinaryTreeMap(QVector<QString>& bNode);
 private:

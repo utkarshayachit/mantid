@@ -159,66 +159,87 @@ void CreateSampleShapeDialog::initLayout()
   //Connect the help button
   connect(m_uiForm.helpButton, SIGNAL(clicked()), this, SLOT(helpClicked()));
   
+  try
+  {
   //populate the tree with the selected workspace's shape data if possible
+  m_mapID = 0;
   populateTree(m_uiForm.wksp_opt->currentText().toStdString());
+  }
+  catch(std::exception e)
+  {
+  }
 }
 
 void CreateSampleShapeDialog::populateTree(const std::string &workspace)
 {
-  auto ws = AnalysisDataService::Instance().retrieveWS<MatrixWorkspace>(workspace);
-  const Object * shape = &(ws->sample().getShape());
-  if (shape->hasValidShape())
+  if (!workspace.empty())
   {
-
-    //parse the XML and get the shapes from it
-
-    //Get the XML
-    std::string shapeXML = shape->getShapeXML();
-
-    DOMParser pParser;
-    try
+    auto ws = AnalysisDataService::Instance().retrieveWS<MatrixWorkspace>(workspace);
+    const Object * shape = &(ws->sample().getShape());
+    if (shape->hasValidShape())
     {
-      m_pDoc = pParser.parseString(shapeXML);
-    }
-    catch(Poco::Exception& exc)
-    {
-      throw std::runtime_error(exc.displayText() + ". Unable to parse shape XML");
-    }
-    catch(...)
-    {
-      throw std::runtime_error("Unable to parse shape XML");
-    }
-    //get the root element
-    m_pRootElem = m_pDoc->documentElement();
-    if ( !m_pRootElem->hasChildNodes() )
-    {
-      throw std::runtime_error("No root element in XML");
-    }
-    //get the algebra equasion ready to parse the tree from
-    NodeList* algebraNL = m_pRootElem->getElementsByTagName("algebra");
-    if ( algebraNL->length() == 0 )
-    {
-      throw std::runtime_error("No shape algebra definiton");
-    }
-    NamedNodeMap* alg = algebraNL->item(0)->attributes();
-    algebraNL->release();
-    Node* algVal = alg->getNamedItem("val");
-    alg->release();
-    QString equation(algVal->getNodeValue().c_str());
-    if (equation == "")
-    {
-      throw std::runtime_error("No shape algebra definition");
-    }
 
-    int rootTreeNodeKey = parseEquation(&equation);
-    traverseBinaryTreeMap(*m_binaryTreeMap.find(QString(rootTreeNodeKey)));
+      //parse the XML and get the shapes from it
 
+      //Get the XML
+      std::string shapeXML = shape->getShapeXML();
 
-    //get shape name
-    //obj = createDetailsWidget(shapename);
-   // obj->
-    //set parameters
-    //m_details_map.insert(child, obj);
+      DOMParser pParser;
+      try
+      {
+        m_pDoc = pParser.parseString(shapeXML);
+      }
+      catch(Poco::Exception& exc)
+      {
+        throw std::runtime_error(exc.displayText() + ". Unable to parse shape XML");
+      }
+      catch(...)
+      {
+        throw std::runtime_error("Unable to parse shape XML");
+      }
+      //get the root element
+      m_pRootElem = m_pDoc->documentElement();
+      if ( !m_pRootElem->hasChildNodes() )
+      {
+        throw std::runtime_error("No root element in XML");
+      }
+      //get the algebra equasion ready to parse the tree from
+      NodeList* algebraNL = m_pRootElem->getElementsByTagName("algebra");
+      if ( algebraNL->length() == 0 )
+      {
+        throw std::runtime_error("No shape algebra definiton");
+      }
+      NamedNodeMap* alg = algebraNL->item(0)->attributes();
+      algebraNL->release();
+      Node* algVal = alg->getNamedItem("val");
+      alg->release();
+      QString equation(algVal->getNodeValue().c_str());
+      if (equation == "")
+      {
+        throw std::runtime_error("No shape algebra definition");
+      }
+
+      int rootTreeNodeKey = parseEquation(&equation);
+      addToQTreeWidget(QString::number(rootTreeNodeKey));
+
+      /*
+      auto detitr = m_details_map.constBegin();
+      ////std::cout << "Map size after initial parse=" << m_details_map.size() << std::endl;
+      for (detitr ; detitr != m_details_map.constEnd(); ++detitr)
+      {
+        //std::cout << "Key=" << detitr.key() << "  value= " << detitr.value() << "\n";
+      }
+      */
+      //get shape name
+      //obj = createDetailsWidget(shapename);
+     // obj->
+      //set parameters
+      //m_details_map.insert(child, obj);
+    }
+  }
+  else
+  {
+    throw std::runtime_error("No Valid Workspaces Loaded");
   }
 }
 
@@ -228,8 +249,14 @@ void CreateSampleShapeDialog::traverseBinaryTreeMap(QVector<QString>& bNode)
   addToQTreeWidget(shapeID);
 }
 
-void CreateSampleShapeDialog::addToQTreeWidget(QString& k, BinaryTreeWidgetItem* parent)
+void CreateSampleShapeDialog::addToQTreeWidget(const QString& mapkey, BinaryTreeWidgetItem* parent)
 {
+  if (mapkey.isEmpty())
+  {
+    return;
+  }
+  auto nodedata = m_binaryTreeMap.find(mapkey);
+  QString k = nodedata->at(1);
   if( parent && parent->childCount() == 2 )
   {
     throw std::runtime_error("Error parsing algebra. Too namy children on a single node");
@@ -283,44 +310,86 @@ void CreateSampleShapeDialog::addToQTreeWidget(QString& k, BinaryTreeWidgetItem*
     }
     //just in case, remove any parseable tokens that slipped through
     k.remove(QRegExp("[ :#]"));
-    Element* Shape = m_pRootElem->getElementById(k.toStdString(),"id");
-    ShapeDetails *obj = NULL;
-    //get shape name
-    QString shapename = Shape->attributes()->getNamedItem("id")->getNodeValue().c_str();
+    Element* shape = m_pRootElem->getElementById(k.toStdString(),"id");
+    //get shape type
+    QString shapeType = shape->tagName().c_str();
     //obj = createDetailsWidget(shapename);
 
-    
-    if( m_setup_map.contains(shapename) )
+    //std::cout << shapename.toStdString() << std::endl;
+    if( m_setup_map.contains(shapeType) )
     {
-      obj =  m_setup_map.value(shapename)->createInstanceFromXML(*Shape);
-    }
+        ShapeDetails *obj = m_setup_map.value(shapeType)->createInstanceFromXML(*shape);
+      //m_uiForm.details_scroll->setWidget(obj);  
 
-    obj->setComplementFlag(complement);
-    if(complement)
-    {
-      child->setText(0, QString("# ") + *k);
+      obj->setComplementFlag(complement);
+      if(complement)
+      {
+        child->setText(0, QString("# ") + *k);
+      }
+      else
+      {
+        child->setText(0, k);
+      }
+      child->setFlags(child->flags() & ~Qt::ItemIsEditable);
+    //std::cout << "map size before adding: " << m_details_map.size() << std::endl;
+      m_details_map.insert(child, obj); 
+    //std::cout << "map size after adding: " << m_details_map.size() << std::endl;
+    QString keytext = child->text(0);
+    //std::cout << "item added: " << keytext.toStdString() << std::endl;
+    auto xmlthing = obj->writeXML();
+    //std::cout << "XML from last item added: " << xmlthing.toStdString() << std::endl;
+    auto getbackitem = m_details_map.value(child);
+    auto morexml = getbackitem->writeXML();
+    //std::cout << "XML got back from map: " << morexml.toStdString() << std::endl;
+    
     }
     else
     {
-      child->setText(0, k);
+      //something went wrong
+      throw std::runtime_error("A shape type in the XML doesn't exist. XML is invalid.");
     }
-    child->setFlags(child->flags() & ~Qt::ItemIsEditable);
-    m_details_map.insert(child, obj);
   }
 
   if( m_shapeTree->topLevelItemCount() == 0 )
   {
     m_shapeTree->insertTopLevelItem(0, child);
+    addToQTreeWidget(nodedata->at(0), child);
+    addToQTreeWidget(nodedata->at(2), child);
+    m_shapeTree->setCurrentItem(child);
+    QString keytext = child->text(0);
+    //std::cout << "item shown: " << keytext.toStdString() << std::endl;
   }
   else
   {
     parent->addChildItem(child);
+    addToQTreeWidget(nodedata->at(0), child);
+    addToQTreeWidget(nodedata->at(2), child);
   }
 
   // This calls setupDetails
-  //m_shapeTree->setCurrentItem(child);
+ // m_shapeTree->setCurrentItem(child);
   // This needs replaced with an instanciator for a specific shape so i can reference it and set up the parameters
   
+  /*
+  QString shapename = child->text(0);
+  shapename.remove(QString("# "));
+
+  if( m_setup_map.contains(shapename) )
+  {
+    //ShapeDetails *obj = NULL; 
+    if( m_details_map.contains(child) )
+    {
+      obj = m_details_map.value(child);
+    }
+    else 
+    {
+      obj = createDetailsWidget(shapename);
+      m_details_map.insert(child, obj);
+    }
+    //Set it as the currently displayed widget
+    m_uiForm.details_scroll->setWidget(obj);    
+  }
+  */
   m_shapeTree->expandAll();
 }
 
@@ -916,6 +985,9 @@ void CreateSampleShapeDialog::setupDetailsBox()
 
   BinaryTreeWidgetItem *item = dynamic_cast<BinaryTreeWidgetItem*>(selection[0]);
   QString shapename = item->text(0);
+  shapename.remove(QString("# "));
+
+  ///need to get the tpye of shape from it
   if( m_setup_map.contains(shapename) )
   {
     ShapeDetails *obj = NULL; 
@@ -955,15 +1027,23 @@ QString CreateSampleShapeDialog::constructShapeXML() const
 {
   if( m_shapeTree->topLevelItemCount() == 0 || m_details_map.isEmpty() ) return QString();
   
-  QString shapexml;
+  QString shapexml = "";
   // First construct the XML that builds each separately defined shape
-  QMapIterator<BinaryTreeWidgetItem*, ShapeDetails*> detitr(m_details_map);
-  while( detitr.hasNext() )
+  //QMapIterator<BinaryTreeWidgetItem*, ShapeDetails*> detitr(m_details_map);
+  auto detitr = m_details_map.constBegin();
+  //std::cout << "map size before XML'ing: " << m_details_map.size() << std::endl;
+  for (detitr ; detitr != m_details_map.constEnd(); ++detitr)
   {
-    detitr.next();
-    shapexml += detitr.value()->writeXML() + "\n";
+    ShapeDetails* temp = detitr.value();
+    auto tempkey = detitr.key();
+    QString keytext = tempkey->text(0);
+    //std::cout << "item being XML'ed: " << keytext.toStdString() << std::endl;
+
+    auto xmlthing = temp->writeXML();
+    //std::cout << "XML generated from item: " << xmlthing.toStdString() << std::endl;
+    shapexml += temp->writeXML() + "\n";
   }
-  
+
   QList<BinaryTreeWidgetItem*> postfix_exp;
   //Build expression list
   m_shapeTree->traverseInPostOrder(m_shapeTree->root(), postfix_exp);

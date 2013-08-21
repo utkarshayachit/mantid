@@ -139,9 +139,41 @@ bool PointGroupBox::valid()
   }
   return true;
 }
+
+/**
+ * Set the coordinate system
+ * @param spherical :: boolean ture to set system to spherical, false for cartesian. Default False.
+ */
+void PointGroupBox::setMode(bool spherical)
+{
+  m_cartesian->setChecked(!spherical);
+  m_spherical->setChecked(spherical);
+  if (spherical)
+  {
+    changeToSpherical();
+  }
+  else
+  {
+    changeToCartesian();
+  }
+}
+
+/**
+ * Set the content of the text fields
+ */
+void PointGroupBox::setFields(const QString & x, const QString & y, const QString & z)
+{
+  if (!x.isEmpty() && !y.isEmpty() && !z.isEmpty())
+  {
+    m_midx->setText(x);
+    m_midy->setText(y);
+    m_midz->setText(z);
+  }
+}
+
 /**
  * Write the element tag for a 3D point.
- * elem_name The name of the element
+ * @param elem_name :: The name of the element
  */
 QString PointGroupBox::write3DElement(const QString & elem_name) const
 {
@@ -315,7 +347,15 @@ SphereDetails::SphereDetails(const Element& xml, QWidget *parent) : ShapeDetails
   NamedNodeMap* centreAtr = centreList->item(0)->attributes();
   if (centreAtr->length() == 3)
   {
-    centreAtr->getNamedItem("val")->getNodeValue().c_str();
+    //m_centre->
+    if (centreAtr->getNamedItem("x") && centreAtr->getNamedItem("y") && centreAtr->getNamedItem("z"))
+    {
+      m_centre->setFields(centreAtr->getNamedItem("x")->getNodeValue().c_str(), centreAtr->getNamedItem("y")->getNodeValue().c_str(), centreAtr->getNamedItem("z")->getNodeValue().c_str());
+    }
+  }
+  else
+  {
+    throw;
   }
   //if (xml.getElementsByTagName("centre")->item(0)->attributes.
     //getNodeValue().c_str()

@@ -52,6 +52,8 @@ public:
 
   ///make sure the point is valid
   bool valid();
+  void setMode(bool spherical = false);
+  void setFields(const QString & x, const QString & y, const QString & z);
 
 private slots:
   // Switch to cartesian coordinates
