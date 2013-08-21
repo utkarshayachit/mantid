@@ -336,13 +336,15 @@ SphereDetails::SphereDetails(QWidget *parent) : ShapeDetails(parent)
 SphereDetails::SphereDetails(const Element& xml, QWidget *parent) : ShapeDetails(parent)
 {
   init();
-  //{}parse the XML
-  m_idvalue = xml.attributes()->getNamedItem("id")->getNodeValue().c_str();
+  //parse the XML
+  //changing the id value could cause a problem, best if the program assigns a new one
+  //m_idvalue = xml.attributes()->getNamedItem("id")->getNodeValue().c_str();
   NodeList* radList = xml.getElementsByTagName("radius");
   NamedNodeMap* radAtr = radList->item(0)->attributes();
   m_radius_box->setText(convertToMillimeters(radAtr->getNamedItem("val")->getNodeValue().c_str(), Unit::metre));
   radAtr->release();
   radList->release();
+
   NodeList* centreList = xml.getElementsByTagName("centre");
   NamedNodeMap* centreAtr = centreList->item(0)->attributes();
   if (centreAtr->length() == 3)
@@ -350,13 +352,27 @@ SphereDetails::SphereDetails(const Element& xml, QWidget *parent) : ShapeDetails
     //m_centre->
     if (centreAtr->getNamedItem("x") && centreAtr->getNamedItem("y") && centreAtr->getNamedItem("z"))
     {
-      m_centre->setFields(centreAtr->getNamedItem("x")->getNodeValue().c_str(), centreAtr->getNamedItem("y")->getNodeValue().c_str(), centreAtr->getNamedItem("z")->getNodeValue().c_str());
+      QString convX = convertToMillimeters(centreAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(centreAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(centreAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_centre->setFields(convX, convY, convZ);
+    }
+    else if (centreAtr->getNamedItem("r") && centreAtr->getNamedItem("t") && centreAtr->getNamedItem("p"))
+    {
+
+    }
+    else
+    {
+      throw;
     }
   }
   else
   {
     throw;
   }
+  centreAtr->release();
+  centreList->release();
+
   //if (xml.getElementsByTagName("centre")->item(0)->attributes.
     //getNodeValue().c_str()
 }
@@ -433,7 +449,63 @@ CylinderDetails::CylinderDetails(QWidget *parent) : ShapeDetails(parent)
 CylinderDetails::CylinderDetails(const Element& xml, QWidget *parent) : ShapeDetails(parent)
 {
   init();
-  //{}parse the XML
+  //parse the XML
+  //changing the id value could cause a problem, best if the program assigns a new one
+  //m_idvalue = xml.attributes()->getNamedItem("id")->getNodeValue().c_str();
+  NodeList* radList = xml.getElementsByTagName("radius");
+  NamedNodeMap* radAtr = radList->item(0)->attributes();
+  m_radius_box->setText(convertToMillimeters(radAtr->getNamedItem("val")->getNodeValue().c_str(), Unit::metre));
+  radAtr->release();
+  radList->release();
+
+  //changing the id value could cause a problem, best if the program assigns a new one
+  //m_idvalue = xml.attributes()->getNamedItem("id")->getNodeValue().c_str();
+  NodeList* heightList = xml.getElementsByTagName("height");
+  NamedNodeMap* heightAtr = heightList->item(0)->attributes();
+  m_height_box->setText(convertToMillimeters(heightAtr->getNamedItem("val")->getNodeValue().c_str(), Unit::metre));
+  heightAtr->release();
+  heightList->release();
+
+  NodeList* centreList = xml.getElementsByTagName("centre-of-bottom-base");
+  NamedNodeMap* centreAtr = centreList->item(0)->attributes();
+  if (centreAtr->length() == 3)
+  {
+    //m_centre->
+    if (centreAtr->getNamedItem("x") && centreAtr->getNamedItem("y") && centreAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(centreAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(centreAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(centreAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_lower_centre->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  centreAtr->release();
+  centreList->release();
+
+  NodeList* axisList = xml.getElementsByTagName("axis");
+  NamedNodeMap* axisAtr = axisList->item(0)->attributes();
+  if (axisAtr->length() == 3)
+  {
+    //m_axis->
+    if (axisAtr->getNamedItem("x") && axisAtr->getNamedItem("y") && axisAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(axisAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(axisAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(axisAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_axis->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  axisAtr->release();
+  axisList->release();
+
 }
 
 /// intialise the shape
@@ -536,7 +608,55 @@ InfiniteCylinderDetails::InfiniteCylinderDetails(QWidget *parent) : ShapeDetails
 InfiniteCylinderDetails::InfiniteCylinderDetails(const Element& xml, QWidget *parent) : ShapeDetails(parent)
 {
   init();
-  //{}parse the XML
+
+  //parse the XML
+  //changing the id value could cause a problem, best if the program assigns a new one
+  //m_idvalue = xml.attributes()->getNamedItem("id")->getNodeValue().c_str();
+  NodeList* radList = xml.getElementsByTagName("radius");
+  NamedNodeMap* radAtr = radList->item(0)->attributes();
+  m_radius_box->setText(convertToMillimeters(radAtr->getNamedItem("val")->getNodeValue().c_str(), Unit::metre));
+  radAtr->release();
+  radList->release();
+
+  NodeList* centreList = xml.getElementsByTagName("centre");
+  NamedNodeMap* centreAtr = centreList->item(0)->attributes();
+  if (centreAtr->length() == 3)
+  {
+    //m_centre->
+    if (centreAtr->getNamedItem("x") && centreAtr->getNamedItem("y") && centreAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(centreAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(centreAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(centreAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_centre->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  centreAtr->release();
+  centreList->release();
+
+  NodeList* axisList = xml.getElementsByTagName("axis");
+  NamedNodeMap* axisAtr = axisList->item(0)->attributes();
+  if (axisAtr->length() == 3)
+  {
+    //m_axis->
+    if (axisAtr->getNamedItem("x") && axisAtr->getNamedItem("y") && axisAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(axisAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(axisAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(axisAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_axis->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  axisAtr->release();
+  axisList->release();
 }
 
 /// intialise the shape
@@ -620,7 +740,41 @@ SliceOfCylinderRingDetails::SliceOfCylinderRingDetails(QWidget *parent) : ShapeD
 SliceOfCylinderRingDetails::SliceOfCylinderRingDetails(const Element& xml, QWidget *parent) : ShapeDetails(parent)
 {
   init();
-  //{}parse the XML
+  init();
+  //parse the XML
+  //changing the id value could cause a problem, best if the program assigns a new one
+  //m_idvalue = xml.attributes()->getNamedItem("id")->getNodeValue().c_str();
+  NodeList* rinnerList = xml.getElementsByTagName("inner-radius");
+  NamedNodeMap* rinnerAtr = rinnerList->item(0)->attributes();
+  m_rinner_box->setText(convertToMillimeters(rinnerAtr->getNamedItem("val")->getNodeValue().c_str(), Unit::metre));
+  rinnerAtr->release();
+  rinnerList->release();
+
+  //changing the id value could cause a problem, best if the program assigns a new one
+  //m_idvalue = xml.attributes()->getNamedItem("id")->getNodeValue().c_str();
+  NodeList* routerList = xml.getElementsByTagName("outer-radius");
+  NamedNodeMap* routerAtr = routerList->item(0)->attributes();
+  m_router_box->setText(convertToMillimeters(routerAtr->getNamedItem("val")->getNodeValue().c_str(), Unit::metre));
+  routerAtr->release();
+  routerList->release();
+
+  //changing the id value could cause a problem, best if the program assigns a new one
+  //m_idvalue = xml.attributes()->getNamedItem("id")->getNodeValue().c_str();
+  NodeList* depthList = xml.getElementsByTagName("depth");
+  NamedNodeMap* depthAtr = depthList->item(0)->attributes();
+  m_depth_box->setText(convertToMillimeters(depthAtr->getNamedItem("val")->getNodeValue().c_str(), Unit::metre));
+  depthAtr->release();
+  depthList->release();
+
+  //changing the id value could cause a problem, best if the program assigns a new one
+  //m_idvalue = xml.attributes()->getNamedItem("id")->getNodeValue().c_str();
+  NodeList* arcList = xml.getElementsByTagName("arc");
+  NamedNodeMap* arcAtr = arcList->item(0)->attributes();
+  m_arc_box->setText(convertToMillimeters(arcAtr->getNamedItem("val")->getNodeValue().c_str(), Unit::metre));
+  arcAtr->release();
+  arcList->release();
+
+
 }
 
 /// intialise the shape

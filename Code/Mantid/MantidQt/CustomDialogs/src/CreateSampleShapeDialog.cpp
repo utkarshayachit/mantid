@@ -221,7 +221,7 @@ void CreateSampleShapeDialog::populateTree(const std::string &workspace)
 
       int rootTreeNodeKey = parseEquation(&equation);
       addToQTreeWidget(QString::number(rootTreeNodeKey));
-
+      update3DView();
       /*
       auto detitr = m_details_map.constBegin();
       ////std::cout << "Map size after initial parse=" << m_details_map.size() << std::endl;
@@ -302,7 +302,7 @@ void CreateSampleShapeDialog::addToQTreeWidget(const QString& mapkey, BinaryTree
     if (k.count(QRegExp("#")) == 1)
     {
       //shape was the compliment
-      bool complement = true;
+      complement = true;
     }
     else if (k.count(QRegExp("#")) > 1)
     {
@@ -313,7 +313,6 @@ void CreateSampleShapeDialog::addToQTreeWidget(const QString& mapkey, BinaryTree
     Element* shape = m_pRootElem->getElementById(k.toStdString(),"id");
     //get shape type
     QString shapeType = shape->tagName().c_str();
-    //obj = createDetailsWidget(shapename);
 
     //std::cout << shapename.toStdString() << std::endl;
     if( m_setup_map.contains(shapeType) )
@@ -324,7 +323,11 @@ void CreateSampleShapeDialog::addToQTreeWidget(const QString& mapkey, BinaryTree
       obj->setComplementFlag(complement);
       if(complement)
       {
-        child->setText(0, QString("# ") + *k);
+        /*
+        std::string compConv = "# " + k.toStdString();
+        child->setText(0, QString(compConv.c_str()));
+        */
+        child->setText(0, k.prepend("# "));
       }
       else
       {
@@ -333,6 +336,7 @@ void CreateSampleShapeDialog::addToQTreeWidget(const QString& mapkey, BinaryTree
       child->setFlags(child->flags() & ~Qt::ItemIsEditable);
     //std::cout << "map size before adding: " << m_details_map.size() << std::endl;
       m_details_map.insert(child, obj); 
+      /*
     //std::cout << "map size after adding: " << m_details_map.size() << std::endl;
     QString keytext = child->text(0);
     //std::cout << "item added: " << keytext.toStdString() << std::endl;
@@ -341,7 +345,7 @@ void CreateSampleShapeDialog::addToQTreeWidget(const QString& mapkey, BinaryTree
     auto getbackitem = m_details_map.value(child);
     auto morexml = getbackitem->writeXML();
     //std::cout << "XML got back from map: " << morexml.toStdString() << std::endl;
-    
+    */
     }
     else
     {
@@ -852,9 +856,13 @@ void CreateSampleShapeDialog::addShape(QAction *shape)
   BinaryTreeWidgetItem *parent = getSelectedItem();
   if( parent && parent->childCount() == 2 ) return;
 
-  BinaryTreeWidgetItem *child = new BinaryTreeWidgetItem(QStringList(shape->text()));
+  //the shape should get initalised here and the id taken from it.
+  ShapeDetails *obj = NULL; 
+  obj = createDetailsWidget(shape->text());
+  BinaryTreeWidgetItem *child = new BinaryTreeWidgetItem(QStringList(obj->getShapeID()));
   child->setFlags(child->flags() & ~Qt::ItemIsEditable);
 
+  m_details_map.insert(child, obj);
   if( m_shapeTree->topLevelItemCount() == 0 )
   {
     m_shapeTree->insertTopLevelItem(0, child);
@@ -984,25 +992,32 @@ void CreateSampleShapeDialog::setupDetailsBox()
   if( m_uiForm.details_scroll->widget() ) m_uiForm.details_scroll->takeWidget();
 
   BinaryTreeWidgetItem *item = dynamic_cast<BinaryTreeWidgetItem*>(selection[0]);
-  QString shapename = item->text(0);
-  shapename.remove(QString("# "));
 
-  ///need to get the tpye of shape from it
-  if( m_setup_map.contains(shapename) )
+  //this is using the display name which isn't a good idea. especially as the display name could be different.
+  //it should try to use the shape from the map first before doing anything else
+
+  ShapeDetails *obj = NULL; 
+  if( m_details_map.contains(item) )
   {
-    ShapeDetails *obj = NULL; 
-    if( m_details_map.contains(item) )
-    {
-      obj = m_details_map.value(item);
-    }
-    else 
-    {
+    obj = m_details_map.value(item);
+    m_uiForm.details_scroll->setWidget(obj);  
+  }
+  /*
+  //this shouldn't really eb needed as i'm gonna change it so that whenever anyhitng is added the details widget is created at the same itme
+  else 
+  {
+    ///need to get the tpye of shape from it
+    QString shapename = item->text(0);
+    shapename.remove(QString("# "));
+    if( m_setup_map.contains(shapename) )
+    { 
       obj = createDetailsWidget(shapename);
       m_details_map.insert(item, obj);
     }
     //Set it as the currently displayed widget
     m_uiForm.details_scroll->setWidget(obj);    
   }
+  */
   
 }
 
