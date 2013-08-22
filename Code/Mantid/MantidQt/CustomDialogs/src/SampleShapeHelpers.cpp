@@ -900,7 +900,63 @@ ConeDetails::ConeDetails(QWidget *parent) : ShapeDetails(parent)
 ConeDetails::ConeDetails(const Element& xml, QWidget *parent) : ShapeDetails(parent)
 {
   init();
-  //{}parse the XML
+  //parse the XML
+  //changing the id value could cause a problem, best if the program assigns a new one
+  //m_idvalue = xml.attributes()->getNamedItem("id")->getNodeValue().c_str();
+  NodeList* angleList = xml.getElementsByTagName("angle");
+  NamedNodeMap* angleAtr = angleList->item(0)->attributes();
+  m_angle_box->setText(convertToMillimeters(angleAtr->getNamedItem("val")->getNodeValue().c_str(), Unit::metre));
+  angleAtr->release();
+  angleList->release();
+
+  //changing the id value could cause a problem, best if the program assigns a new one
+  //m_idvalue = xml.attributes()->getNamedItem("id")->getNodeValue().c_str();
+  NodeList* heightList = xml.getElementsByTagName("height");
+  NamedNodeMap* heightAtr = heightList->item(0)->attributes();
+  m_height_box->setText(convertToMillimeters(heightAtr->getNamedItem("val")->getNodeValue().c_str(), Unit::metre));
+  heightAtr->release();
+  heightList->release();
+
+  NodeList* tippointList = xml.getElementsByTagName("tip-point");
+  NamedNodeMap* tippointAtr = tippointList->item(0)->attributes();
+  if (tippointAtr->length() == 3)
+  {
+    //m_tippoint->
+    if (tippointAtr->getNamedItem("x") && tippointAtr->getNamedItem("y") && tippointAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(tippointAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(tippointAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(tippointAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_tippoint->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  tippointAtr->release();
+  tippointList->release();
+
+  NodeList* axisList = xml.getElementsByTagName("axis");
+  NamedNodeMap* axisAtr = axisList->item(0)->attributes();
+  if (axisAtr->length() == 3)
+  {
+    //m_axis->
+    if (axisAtr->getNamedItem("x") && axisAtr->getNamedItem("y") && axisAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(axisAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(axisAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(axisAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_axis->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  axisAtr->release();
+  axisList->release();
+
 }
 
 /// intialise the shape
@@ -1004,7 +1060,54 @@ InfiniteConeDetails::InfiniteConeDetails(QWidget *parent) : ShapeDetails(parent)
 InfiniteConeDetails::InfiniteConeDetails(const Element& xml, QWidget *parent) : ShapeDetails(parent)
 {
   init();
-  //{}parse the XML
+  //parse the XML
+  //changing the id value could cause a problem, best if the program assigns a new one
+  //m_idvalue = xml.attributes()->getNamedItem("id")->getNodeValue().c_str();
+  NodeList* angleList = xml.getElementsByTagName("angle");
+  NamedNodeMap* angleAtr = angleList->item(0)->attributes();
+  m_angle_box->setText(convertToMillimeters(angleAtr->getNamedItem("val")->getNodeValue().c_str(), Unit::metre));
+  angleAtr->release();
+  angleList->release();
+
+  NodeList* tippointList = xml.getElementsByTagName("tip-point");
+  NamedNodeMap* tippointAtr = tippointList->item(0)->attributes();
+  if (tippointAtr->length() == 3)
+  {
+    //m_tippoint->
+    if (tippointAtr->getNamedItem("x") && tippointAtr->getNamedItem("y") && tippointAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(tippointAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(tippointAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(tippointAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_tippoint->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  tippointAtr->release();
+  tippointList->release();
+
+  NodeList* axisList = xml.getElementsByTagName("axis");
+  NamedNodeMap* axisAtr = axisList->item(0)->attributes();
+  if (axisAtr->length() == 3)
+  {
+    //m_axis->
+    if (axisAtr->getNamedItem("x") && axisAtr->getNamedItem("y") && axisAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(axisAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(axisAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(axisAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_axis->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  axisAtr->release();
+  axisList->release();
 }
 
 /// intialise the shape
@@ -1089,7 +1192,46 @@ InfinitePlaneDetails::InfinitePlaneDetails(QWidget *parent) : ShapeDetails(paren
 InfinitePlaneDetails::InfinitePlaneDetails(const Element& xml, QWidget *parent) : ShapeDetails(parent)
 {
   init();
-  //{}parse the XML
+
+  NodeList* pointList = xml.getElementsByTagName("point-in-plane");
+  NamedNodeMap* pointAtr = pointList->item(0)->attributes();
+  if (pointAtr->length() == 3)
+  {
+    //m_point->
+    if (pointAtr->getNamedItem("x") && pointAtr->getNamedItem("y") && pointAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(pointAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(pointAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(pointAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_plane->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  pointAtr->release();
+  pointList->release();
+
+  NodeList* normalList = xml.getElementsByTagName("normal-to-plane");
+  NamedNodeMap* normalAtr = normalList->item(0)->attributes();
+  if (normalAtr->length() == 3)
+  {
+    //m_normal->
+    if (normalAtr->getNamedItem("x") && normalAtr->getNamedItem("y") && normalAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(normalAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(normalAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(normalAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_normal->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  normalAtr->release();
+  normalList->release();
 }
 
 /// intialise the shape
@@ -1150,7 +1292,85 @@ CuboidDetails::CuboidDetails(QWidget *parent) : ShapeDetails(parent)
 CuboidDetails::CuboidDetails(const Element& xml, QWidget *parent) : ShapeDetails(parent)
 {
   init();
-  //{}parse the XML
+  NodeList* left_frt_topList = xml.getElementsByTagName("left-front-top-point");
+  NamedNodeMap* left_frt_topAtr = left_frt_topList->item(0)->attributes();
+  if (left_frt_topAtr->length() == 3)
+  {
+    //m_left_frt_top->
+    if (left_frt_topAtr->getNamedItem("x") && left_frt_topAtr->getNamedItem("y") && left_frt_topAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(left_frt_topAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(left_frt_topAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(left_frt_topAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_left_frt_top->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  left_frt_topAtr->release();
+  left_frt_topList->release();
+
+  NodeList* left_frt_botList = xml.getElementsByTagName("left-front-bottom-point");
+  NamedNodeMap* left_frt_botAtr = left_frt_botList->item(0)->attributes();
+  if (left_frt_botAtr->length() == 3)
+  {
+    //m_left_frt_bot->
+    if (left_frt_botAtr->getNamedItem("x") && left_frt_botAtr->getNamedItem("y") && left_frt_botAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(left_frt_botAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(left_frt_botAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(left_frt_botAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_left_frt_bot->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  left_frt_botAtr->release();
+  left_frt_botList->release();
+
+  NodeList* right_frt_botList = xml.getElementsByTagName("right-front-bottom-point");
+  NamedNodeMap* right_frt_botAtr = right_frt_botList->item(0)->attributes();
+  if (right_frt_botAtr->length() == 3)
+  {
+    //m_right_frt_bot->
+    if (right_frt_botAtr->getNamedItem("x") && right_frt_botAtr->getNamedItem("y") && right_frt_botAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(right_frt_botAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(right_frt_botAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(right_frt_botAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_right_frt_bot->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  right_frt_botAtr->release();
+  right_frt_botList->release();
+
+  NodeList* left_bck_botList = xml.getElementsByTagName("left-back-bottom-point");
+  NamedNodeMap* left_bck_botAtr = left_bck_botList->item(0)->attributes();
+  if (left_bck_botAtr->length() == 3)
+  {
+    //m_left_bck_bot->
+    if (left_bck_botAtr->getNamedItem("x") && left_bck_botAtr->getNamedItem("y") && left_bck_botAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(left_bck_botAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(left_bck_botAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(left_bck_botAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_left_bck_bot->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  left_bck_botAtr->release();
+  left_bck_botList->release();
 }
 
 /// intialise the shape
@@ -1220,7 +1440,166 @@ HexahedronDetails::HexahedronDetails(QWidget *parent) : ShapeDetails(parent)
 HexahedronDetails::HexahedronDetails(const Element& xml, QWidget *parent) : ShapeDetails(parent)
 {
   init();
-  //{}parse the XML
+
+  NodeList* left_bck_botList = xml.getElementsByTagName("left-back-bottom-point");
+  NamedNodeMap* left_bck_botAtr = left_bck_botList->item(0)->attributes();
+  if (left_bck_botAtr->length() == 3)
+  {
+    //m_left_bck_bot->
+    if (left_bck_botAtr->getNamedItem("x") && left_bck_botAtr->getNamedItem("y") && left_bck_botAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(left_bck_botAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(left_bck_botAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(left_bck_botAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_left_bck_bot->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  left_bck_botAtr->release();
+  left_bck_botList->release();
+
+  NodeList* left_frt_botList = xml.getElementsByTagName("left-front-bottom-point");
+  NamedNodeMap* left_frt_botAtr = left_frt_botList->item(0)->attributes();
+  if (left_frt_botAtr->length() == 3)
+  {
+    //m_left_frt_bot->
+    if (left_frt_botAtr->getNamedItem("x") && left_frt_botAtr->getNamedItem("y") && left_frt_botAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(left_frt_botAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(left_frt_botAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(left_frt_botAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_left_frt_bot->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  left_frt_botAtr->release();
+  left_frt_botList->release();
+
+  NodeList* right_frt_botList = xml.getElementsByTagName("right-front-bottom-point");
+  NamedNodeMap* right_frt_botAtr = right_frt_botList->item(0)->attributes();
+  if (right_frt_botAtr->length() == 3)
+  {
+    //m_right_frt_bot->
+    if (right_frt_botAtr->getNamedItem("x") && right_frt_botAtr->getNamedItem("y") && right_frt_botAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(right_frt_botAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(right_frt_botAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(right_frt_botAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_right_frt_bot->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  right_frt_botAtr->release();
+  right_frt_botList->release();
+
+  NodeList* right_bck_botList = xml.getElementsByTagName("right-back-bottom-point");
+  NamedNodeMap* right_bck_botAtr = right_bck_botList->item(0)->attributes();
+  if (right_bck_botAtr->length() == 3)
+  {
+    //m_right_bck_bot->
+    if (right_bck_botAtr->getNamedItem("x") && right_bck_botAtr->getNamedItem("y") && right_bck_botAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(right_bck_botAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(right_bck_botAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(right_bck_botAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_right_bck_bot->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  right_bck_botAtr->release();
+  right_bck_botList->release();
+
+  NodeList* left_bck_topList = xml.getElementsByTagName("left-back-top-point");
+  NamedNodeMap* left_bck_topAtr = left_bck_topList->item(0)->attributes();
+  if (left_bck_topAtr->length() == 3)
+  {
+    //m_left_bck_top->
+    if (left_bck_topAtr->getNamedItem("x") && left_bck_topAtr->getNamedItem("y") && left_bck_topAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(left_bck_topAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(left_bck_topAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(left_bck_topAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_left_bck_top->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  left_bck_topAtr->release();
+  left_bck_topList->release();
+
+  NodeList* left_frt_topList = xml.getElementsByTagName("left-front-top-point");
+  NamedNodeMap* left_frt_topAtr = left_frt_topList->item(0)->attributes();
+  if (left_frt_topAtr->length() == 3)
+  {
+    //m_left_frt_top->
+    if (left_frt_topAtr->getNamedItem("x") && left_frt_topAtr->getNamedItem("y") && left_frt_topAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(left_frt_topAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(left_frt_topAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(left_frt_topAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_left_frt_top->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  left_frt_topAtr->release();
+  left_frt_topList->release();
+
+  NodeList* right_frt_topList = xml.getElementsByTagName("right-front-top-point");
+  NamedNodeMap* right_frt_topAtr = right_frt_topList->item(0)->attributes();
+  if (right_frt_topAtr->length() == 3)
+  {
+    //m_right_frt_top->
+    if (right_frt_topAtr->getNamedItem("x") && right_frt_topAtr->getNamedItem("y") && right_frt_topAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(right_frt_topAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(right_frt_topAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(right_frt_topAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_right_frt_top->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  right_frt_topAtr->release();
+  right_frt_topList->release();
+
+  NodeList* right_bck_topList = xml.getElementsByTagName("right-back-top-point");
+  NamedNodeMap* right_bck_topAtr = right_bck_topList->item(0)->attributes();
+  if (right_bck_topAtr->length() == 3)
+  {
+    //m_right_bck_top->
+    if (right_bck_topAtr->getNamedItem("x") && right_bck_topAtr->getNamedItem("y") && right_bck_topAtr->getNamedItem("z"))
+    {
+      QString convX = convertToMillimeters(right_bck_topAtr->getNamedItem("x")->getNodeValue().c_str(), Unit::metre);
+      QString convY = convertToMillimeters(right_bck_topAtr->getNamedItem("y")->getNodeValue().c_str(), Unit::metre);
+      QString convZ = convertToMillimeters(right_bck_topAtr->getNamedItem("z")->getNodeValue().c_str(), Unit::metre);
+      m_right_bck_top->setFields(convX, convY, convZ);
+    }
+  }
+  else
+  {
+    throw;
+  }
+  right_bck_topAtr->release();
+  right_bck_topList->release();
 }
 
 
@@ -1260,12 +1639,12 @@ void HexahedronDetails::init()
 
   main_layout->addWidget(m_left_bck_bot);
   main_layout->addWidget(m_left_frt_bot);
-  main_layout->addWidget(m_right_bck_bot);
   main_layout->addWidget(m_right_frt_bot);
+  main_layout->addWidget(m_right_bck_bot);
   main_layout->addWidget(m_left_bck_top);
   main_layout->addWidget(m_left_frt_top);
-  main_layout->addWidget(m_right_bck_top);
   main_layout->addWidget(m_right_frt_top);
+  main_layout->addWidget(m_right_bck_top);
   
 }
 
@@ -1297,71 +1676,3 @@ bool HexahedronDetails::valid()
   }
   return true;
 }
-// This is not implemented in OpenCascade yet 
-
-//--------------------------------------------------------//
-//                Torus
-//--------------------------------------------------------//
-/// Static counter
-// int TorusDetails::g_ntori = 0;
-
-// /// Default constructor
-// TorusDetails::TorusDetails(QWidget *parent) : ShapeDetails(parent)
-// {
-//   /// Update number of sphere objects and the set the ID of this one
-//   ++g_ntori;
-//   m_idvalue = "torus_" + QString::number(g_ntori);
-
-//   QVBoxLayout *main_layout = new QVBoxLayout(this);
-
-//   //Radi
-//   m_tube_rad = new QLineEdit;
-//   m_tunits = createLengthUnitsCombo();
-//   QHBoxLayout *tub_layout = new QHBoxLayout;
-//   tub_layout->addWidget(new QLabel("Tube radius: "));
-//   tub_layout->addWidget(m_tube_rad);
-//   tub_layout->addWidget(m_tunits);
-
-//   m_inner_rad = new QLineEdit;
-//   m_iunits = createLengthUnitsCombo();
-//   QHBoxLayout *hol_layout = new QHBoxLayout;
-//   hol_layout->addWidget(new QLabel("Hole radius: "));
-//   hol_layout->addWidget(m_inner_rad);
-//   hol_layout->addWidget(m_iunits);
-  
-//   //Point boxes
-//   m_centre = new PointGroupBox;
-//   m_centre->setTitle("Centre");
-
-//   m_axis = new PointGroupBox;
-//   m_axis->setTitle("Axis");
-
-//   main_layout->addLayout(tub_layout);
-//   main_layout->addLayout(hol_layout);
-//   main_layout->addWidget(m_centre);
-//   main_layout->addWidget(m_axis);
-// }
-
-// /**
-//  * Write the XML definition
-//  */
-// QString TorusDetails::writeXML() const
-// {
-//   QString valt("0.0"), vali("0.0");
-//   if( !m_tube_rad->text().isEmpty() )
-//   {
-//     valt = convertToMetres(m_tube_rad->text(), ShapeDetails::Unit(m_tunits->currentIndex()));
-//   }
-//   if( !m_inner_rad->text().isEmpty() )
-//   {
-//     vali = convertToMetres(m_inner_rad->text(), ShapeDetails::Unit(m_iunits->currentIndex())); 
-//   }
-//   QString xmldef = 
-//     "<torus id=\"" + m_idvalue + "\" >\n"
-//     "<radius-tube val=\"" + valt + "\" />\n"
-//     "<radius-from-centre-to-tube val=\"" + vali + "\" />\n" +
-//     m_centre->write3DElement("centre") +
-//     m_axis->write3DElement("axis") +
-//     "</torus>\n";
-//   return xmldef;
-// }
