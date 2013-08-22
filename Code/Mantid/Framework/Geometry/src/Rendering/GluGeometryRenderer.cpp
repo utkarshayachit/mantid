@@ -46,7 +46,15 @@ namespace Mantid
 
     void GluGeometryRenderer::RenderCone(const V3D& center,const V3D& axis,double radius,double height)
     {
-      while(glGetError() != GL_NO_ERROR);
+      while(true)
+      {
+        auto testpoint = glGetError();
+        if (glGetError() == GL_NO_ERROR)
+        {
+          break;
+        }
+      }
+
       CreateCone(center,axis,radius,height);
     }
 
