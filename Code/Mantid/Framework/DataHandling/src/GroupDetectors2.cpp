@@ -7,57 +7,7 @@ Not all spectra in the input workspace have to be copied to a group. If KeepUngr
 
 To create a single group the list of spectra can be identified using a list of either spectrum numbers, detector IDs or workspace indices. The list should be set against the appropriate property.
 
-An input file allows the specification of many groups. The file must have the following format* (extra space and comments starting with # are allowed) :
-
- "unused number1"             
- "unused number2"
- "number_of_input_spectra1"
- "input spec1" "input spec2" "input spec3" "input spec4"
- "input spec5 input spec6"
- **    
- "unused number2" 
- "number_of_input_spectra2"
- "input spec1" "input spec2" "input spec3" "input spec4"
-
-<nowiki>*</nowiki> each phrase in "" is replaced by a single integer
-
-<nowiki>**</nowiki> the section of the file that follows is repeated once for each group
-
-Some programs require that "unused number1" is the number of groups specified in the file but Mantid ignores that number and all groups contained in the file are read regardless. "unused number2" is in other implementations the group's spectrum number but in this algorithm it is is ignored and can be any integer (not necessarily the same integer)
-
- An example of an input file follows:
- 2  
- 1  
- 64  
- 1 2 3 4 5 6 7 8 9 10  
- 11 12 13 14 15 16 17 18 19 20  
- 21 22 23 24 25 26 27 28 29 30  
- 31 32 33 34 35 36 37 38 39 40  
- 41 42 43 44 45 46 47 48 49 50  
- 51 52 53 54 55 56 57 58 59 60  
- 61 62 63 64  
- 2  
- 60
- 65 66 67 68 69 70 71 72 73 74  
- 75 76 77 78 79 80 81 82 83 84  
- 85 86 87 88 89 90 91 92 93 94  
- 95 96 97 98 99 100 101 102 103 104  
- 105 106 107 108 109 110 111 112 113 114  
- 115 116 117 118 119 120 121 122 123 124
-
-In addition the following XML grouping format is also supported
-<div style="border:1pt dashed black; background:#f9f9f9;padding: 1em 0;">
-<source lang="xml">
-<?xml version="1.0" encoding="UTF-8" ?>
-<detector-grouping> 
-  <group name="fwd1"> <ids val="1-32"/> </group> 
-  <group name="bwd1"> <ids val="33,36,38,60-64"/> </group>   
-
-  <group name="fwd2"><detids val="1,2,17,32"/></group> 
-  <group name="bwd2"><detids val="33,36,38,60,64"/> </group> 
-</detector-grouping>
-</source></div>
-where <ids> is used to specify spectra IDs and <detids> detector IDs.
+See [LoadDetectorsGroupingFile] for a description of a MapFile format. // TODO: check if is correct
 
 == Previous Versions ==
 
@@ -124,9 +74,7 @@ GroupDetectors2::~GroupDetectors2() {}
 
 // progress estimates
 const double GroupDetectors2::CHECKBINS = 0.10;
-const double GroupDetectors2::OPENINGFILE = 0.03;
-// if CHECKBINS+OPENINGFILE+2*READFILE > 1 then the algorithm might report progress > 100%
-const double GroupDetectors2::READFILE = 0.15;
+const double GroupDetectors2::READFILE = 0.10;
 
 void GroupDetectors2::init()
 {
@@ -135,8 +83,8 @@ void GroupDetectors2::init()
   declareProperty(new WorkspaceProperty<MatrixWorkspace>("OutputWorkspace","",Direction::Output),
     "The name of the output workspace");
   std::vector<std::string> fileExts(2);
-  fileExts[0] = ".map";
-  fileExts[1] = ".xml";
+  fileExts[0] = ".xml";
+  fileExts[1] = ".map";
   declareProperty(new FileProperty("MapFile", "", FileProperty::OptionalLoad, fileExts),
     "A file that consists of lists of spectra numbers to group. See the help\n"
     "for the file format");
@@ -306,28 +254,31 @@ void GroupDetectors2::getGroups(API::MatrixWorkspace_const_sptr workspace,
   const std::string filename = getProperty("MapFile");
   if ( ! filename.empty() )
   {// The file property has been set so try to load the file
-    try
-    {
-      // check if XML file and if yes assume it is a XML grouping file
-      std::string filenameCopy(filename);
-      std::transform(filenameCopy.begin(), filenameCopy.end(), filenameCopy.begin(), tolower);
-      if ( (filenameCopy.find(".xml")) != std::string::npos )
-      {
-        processXMLFile(filename, workspace, unUsedSpec);
-      }
-      else
-      {
-        // the format of this input file format is described in "GroupDetectors2.h"
-        processFile(filename, workspace, unUsedSpec);
-      }
-    }
-    catch ( std::exception & )
-    {
-      g_log.error() << name() << ": Error reading input file " << filename << std::endl;
-      throw;
-    }
+    g_log.debug() << "Parsing file " << filename << std::endl;
+
+    Mantid::API::IAlgorithm_sptr loader = createChildAlgorithm("LoadDetectorsGroupingFile");
+    loader->initialize();
+    loader->setProperty("InputFile", filename);
+    loader->execute();
+
+    GroupingWorkspace_sptr groupingWS = loader->getProperty("OutputWorkspace");
+
+    if(!groupingWS)
+      throw std::invalid_argument("Unable to parse grouping from file");
+
+    if(groupingWS->getNumberHistograms() > workspace->getNumberHistograms())
+      throw std::invalid_argument("One of the spectra requested to group does not exist in the input workspace");
+
+    getGroupsFromWS(groupingWS, unUsedSpec);
+
+    if(m_GroupSpecInds.empty())
+      throw std::invalid_argument("No groups specified in a file, nothing to do");
+
+    // TODO: update progress
+
     return;
   }
+
   const std::vector<specid_t> spectraList = getProperty("SpectraList");
   const std::vector<detid_t> detectorList = getProperty("DetectorList");
   const std::vector<size_t> indexList = getProperty("WorkspaceIndexList");
@@ -381,364 +332,31 @@ void GroupDetectors2::getGroups(API::MatrixWorkspace_const_sptr workspace,
     else g_log.warning() << "Duplicate index, " << *index << ", found\n";
   }
 }
-/** Read the spectra numbers in from the input file (the file format is in the
-*  source file "GroupDetectors2.h" and make an array of spectra indexes to group
-*  @param fname :: the full path name of the file to open
-*  @param workspace :: a pointer to the input workspace, used to get spectra indexes from numbers
-*  @param unUsedSpec :: the list of spectra indexes that have been included in a group (so far)
-*  @throw FileError if there's any problem with the file or its format
-*/
-void GroupDetectors2::processFile(std::string fname,
-  API::MatrixWorkspace_const_sptr workspace, std::vector<int64_t> &unUsedSpec)
+
+/**
+ * Updates m_GroupSpecInds and unUsedSpec in the way that it matches the information provided in
+ * groupingWS.
+ * @param groupingWS WS with grouping information
+ * @param unUsedSpec Vector with elements for every spectra which are set to USED if the are in some group.
+ */
+void GroupDetectors2::getGroupsFromWS(GroupingWorkspace_const_sptr groupingWS, std::vector<int64_t> &unUsedSpec)
 {
-  // tring to open the file the user told us exists, skip down 20 lines to find out what happens if we can read from it
-  g_log.debug() << "Opening input file ... " << fname;
-  std::ifstream File(fname.c_str(), std::ios::in);
+  const size_t noOfSpectra = groupingWS->getNumberHistograms();
+  
+  specid_t groupNo;
 
-  std::string firstLine;
-  std::getline( File, firstLine );
-  // for error reporting keep a count of where we are reading in the file
-  size_t lineNum = 1;
-
-  if (File.fail())
+  for(size_t i = 0; i < noOfSpectra; i++)
   {
-    g_log.debug() << " file state failbit set after read attempt\n";
-    throw Exception::FileError("Couldn't read file", fname);
-  }
-  g_log.debug() << " success opening input file " << fname << std::endl;
-  progress(m_FracCompl += OPENINGFILE);
-  // check for a (user) cancel message
-  interruption_point();
+    groupNo = static_cast<specid_t>(groupingWS->readY(i)[0]);
 
-  // allow spectra number to spectra index look ups
-  spec2index_map specs2index;
-  const SpectraAxis* axis = dynamic_cast<const SpectraAxis*>(workspace->getAxis(1));
-  if (axis)
-  {
-    axis->getSpectraIndexMap(specs2index);
-  }
-
-  try
-  {
-    // we don't use the total number of groups report at the top of the file but we'll tell them later if there is a problem with it for their diagnostic purposes
-    int totalNumberOfGroups = readInt(firstLine);
-
-    // Reading file now ...
-    while ( totalNumberOfGroups == EMPTY_LINE )
+    if(groupNo != 0)
     {
-      if ( ! File ) throw Exception::FileError("The input file doesn't appear to contain any data", fname);
-      std::getline( File, firstLine ), lineNum ++;
-      totalNumberOfGroups = readInt(firstLine);
-    }
+      m_GroupSpecInds[groupNo].push_back(i);
 
-    readFile(specs2index, File, lineNum, unUsedSpec);
-
-    if ( m_GroupSpecInds.size() != static_cast<size_t>(totalNumberOfGroups) )
-    {
-      g_log.warning() << "The input file header states there are " << totalNumberOfGroups << " but the file contains " << m_GroupSpecInds.size() << " groups\n";
-    }
-  }
-  // add some more info to the error messages, including the line number, to help users correct their files. These problems should cause the algorithm to stop
-  catch (std::invalid_argument &e)
-  {
-    g_log.debug() << "Exception thrown: " << e.what() << std::endl;
-    File.close();
-    std::string error(e.what() + std::string(" near line number ") + boost::lexical_cast<std::string>(lineNum));
-    if (File.fail())
-    {
-      error = "Input output error while reading file ";
-    }
-    throw Exception::FileError(error, fname);
-  }
-  catch (boost::bad_lexical_cast &e)
-  {
-    g_log.debug() << "Exception thrown: " << e.what() << std::endl;
-    File.close();
-    std::string error(std::string("Problem reading integer value \"") + e.what() + std::string("\" near line number ") + boost::lexical_cast<std::string>(lineNum));
-    if (File.fail())
-    {
-      error = "Input output error while reading file ";
-    }
-    throw Exception::FileError(error, fname);
-  }
-  File.close();
-  g_log.debug() << "Closed file " << fname << " after reading in " << m_GroupSpecInds.size() << " groups\n";
-  m_FracCompl += fileReadProg( m_GroupSpecInds.size(), specs2index.size() );
-  return;
-}
-
-/** Get groupings from XML file
-*  @param fname :: the full path name of the file to open
-*  @param workspace :: a pointer to the input workspace, used to get spectra indexes from numbers
-*  @param unUsedSpec :: the list of spectra indexes that have been included in a group (so far)
-*  @throw FileError if there's any problem with the file or its format
-*/
-void GroupDetectors2::processXMLFile(std::string fname,
-  API::MatrixWorkspace_const_sptr workspace, std::vector<int64_t> &unUsedSpec)
-{
-  // 1. Get maps for spectrum ID and detector ID
-  spec2index_map specs2index;
-  const SpectraAxis* axis = dynamic_cast<const SpectraAxis*>(workspace->getAxis(1));
-  if (axis)
-  {
-    axis->getSpectraIndexMap(specs2index);
-  }
-
-  detid2index_map* detIdToWiMap = workspace->getDetectorIDToWorkspaceIndexMap();
-
-  // 2. Load XML file
-  DataHandling::LoadGroupXMLFile loader;
-  loader.setDefaultStartingGroupID(0);
-  loader.loadXMLFile(fname);
-  std::map<int, std::vector<detid_t> > mGroupDetectorsMap = loader.getGroupDetectorsMap();
-  std::map<int, std::vector<int> > mGroupSpectraMap = loader.getGroupSpectraMap();
-
-  // 3. Build m_GroupSpecInds
-  std::map<int, std::vector<detid_t> >::iterator dit;
-  for (dit = mGroupDetectorsMap.begin(); dit != mGroupDetectorsMap.end(); ++ dit)
-  {
-    int groupid = dit->first;
-    std::vector<size_t> tempv;
-    m_GroupSpecInds.insert(std::make_pair(groupid, tempv));
-  }
-
-  // 4. Detector IDs
-  for (dit = mGroupDetectorsMap.begin(); dit != mGroupDetectorsMap.end(); ++ dit)
-  {
-    int groupid = dit->first;
-    std::vector<detid_t> detids = dit->second;
-
-    storage_map::iterator sit;
-    sit = m_GroupSpecInds.find(groupid);
-    if (sit == m_GroupSpecInds.end())
-      continue;
-
-    std::vector<size_t>& wsindexes = sit->second;
-
-    for (size_t i = 0; i < detids.size(); i++)
-    {
-      detid_t detid = detids[i];
-      detid2index_map::iterator ind =detIdToWiMap->find(detid);
-      if ( ind != detIdToWiMap->end() )
-      {
-        size_t wsid = ind->second;
-        wsindexes.push_back(wsid);
-        if ( unUsedSpec[wsid] != ( 1000 - INT_MAX ) )
-        {
-          unUsedSpec[wsid] = ( 1000 - INT_MAX );
-        }
-      }
-      else
-      {
-        g_log.error() << "Detector with ID " << detid << " is not found in instrument " << std::endl;
-      }
-    } // for index
-  } // for group
-
-  // 5. Spectrum IDs
-  std::map<int, std::vector<int> >::iterator pit;
-  for (pit = mGroupSpectraMap.begin(); pit != mGroupSpectraMap.end(); ++pit)
-  {
-    int groupid = pit->first;
-    std::vector<int> spectra = pit->second;
-
-    storage_map::iterator sit;
-    sit = m_GroupSpecInds.find(groupid);
-    if (sit == m_GroupSpecInds.end())
-      continue;
-
-    std::vector<size_t>& wsindexes = sit->second;
-
-    for (size_t i = 0; i < spectra.size(); i++)
-    {
-      int specid = spectra[i];
-      spec2index_map::iterator ind = specs2index.find(specid);
-      if ( ind != specs2index.end() )
-      {
-        size_t wsid = ind->second;
-        wsindexes.push_back(wsid);
-        if ( unUsedSpec[wsid] != ( 1000 - INT_MAX ) )
-        {
-          unUsedSpec[wsid] = ( 1000 - INT_MAX );
-        }
-      }
-      else
-      {
-        g_log.error() << "Spectrum with ID " << specid<< " is not found in instrument " << std::endl;
-      }
-    } // for index
-  } // for group
-
-  return;
-}
-
-/** The function expects that the string passed to it contains an integer number,
-*  it reads the number and returns it
-*  @param line :: a line read from the file, we'll interpret this
-*  @return the integer read from the line, error code if not readable
-*  @throw invalid_argument when the line contains more just an integer
-*  @throw boost::bad_lexical_cast when the string can't be interpreted as an integer
-*/
-int GroupDetectors2::readInt(std::string line)
-{
-  // remove comments and white space (TOK_TRIM)
-  Poco::StringTokenizer dataComment(line, "#",Poco::StringTokenizer::TOK_TRIM);
-  if ( dataComment.begin() != dataComment.end() )
-  {
-    Poco::StringTokenizer
-      data(*(dataComment.begin()), " ", Poco::StringTokenizer::TOK_TRIM);
-    if ( data.count() == 1 )
-    {
-      if ( ! data[0].empty() )
-      {
-        try
-        {
-          return boost::lexical_cast<int>(data[0]);
-        }
-        catch (boost::bad_lexical_cast &e)
-        {
-          g_log.debug() << "Exception thrown: " << e.what() << std::endl;
-          throw std::invalid_argument("Error reading file, integer expected");
-        }
-      }
-    }
-    else
-    {
-      if ( data.count() == 0 )
-      {
-        return EMPTY_LINE;
-      }
-      // we expected an integer but there were more things on the line, before any #
-      g_log.debug() << "Error: found " << data.count() << " strings the first string is " << data[0] << std::endl;
-      throw std::invalid_argument("Problem reading file, a singe integer expected");
-    }
-  }
-  // we haven't found any data, return the nodata condition
-  return EMPTY_LINE;
-}
-/** Reads from the file getting in order: an unused integer, on the next line the number of
-*  spectra in the group and next one or more lines the spectra numbers, (format in GroupDetectors.h)
-* @param specs2index :: a map that links spectra numbers to indexes
-* @param File :: the input stream that is linked to the file
-* @param lineNum :: the last line read in the file, is updated by this function
-* @param unUsedSpec :: list of spectra that haven't yet been included in a group
-* @throw invalid_argument if there is any problem with the file
-*/
-void GroupDetectors2::readFile(spec2index_map &specs2index, std::ifstream &File, size_t &lineNum, std::vector<int64_t> &unUsedSpec)
-{
-  // used in writing the spectra to the outData map. The groups are just labelled incrementally from 1
-  int spectrumNo = 1;
-  // go through the rest of the file reading in lists of spectra number to group
-  while ( File )
-  {
-    std::string thisLine;
-    do
-    {
-      std::getline( File, thisLine ), lineNum ++;
-      // we haven't started reading a new group and so if the file ends here it is OK
-      if ( ! File ) return;
-    }
-    while( readInt(thisLine) == EMPTY_LINE && File );
-
-    // the number of spectra that will be combined in the group
-    int numberOfSpectra = EMPTY_LINE;
-    do
-    {
-      if ( ! File ) throw std::invalid_argument("Premature end of file, expecting an integer with the number of spectra in the group");
-      std::getline( File, thisLine ), lineNum ++;
-      numberOfSpectra = readInt(thisLine);
-    }
-    while( numberOfSpectra == EMPTY_LINE );
-
-    // the value of this map is the list of spectra numbers that will be combined into a group
-    m_GroupSpecInds[spectrumNo].reserve(numberOfSpectra);
-    do
-    {
-      if ( ! File ) throw std::invalid_argument("Premature end of file, found number of spectra specification but no spectra list");
-      std::getline( File, thisLine ), lineNum ++;
-      // the spectra numbers that will be included in the group
-      readSpectraIndexes(
-        thisLine, specs2index, m_GroupSpecInds[spectrumNo], unUsedSpec);
-    }
-    while (static_cast<int>(m_GroupSpecInds[spectrumNo].size()) < numberOfSpectra);
-    if ( static_cast<int>(m_GroupSpecInds[spectrumNo].size()) != numberOfSpectra )
-    {// it makes no sense to continue reading the file, we'll stop here
-      throw std::invalid_argument(std::string("Bad number of spectra specification or spectra list near line number ") + boost::lexical_cast<std::string>(lineNum));
-    }
-    // make regular progress reports and check for a cancellastion notification
-    if ( (m_GroupSpecInds.size() % INTERVAL) == 1 )
-    {
-      fileReadProg( m_GroupSpecInds.size(), specs2index.size() );
-    }
-    spectrumNo++;
-  }
-}
-/** The function expects that the string passed to it contains a series of integers,
-*  ranges specified with a '-' are possible
-*  @param line :: a line read from the file, we'll interpret this
-*  @param specs2index :: a map with spectra numbers as indexes and index numbers as values
-*  @param output :: the list of integers, with any ranges expanded
-*  @param unUsedSpec :: the list of spectra indexes that have been included in a group (so far)
-*  @param seperator :: the symbol for the index range separator
-*  @throw invalid_argument when a number couldn't be found or the number is not in the spectra map
-*/
-void GroupDetectors2::readSpectraIndexes(std::string line, spec2index_map &specs2index,
-    std::vector<size_t> &output, std::vector<int64_t> &unUsedSpec, std::string seperator)
-{
-  // remove comments and white space
-  Poco::StringTokenizer dataComment(line, seperator, IGNORE_SPACES);
-  Poco::StringTokenizer::Iterator iend = dataComment.end();
-  for( Poco::StringTokenizer::Iterator itr = dataComment.begin(); itr != iend; ++itr )
-  {
-    std::vector<size_t> specNums;
-    specNums.reserve(output.capacity());
-
-    RangeHelper::getList(*itr, specNums);
-
-    std::vector<size_t>::const_iterator specN = specNums.begin();
-    for( ;specN!=specNums.end(); ++specN)
-    {
-      specid_t spectrumNum = static_cast<specid_t>(*specN);
-      spec2index_map::const_iterator ind = specs2index.find(spectrumNum);
-      if ( ind == specs2index.end() )
-      {
-        g_log.debug() << name() << ": spectrum number " << spectrumNum << " refered to in the input file was not found in the input workspace\n";
-        throw std::invalid_argument("Spectrum number " + boost::lexical_cast<std::string>(spectrumNum) + " not found");
-      } 
-      if ( unUsedSpec[ind->second] != USED )
-      {// this array is used when the user sets KeepUngroupedSpectra, as well as to find duplicates
-        unUsedSpec[ind->second] = USED;
-        output.push_back( ind->second );
-      }
-      else
-      {// the spectra was already included in a group
-        output.push_back( ind->second );
-      }
+      unUsedSpec[i] = USED;
     }
   }
 }
-
-/** Called while reading input file to report progress (doesn't update m_FracCompl ) and
-*  check for algorithm cancel messages, doesn't look at file size to estimate progress
-*  @param numGroupsRead :: number of groups read from the file so far (not the number of spectra)
-*  @param numInHists :: the total number of histograms in the input workspace
-*  @return estimate of the amount of algorithm progress obtained by reading from the file
-*/
-double GroupDetectors2::fileReadProg(DataHandling::GroupDetectors2::storage_map::size_type numGroupsRead,
-    DataHandling::GroupDetectors2::storage_map::size_type numInHists)
-{
-  // I'm going to guess that there are half as many groups as spectra
-  double progEstim = 2.*static_cast<double>(numGroupsRead)/static_cast<double>(numInHists);
-  // but it might be more, in which case this complex function always increases but slower and slower
-  progEstim = READFILE*progEstim/(1+progEstim);
-  // now do the reporting
-  progress(m_FracCompl + progEstim );
-  // check for a (user) cancel message
-  interruption_point();
-  return progEstim;
-}
-
-
 
 /**
 *  Move the user selected spectra in the input workspace into groups in the output workspace
@@ -1051,78 +669,6 @@ void GroupDetectors2::moveOthersEvent(const std::set<int64_t> &unGroupedSet, Dat
   }
 
   g_log.debug() << name() << " copied " << unGroupedSet.size()-1 << " ungrouped spectra\n";
-}
-
-//RangeHelper
-/** Expands any ranges in the input string of non-negative integers, eg. "1 3-5 4" -> "1 3 4 5 4"
-*  @param line :: a line of input that is interpreted and expanded
-*  @param outList :: all integers specified both as ranges and individually in order
-*  @throw invalid_argument if a character is found that is not an integer or hypehn and when a hyphen occurs at the start or the end of the line
-*/
-void GroupDetectors2::RangeHelper::getList(const std::string &line, std::vector<size_t> &outList)
-{
-  if ( line.empty() )
-  {// it is not an error to have an empty line but it would cause problems with an error check a the end of this function
-    return;
-  }
-  Poco::StringTokenizer ranges(line, "-");
-
-  size_t loop = 0;
-  try
-  {
-    do
-    {
-      Poco::StringTokenizer beforeHyphen(ranges[loop], " ", IGNORE_SPACES);
-      Poco::StringTokenizer::Iterator readPostion = beforeHyphen.begin();
-      if ( readPostion == beforeHyphen.end() )
-      {
-        throw std::invalid_argument("'-' found at the start of a list, can't interpret range specification");
-      }
-      for ( ; readPostion != beforeHyphen.end(); ++readPostion )
-      {
-        outList.push_back(boost::lexical_cast<size_t>(*readPostion));
-      }
-      // this will be the start of a range if it was followed by a - i.e. another token was captured
-      const size_t rangeStart = outList.back();
-      if (loop+1 == ranges.count())
-      {// there is no more input
-        break;
-      }
-
-      Poco::StringTokenizer afterHyphen(ranges[loop+1], " ", IGNORE_SPACES);
-      readPostion = afterHyphen.begin();
-      if ( readPostion == afterHyphen.end() )
-      {
-        throw std::invalid_argument("A '-' follows straight after another '-', can't interpret range specification");
-      }
-
-      // the tokenizer will always return at least on string
-      const size_t rangeEnd = boost::lexical_cast<size_t>(*readPostion);
-
-      // this is unanticipated and marked as an error, it would be easy to change this to count down however
-      if ( rangeStart > rangeEnd )
-      {
-        throw std::invalid_argument("A range where the first integer is larger than the second is not allowed");
-      }
-
-      // expand the range
-      for ( size_t j = rangeStart+1; j < rangeEnd; j++ )
-      {
-        outList.push_back(j);
-      }
-
-      loop ++;
-    }
-    while( loop < ranges.count() );
-  }
-  catch (boost::bad_lexical_cast &e)
-  {
-    throw std::invalid_argument(std::string("Expected list of integers, exception thrown: ") + e.what() );
-  }
-  if ( *(line.end()-1) == '-' )
-  {
-    throw std::invalid_argument("'-' found at the end of a list, can't interpret range specification");
-  }
 }
 
 } // namespace DataHandling
