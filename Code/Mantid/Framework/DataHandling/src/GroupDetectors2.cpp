@@ -271,10 +271,7 @@ void GroupDetectors2::getGroups(API::MatrixWorkspace_const_sptr workspace,
     if(!groupingWS)
       throw std::invalid_argument("Unable to parse grouping from file");
 
-    if(groupingWS->getNumberHistograms() > workspace->getNumberHistograms())
-      throw std::invalid_argument("One of the spectra requested to group does not exist in the input workspace");
-
-    getGroupsFromWS(groupingWS, unUsedSpec);
+    getGroupsFromWS(groupingWS, workspace, unUsedSpec);
 
     if(m_GroupSpecInds.empty())
       throw std::invalid_argument("No groups specified in a file, nothing to do");
@@ -345,21 +342,33 @@ void GroupDetectors2::getGroups(API::MatrixWorkspace_const_sptr workspace,
  * @param groupingWS WS with grouping information
  * @param unUsedSpec Vector with elements for every spectra which are set to USED if they are in some group.
  */
-void GroupDetectors2::getGroupsFromWS(GroupingWorkspace_const_sptr groupingWS, std::vector<int64_t> &unUsedSpec)
+void GroupDetectors2::getGroupsFromWS(GroupingWorkspace_const_sptr groupingWS, MatrixWorkspace_const_sptr inputWS,
+                                      std::vector<int64_t> &unUsedSpec)
 {
+
+  const spec2index_map* inputSpec2index = inputWS->getSpectrumToWorkspaceIndexMap();
+
   const size_t noOfSpectra = groupingWS->getNumberHistograms();
-  
-  specid_t groupNo;
 
   for(size_t i = 0; i < noOfSpectra; i++)
   {
-    groupNo = static_cast<specid_t>(groupingWS->readY(i)[0]);
+    const specid_t groupNo = static_cast<specid_t>(groupingWS->readY(i)[0]);
 
     if(groupNo != 0)
     {
-      m_GroupSpecInds[groupNo].push_back(i);
+      const specid_t spectrumNo = groupingWS->getSpectrum(i)->getSpectrumNo();
 
-      unUsedSpec[i] = USED;
+      spec2index_map::const_iterator it = inputSpec2index->find(spectrumNo);
+
+      if(it == inputSpec2index->end())
+        throw std::out_of_range("One of the spectra requested to group does not exist in the input workspace");
+
+      const size_t& inputIndex = it->second;
+
+      // it->second is input workspace index for the spectra
+      m_GroupSpecInds[groupNo].push_back(inputIndex);
+
+      unUsedSpec[inputIndex] = USED;
     }
   }
 }

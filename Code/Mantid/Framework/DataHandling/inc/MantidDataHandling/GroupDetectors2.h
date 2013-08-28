@@ -18,6 +18,10 @@
 
 namespace Mantid
 {
+
+using namespace API;
+using namespace DataObjects;
+
 namespace DataHandling
 {
 /** An algorithm for grouping detectors and their associated spectra into
@@ -78,29 +82,29 @@ typedef std::tr1::unordered_map<specid_t, std::vector<size_t> > storage_map;
   /// stores lists of spectra indexes to group, although we never do an index search on it
   storage_map m_GroupSpecInds;
 
-
   // Implement abstract Algorithm methods
   void init();
   void exec();
   void execEvent();
   
   /// read in the input parameters and see what findout what will be to grouped
-  void getGroups(API::MatrixWorkspace_const_sptr workspace, std::vector<int64_t> &unUsedSpec);
+  void getGroups(MatrixWorkspace_const_sptr workspace, std::vector<int64_t> &unUsedSpec);
 
   /// Converts GroupingWorkspace to data structures used to form groups
-  void getGroupsFromWS(DataObjects::GroupingWorkspace_const_sptr groupingWS, std::vector<int64_t> &unUsedSpec);
+  void getGroupsFromWS(GroupingWorkspace_const_sptr groupingWS, MatrixWorkspace_const_sptr inputWS,
+                       std::vector<int64_t> &unUsedSpec);
 
   /// Copy the and combine the histograms that the user requested from the input into the output workspace
-  size_t formGroups(API::MatrixWorkspace_const_sptr inputWS, API::MatrixWorkspace_sptr outputWS, 
+  size_t formGroups(MatrixWorkspace_const_sptr inputWS, MatrixWorkspace_sptr outputWS, 
         const double prog4Copy);
   /// Copy the and combine the event lists that the user requested from the input into the output workspace
-  size_t formGroupsEvent(DataObjects::EventWorkspace_const_sptr inputWS, DataObjects::EventWorkspace_sptr outputWS,
+  size_t formGroupsEvent(EventWorkspace_const_sptr inputWS, EventWorkspace_sptr outputWS,
         const double prog4Copy);
 
   /// Copy the data data in ungrouped histograms from the input workspace to the output
-  void moveOthers(const std::set<int64_t> &unGroupedSet, API::MatrixWorkspace_const_sptr inputWS, API::MatrixWorkspace_sptr outputWS, size_t outIndex);
+  void moveOthers(const std::set<int64_t> &unGroupedSet, MatrixWorkspace_const_sptr inputWS, MatrixWorkspace_sptr outputWS, size_t outIndex);
   /// Copy the data data in ungrouped event lists from the input workspace to the output
-  void moveOthersEvent(const std::set<int64_t> &unGroupedSet, DataObjects::EventWorkspace_const_sptr inputWS, DataObjects::EventWorkspace_sptr outputWS, size_t outIndex);
+  void moveOthersEvent(const std::set<int64_t> &unGroupedSet, EventWorkspace_const_sptr inputWS, EventWorkspace_sptr outputWS, size_t outIndex);
 
   /// flag values
   enum {
