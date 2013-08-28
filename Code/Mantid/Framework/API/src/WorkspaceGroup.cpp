@@ -290,15 +290,13 @@ void WorkspaceGroup::workspaceReplaceHandle(Mantid::API::WorkspaceBeforeReplaceN
   bool isObserving = m_observingADS;
   if ( isObserving )
     observeADSNotifications( false );
-  const std::string replacedName = notice->object_name();
-  for(auto citr=m_workspaces.begin(); citr!=m_workspaces.end(); ++citr)
-  {
-    if ( (**citr).name() == replacedName )
-    {
-      *citr = notice->new_object();
-      break;
-    }
-  }
+
+  //remove any workspace that already exists with the name
+  this->remove(notice->object_name());
+
+  //replace the object in the group
+  this->addWorkspace(notice->new_object());
+
   if ( isObserving )
     observeADSNotifications( true );
 }
