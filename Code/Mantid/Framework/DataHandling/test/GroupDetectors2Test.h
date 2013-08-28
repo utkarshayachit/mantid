@@ -37,7 +37,7 @@ public:
   GroupDetectors2Test() :
       inputWS("groupdetectorstests_input_workspace"),
         outputBase("groupdetectorstests_output_basename"),
-        inputFile(Poco::Path::current()+"GroupDetectors2Test_mapfile_example")
+        inputFile(Poco::Path::current()+"GroupDetectors2Test_mapfile_example.map")
   {
     // This is needed to load in the plugin algorithms (specifically Divide, which is a Child Algorithm of GroupDetectors)
     FrameworkManager::Instance();
