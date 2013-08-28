@@ -59,9 +59,11 @@ using namespace Geometry;
  */
 bool CheckWorkspacesMatch::processGroups()
 {
-  AnalysisDataServiceImpl& dataStore = AnalysisDataService::Instance();
-  WorkspaceGroup_sptr ws1 = boost::dynamic_pointer_cast<WorkspaceGroup>(dataStore.retrieve(getPropertyValue("Workspace1")));
-  WorkspaceGroup_sptr ws2 = boost::dynamic_pointer_cast<WorkspaceGroup>(dataStore.retrieve(getPropertyValue("Workspace2")));
+  Workspace_const_sptr w1 = getProperty("Workspace1");
+  Workspace_const_sptr w2 = getProperty("Workspace2");
+
+  WorkspaceGroup_const_sptr ws1 = boost::dynamic_pointer_cast<const WorkspaceGroup>(w1);
+  WorkspaceGroup_const_sptr ws2 = boost::dynamic_pointer_cast<const WorkspaceGroup>(w2);
   this->result.clear();
 
   if( ws1 && ws2 ) // Both groups
@@ -96,7 +98,7 @@ bool CheckWorkspacesMatch::processGroups()
  * @param groupOne :: Input group 1
  * @param groupTwo :: Input group 2
  */
-void CheckWorkspacesMatch::processGroups(boost::shared_ptr<API::WorkspaceGroup> groupOne, boost::shared_ptr<API::WorkspaceGroup> groupTwo)
+void CheckWorkspacesMatch::processGroups(WorkspaceGroup_const_sptr groupOne, WorkspaceGroup_const_sptr groupTwo)
 {
   // Check their sizes
   const size_t totalNum = static_cast<size_t>(groupOne->getNumberOfEntries());
@@ -687,12 +689,12 @@ bool CheckWorkspacesMatch::checkInstrument(API::MatrixWorkspace_const_sptr ws1, 
   const Geometry::ParameterMap& ws1_parmap = ws1->instrumentParameters();
   const Geometry::ParameterMap& ws2_parmap = ws2->instrumentParameters();
 
-  if ( ws1_parmap.asString() != ws2_parmap.asString() )
+  if ( ws1_parmap != ws2_parmap )
   {
     g_log.debug() << "Parameter maps...\n";
     g_log.debug() << "WS1: " << ws1_parmap.asString() << "\n";
     g_log.debug() << "WS2: " << ws2_parmap.asString() << "\n";
-    result = "Instrument ParameterMap mismatch";
+    result = "Instrument ParameterMap mismatch (differences in ordering ignored)";
     return false;
   }
   
