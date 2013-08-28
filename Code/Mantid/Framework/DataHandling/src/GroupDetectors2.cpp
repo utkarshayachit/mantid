@@ -7,7 +7,7 @@ Not all spectra in the input workspace have to be copied to a group. If KeepUngr
 
 To create a single group the list of spectra can be identified using a list of either spectrum numbers, detector IDs or workspace indices. The list should be set against the appropriate property.
 
-See [LoadDetectorsGroupingFile] for a description of a MapFile format. // TODO: check if is correct
+See [[LoadDetectorsGroupingFile]] for a description of a MapFile format.
 
 == Previous Versions ==
 
@@ -185,7 +185,7 @@ void GroupDetectors2::execEvent()
 
 
     const size_t numInHists = inputWS->getNumberHistograms();
-    progress( m_FracCompl = CHECKBINS );
+    progress(m_FracCompl = CHECKBINS);
     interruption_point();
 
     // some values loaded into this vector can be negative so this needs to be a signed type
@@ -254,11 +254,16 @@ void GroupDetectors2::getGroups(API::MatrixWorkspace_const_sptr workspace,
   const std::string filename = getProperty("MapFile");
   if ( ! filename.empty() )
   {// The file property has been set so try to load the file
-    g_log.debug() << "Parsing file " << filename << std::endl;
+
 
     Mantid::API::IAlgorithm_sptr loader = createChildAlgorithm("LoadDetectorsGroupingFile");
     loader->initialize();
     loader->setProperty("InputFile", filename);
+
+    // Will not work till progress reporting implemented in LoadDetectorsGroupingFile
+    setChildStartProgress(m_FracCompl);
+    setChildEndProgress(m_FracCompl + READFILE);
+    
     loader->execute();
 
     GroupingWorkspace_sptr groupingWS = loader->getProperty("OutputWorkspace");
@@ -274,7 +279,8 @@ void GroupDetectors2::getGroups(API::MatrixWorkspace_const_sptr workspace,
     if(m_GroupSpecInds.empty())
       throw std::invalid_argument("No groups specified in a file, nothing to do");
 
-    // TODO: update progress
+    progress(m_FracCompl += READFILE);
+    interruption_point();
 
     return;
   }
@@ -337,7 +343,7 @@ void GroupDetectors2::getGroups(API::MatrixWorkspace_const_sptr workspace,
  * Updates m_GroupSpecInds and unUsedSpec in the way that it matches the information provided in
  * groupingWS.
  * @param groupingWS WS with grouping information
- * @param unUsedSpec Vector with elements for every spectra which are set to USED if the are in some group.
+ * @param unUsedSpec Vector with elements for every spectra which are set to USED if they are in some group.
  */
 void GroupDetectors2::getGroupsFromWS(GroupingWorkspace_const_sptr groupingWS, std::vector<int64_t> &unUsedSpec)
 {
