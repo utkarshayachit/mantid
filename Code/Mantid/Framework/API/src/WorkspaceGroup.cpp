@@ -287,18 +287,35 @@ void WorkspaceGroup::workspaceDeleteHandle(Mantid::API::WorkspacePostDeleteNotif
 void WorkspaceGroup::workspaceReplaceHandle(Mantid::API::WorkspaceBeforeReplaceNotification_ptr notice)
 {
   Poco::Mutex::ScopedLock _lock(m_mutex);
-  bool isObserving = m_observingADS;
-  if ( isObserving )
-    observeADSNotifications( false );
+  std::string newName = notice->object_name();
+  if(this->contains(newName))
+  {
+    bool isObserving = m_observingADS;
+    if ( isObserving )
+      observeADSNotifications( false );
 
-  //remove any workspace that already exists with the name
-  this->remove(notice->object_name());
+    //remove any workspace that already exists with the name
+    if(this->name() != newName)
+    {
 
-  //replace the object in the group
-  this->addWorkspace(notice->new_object());
+      //remove workspace from group
+      std::vector<Workspace_sptr>::iterator iter = this->m_workspaces.begin();
+      for(; iter != m_workspaces.end(); ++iter)
+      {
+        if((**iter).name() == newName)
+        {
+          m_workspaces.erase(iter);
+          break;
+        }
+      }
 
-  if ( isObserving )
-    observeADSNotifications( true );
+      //replace the object in the group
+      this->addWorkspace(notice->new_object());
+    }
+
+    if ( isObserving )
+      observeADSNotifications( true );
+  }
 }
 
 /**
