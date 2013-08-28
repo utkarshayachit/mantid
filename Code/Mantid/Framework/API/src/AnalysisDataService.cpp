@@ -228,7 +228,7 @@ namespace Mantid
         }
         if ( !group->contains(wsName) )
         {
-            throw std::runtime_error("WorkspaceGroup " + groupName + " does not containt workspace " + wsName);
+            throw std::runtime_error("WorkspaceGroup " + groupName + " does not contain workspace " + wsName);
         }
         group->removeByADS( wsName );
         notificationCenter.postNotification(new GroupUpdatedNotification( groupName ));
