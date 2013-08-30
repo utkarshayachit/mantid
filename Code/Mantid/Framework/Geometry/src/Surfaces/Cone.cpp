@@ -37,7 +37,7 @@ namespace Mantid
     int Cone::g_nslices = 10;
 
     // The number of slices to use to approximate a cylinder
-    int Cone::g_nstacks = 1;
+    int Cone::g_nstacks = 10;
 
     Cone::Cone() :
         Quadratic(), Centre(), Normal(1, 0, 0), alpha(0.0), cangle(1.0)
@@ -374,24 +374,35 @@ namespace Mantid
         double &zmin)
     {
       /**
-       Cone bounding box
-       Intended to improve bounding box for a general quadratic surface
-       Using the surface calculate improved limits on the bounding box, if possible.
-       @param xmax :: On input, existing Xmax bound, on exit possibly improved Xmax bound
-       @param xmin :: On input, existing Xmin bound, on exit possibly improved Xmin bound
-       @param ymax :: as for xmax
-       @param ymin :: as for xmin
-       @param zmax :: as for xmax
-       @param zmin :: as for xmin
-       ///TODO: its bit difficult to find resonable AABB
-       ///For now it will return the same bounding box as input
-       */
-      UNUSED_ARG(xmax);
-      UNUSED_ARG(ymax);
-      UNUSED_ARG(zmax);
-      UNUSED_ARG(xmin);
-      UNUSED_ARG(ymin);
-      UNUSED_ARG(zmin);
+      Cone bounding box
+      Intended to improve bounding box for a general quadratic surface
+      Using the surface calculate improved limits on the bounding box, if possible.
+      @param xmax :: On input, existing Xmax bound, on exit possibly improved Xmax bound
+      @param xmin :: On input, existing Xmin bound, on exit possibly improved Xmin bound
+      @param ymax :: as for xmax
+      @param ymin :: as for xmin
+      @param zmax :: as for xmax
+      @param zmin :: as for xmin
+      ///TODO: its bit difficult to find resonable AABB
+      ///For now it will return the same bounding box as input
+      */
+
+      //UNUSED_ARG(xmax);
+      //UNUSED_ARG(ymax);
+      //UNUSED_ARG(zmax);
+      //UNUSED_ARG(xmin);
+      //UNUSED_ARG(ymin);
+      //UNUSED_ARG(zmin);
+
+      std::vector<V3D> listOfPoints;
+      double txmax, tymax, tzmax, txmin, tymin, tzmin;
+      txmax = xmax;
+      tymax = ymax;
+      tzmax = zmax;
+      txmin = xmin;
+      tymin = ymin;
+      tzmin = zmin;
+      V3D xminPoint, xmaxPoint, yminPoint, ymaxPoint, zminPoint, zmaxPoint;
     }
 
   }  // NAMESPACE Geometry

@@ -50,16 +50,16 @@ namespace Mantid
     {
     private:
 
-      static Kernel::Logger& PLog;           ///< The official logger
+      static Kernel::Logger& PLog;           /// The official logger
 
-      Kernel::V3D Centre;        ///< Kernel::V3D for centre
-      Kernel::V3D Normal;        ///< Direction of centre line
-      int Nvec;            ///< Normal vector is x,y or z :: (1-3) (0 if general)
-      double Radius;       ///< Radius of cylinder
+      Kernel::V3D Centre;        /// Kernel::V3D for centre
+      Kernel::V3D Normal;        /// Direction of centre line
+      int Nvec;            /// Normal vector is x,y or z :: (1-3) (0 if general)
+      double Radius;       /// Radius of cylinder
 
       void rotate(const Kernel::Matrix<double>&);
       void displace(const Kernel::V3D&);
-      void setNvec();      ///< check to obtain orientation
+      void setNvec();      /// check to obtain orientation
 
     public:
 

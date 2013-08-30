@@ -32,7 +32,7 @@ namespace Mantid
 
     void GluGeometryRenderer::RenderSphere(const V3D& center,double radius)
     {
-      while(glGetError() != GL_NO_ERROR);
+      while(glGetError() != GL_NO_ERROR );
       CreateSphere(center,radius);
     }
 
@@ -46,23 +46,15 @@ namespace Mantid
 
     void GluGeometryRenderer::RenderCone(const V3D& center,const V3D& axis,double radius,double height)
     {
-      while(true)
-      {
-        auto testpoint = glGetError();
-        if (glGetError() == GL_NO_ERROR)
-        {
-          break;
-        }
-      }
-
+      while(glGetError() != GL_NO_ERROR );
       CreateCone(center,axis,radius,height);
     }
 
 
     void GluGeometryRenderer::RenderCylinder(const V3D& center,const V3D& axis,double radius,double height)
     {
-        while(glGetError() != GL_NO_ERROR);
-        CreateCylinder(center,axis,radius,height);
+      while(glGetError() != GL_NO_ERROR);
+      CreateCylinder(center,axis,radius,height);
     }
 
     void GluGeometryRenderer::RenderSegmentedCylinder(const V3D& center,const V3D& axis,double radius,double height)
@@ -101,7 +93,7 @@ namespace Mantid
       gluQuadricNormals(qobj,GL_SMOOTH);
       glPushMatrix();
       glTranslated(center[0],center[1],center[2]);
-      gluSphere(qobj,radius, Geometry::Sphere::g_nslices, Geometry::Sphere::g_nstacks);
+      gluSphere(qobj,radius, Sphere::g_nslices, Sphere::g_nstacks);
       glPopMatrix();
       gluDeleteQuadric(qobj);
     }
@@ -131,33 +123,34 @@ namespace Mantid
       //int faceindex[6][4]={{0,1,2,3},{0,3,7,4},{3,2,6,7},{2,1,5,6},{0,4,5,1},{4,7,6,5}};
       //int faceindex[6][4]={{0,3,2,1},{0,4,7,3},{3,7,6,2},{2,6,5,1},{0,1,5,4},{4,5,6,7}};
       int faceindex[6][4]={
-	{0,1,2,3}, //top
-	{0,3,7,4}, //left
-	{3,2,6,7}, //back
-	{2,1,5,6}, //right
-	{0,4,5,1}, //front
-	{4,7,6,5}, //bottom
+        {0,1,2,3}, //top
+        {0,3,7,4}, //left
+        {3,2,6,7}, //back
+        {2,1,5,6}, //right
+        {0,4,5,1}, //front
+        {4,7,6,5}, //bottom
       };
       V3D normal;
       //first face
       glBegin(GL_QUADS);
-      for(int i=0;i<6;i++){
-	normal=(vertex[faceindex[i][0]]-vertex[faceindex[i][1]]).cross_prod((vertex[faceindex[i][0]]-vertex[faceindex[i][2]]));
-	normal.normalize();
-	glNormal3d(normal[0],normal[1],normal[2]);
-	for(int j=0;j<4;j++)
-	{
-	  int ij = faceindex[i][j];
-	  if (ij == 0) glTexCoord2i(0, 0);
-	  if (ij == 1) glTexCoord2i(1, 0);
-	  if (ij == 2) glTexCoord2i(1, 1);
-	  if (ij == 3) glTexCoord2i(0, 1);
-	  if (ij == 4) glTexCoord2i(0, 0);
-	  if (ij == 5) glTexCoord2i(1, 0);
-	  if (ij == 6) glTexCoord2i(1, 1);
-	  if (ij == 7) glTexCoord2i(0, 1);
-	  glVertex3d(vertex[ij][0],vertex[ij][1],vertex[ij][2]);
-	}
+      for(int i=0;i<6;i++)
+      {
+        normal=(vertex[faceindex[i][0]]-vertex[faceindex[i][1]]).cross_prod((vertex[faceindex[i][0]]-vertex[faceindex[i][2]]));
+        normal.normalize();
+        glNormal3d(normal[0],normal[1],normal[2]);
+        for(int j=0;j<4;j++)
+        {
+          int ij = faceindex[i][j];
+          if (ij == 0) glTexCoord2i(0, 0);
+          if (ij == 1) glTexCoord2i(1, 0);
+          if (ij == 2) glTexCoord2i(1, 1);
+          if (ij == 3) glTexCoord2i(0, 1);
+          if (ij == 4) glTexCoord2i(0, 0);
+          if (ij == 5) glTexCoord2i(1, 0);
+          if (ij == 6) glTexCoord2i(1, 1);
+          if (ij == 7) glTexCoord2i(0, 1);
+          glVertex3d(vertex[ij][0],vertex[ij][1],vertex[ij][2]);
+        }
       }
       glEnd();
     }
@@ -171,20 +164,24 @@ namespace Mantid
  */
     void GluGeometryRenderer::CreateCone(const V3D& center,const V3D& axis,double radius,double height)
     {
-      glPushMatrix();
       GLUquadricObj *qobj=gluNewQuadric();
       gluQuadricDrawStyle(qobj,GLU_FILL);
       gluQuadricNormals(qobj,GL_SMOOTH);
+      gluQuadricTexture(qobj,true);
+      glPushMatrix();
       glTranslated(center[0],center[1],center[2]);
       GLdouble mat[16];
       V3D unit(0,0,1);
       Quat rot(unit,axis);
       rot.GLMatrix(&mat[0]);
       glMultMatrixd(mat);
-      gluCylinder(qobj,0,radius,height,Geometry::Cone::g_nslices,Geometry::Cone::g_nstacks);
+      gluCylinder(qobj,0,radius,height, Cone::g_nslices, Cone::g_nstacks);
+      //gluCylinder(qobj,0.0003,radius,height,10,10);
+      gluQuadricTexture(qobj,false);
       glTranslated(0.0,0.0,height);
       gluDisk(qobj,0,radius,Geometry::Cone::g_nslices,1);
       glPopMatrix();
+      gluDeleteQuadric(qobj);
     }
 
 /**
@@ -213,6 +210,7 @@ namespace Mantid
       glTranslated(0.0,0.0,height);
       gluDisk(qobj,0,radius,Cylinder::g_nslices, 1);
       glPopMatrix();
+      gluDeleteQuadric(qobj);
     }
 
     void GluGeometryRenderer::CreateSegmentedCylinder(const V3D& center,const V3D& axis,double radius,double height)
@@ -234,6 +232,7 @@ namespace Mantid
       glTranslated(0.0,0.0,height);
       gluDisk(qobj,0,radius,Cylinder::g_nslices, 1);
       glPopMatrix();
+      gluDeleteQuadric(qobj);
     }
   }
 }

@@ -657,11 +657,10 @@ std::string ShapeFactory::parseInfiniteCone(Poco::XML::Element* pElem, std::map<
  */
 std::string ShapeFactory::parseCone(Poco::XML::Element* pElem, std::map<int, Surface*>& prim, int& l_id)
 {
-  Element* pElemTipPoint = getShapeElement(pElem, "tip-point"); 
-  Element* pElemAxis = getShapeElement(pElem, "axis");  
-  Element* pElemAngle = getShapeElement(pElem, "angle");  
-  Element* pElemHeight = getShapeElement(pElem, "height"); 
-
+  Element* pElemTipPoint = getShapeElement(pElem, "tip-point");
+  Element* pElemAxis = getShapeElement(pElem, "axis");
+  Element* pElemAngle = getShapeElement(pElem, "angle");
+  Element* pElemHeight = getShapeElement(pElem, "height");
   V3D normVec = parsePosition(pElemAxis);
   normVec.normalize();
 
@@ -671,8 +670,8 @@ std::string ShapeFactory::parseCone(Poco::XML::Element* pElem, std::map<int, Sur
   
   // add infinite double cone
   Cone* pCone = new Cone();
-  pCone->setCentre(parsePosition(pElemTipPoint));              
-  pCone->setNorm(normVec);  
+  pCone->setCentre(parsePosition(pElemTipPoint));
+  pCone->setNorm(normVec);
   pCone->setAngle(angle);
   prim[l_id] = pCone;
 
@@ -691,7 +690,7 @@ std::string ShapeFactory::parseCone(Poco::XML::Element* pElem, std::map<int, Sur
 
   // plane top cut of top part of double cone 
   Plane* pPlaneBottom = new Plane();
-  pPlaneBottom->setPlane(parsePosition(pElemTipPoint), normVec); 
+  pPlaneBottom->setPlane(parsePosition(pElemTipPoint), normVec);
   prim[l_id] = pPlaneBottom;
   retAlgebraMatch << "-" << l_id << ")";
   l_id++;
