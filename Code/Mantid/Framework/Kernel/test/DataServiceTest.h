@@ -161,13 +161,13 @@ public:
     TSM_ASSERT_THROWS("One should have been renamed to anotherOne", svc.retrieve("one"), Exception::NotFoundError );
     TSM_ASSERT_EQUALS("One should have been renamed to anotherOne", svc.retrieve("anotherOne"), one );
 
-    TSM_ASSERT_EQUALS("The observers should have been called 2 times in total", notificationFlag, 2 );
+    TSM_ASSERT_EQUALS("The observers should have been called 4 times in total", notificationFlag, 4 );
 
     svc.rename("Two","anotherOne");
     TS_ASSERT_EQUALS( svc.size(), 1);
     TSM_ASSERT_THROWS("Two should have been renamed to anotherOne", svc.retrieve("two"), Exception::NotFoundError );
     TSM_ASSERT_EQUALS("Two should have been renamed to anotherOne", svc.retrieve("anotherOne"), two );
-    TSM_ASSERT_EQUALS("The observers should have been called 4 times in total", notificationFlag, 4 );
+    TSM_ASSERT_EQUALS("The observers should have been called 6 times in total", notificationFlag, 6 );
 
     svc.notificationCenter.removeObserver(observer);
     svc.notificationCenter.removeObserver(observer2);

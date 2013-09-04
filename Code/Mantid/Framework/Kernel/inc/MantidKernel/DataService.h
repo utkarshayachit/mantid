@@ -278,7 +278,7 @@ public:
   {
     checkForEmptyName(newName);
 
-    auto item = this->retrieve(oldName);
+    // Make DataService access thread-safe
     m_mutex.lock();
 
     std::string foundName;
@@ -290,14 +290,35 @@ public:
       return;
     }
 
-    // delete the object with the old name silently
+    // delete the object with the old name
     auto object = it->second;
-    datamap.erase(it);
-
+    m_mutex.lock();
+    datamap.erase( it );
     m_mutex.unlock();
 
-    this->addOrReplace(newName,item);
+    // if there is another object which has newName delete it
+    // this is actually a replace operation, so we send out there notifications as well.
+    notificationCenter.postNotification(new BeforeReplaceNotification(newName, it->second, object));
+    it = datamap.find( newName );
+    if ( it != datamap.end() )
+    {
+      m_mutex.lock();
+      datamap.erase( it );
+      m_mutex.unlock();
+    }
 
+    // insert the old object with the new name
+    if ( ! datamap.insert(typename svcmap::value_type(newName, object)).second )
+    {
+      std::string error=" add : Unable to insert Data Object : '"+newName+"'";
+      g_log.error(error);
+      m_mutex.unlock();
+      throw std::runtime_error(error);
+    }
+    g_log.information("Data Object '"+ foundName +"' renamed to '" + newName + "'");
+    m_mutex.unlock();
+
+    notificationCenter.postNotification(new AfterReplaceNotification(newName,object));
     notificationCenter.postNotification(new RenameNotification(oldName, newName));
 
     return;

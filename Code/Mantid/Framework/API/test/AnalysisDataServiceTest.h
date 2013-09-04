@@ -430,6 +430,32 @@ public:
 
   }
 
+  void test_Rename_Group_Child_To_Another_Child()
+  {
+    auto group = addGroupToADS("group");
+    TS_ASSERT_EQUALS( ads.size(), 3);
+
+    ads.rename("group_1", "group_2");
+
+    TS_ASSERT_EQUALS( ads.size(), 2);
+    TS_ASSERT( group->contains("group_2") );
+    TS_ASSERT( !group->contains("group_1") );
+  }
+
+  void test_Rename_Group_To_Another_Group()
+  {
+    auto group1 = addGroupToADS("group1");
+    auto group2 = addGroupToADS("group2");
+
+    ads.rename("group2", "group1");
+
+    TS_ASSERT_EQUALS( ads.size(), 5);
+    TS_ASSERT( group1->contains("group1_1") );
+    TS_ASSERT( !ads.doesExist("group2") );
+    TS_ASSERT( ads.doesExist("group2_1") );
+    TS_ASSERT( ads.doesExist("group2_2") );
+  }
+
 private:
 
   /// If replace=true then usea addOrReplace

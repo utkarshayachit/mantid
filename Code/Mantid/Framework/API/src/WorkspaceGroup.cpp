@@ -280,42 +280,40 @@ void WorkspaceGroup::workspaceDeleteHandle(Mantid::API::WorkspacePostDeleteNotif
 }
 
 /**
- * Callback when a after-replace notification is received
+ * Callback when a before-replace notification is received
  * Replaces a member if it was replaced in the ADS.
- * @param notice :: A pointer to a workspace after-replace notificiation object
+ * @param notice :: A pointer to a workspace before-replace notificiation object
  */
 void WorkspaceGroup::workspaceReplaceHandle(Mantid::API::WorkspaceBeforeReplaceNotification_ptr notice)
 {
   Poco::Mutex::ScopedLock _lock(m_mutex);
   std::string newName = notice->object_name();
-  if(this->contains(newName))
+
+  bool isObserving = m_observingADS;
+  if ( isObserving )
+    observeADSNotifications( false );
+
+  const std::string replacedName = notice->object_name();
+  bool found(false);
+  for(auto citr=m_workspaces.begin(); citr!=m_workspaces.end(); ++citr)
   {
-    bool isObserving = m_observingADS;
-    if ( isObserving )
-      observeADSNotifications( false );
-
-    //remove any workspace that already exists with the name
-    if(this->name() != newName)
+    if ( (**citr).name() == replacedName )
     {
-
-      //remove workspace from group
-      std::vector<Workspace_sptr>::iterator iter = this->m_workspaces.begin();
-      for(; iter != m_workspaces.end(); ++iter)
+      if(!found)
       {
-        if((**iter).name() == newName)
-        {
-          m_workspaces.erase(iter);
-          break;
-        }
+        *citr = notice->new_object();
+        found = true;
       }
-
-      //replace the object in the group
-      this->addWorkspace(notice->new_object());
+      else
+      {
+        m_workspaces.erase(citr);
+        break;
+      }
     }
-
-    if ( isObserving )
-      observeADSNotifications( true );
   }
+
+  if ( isObserving )
+    observeADSNotifications( true );
 }
 
 /**
