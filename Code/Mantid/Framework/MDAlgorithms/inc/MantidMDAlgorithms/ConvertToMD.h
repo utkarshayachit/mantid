@@ -91,6 +91,7 @@ namespace MDAlgorithms
         API::IMDEventWorkspace_sptr createNewMDWorkspace(const MDEvents::MDWSDescription &NewMDWSDescription);
 
         bool buildTargetWSDescription(API::IMDEventWorkspace_sptr spws,const std::string &Q_mod_req,const std::string &dEModeRequested,const std::vector<std::string> &other_dim_names,
+                                      std::vector<double> &dimMin,std::vector<double> &dimMax,
                                       const std::string &QFrame,const std::string &convertTo_,MDEvents::MDWSDescription &targWSDescr);
 
        /// Store metadata and set some methadata, needed for plugin to run on the target workspace description
@@ -102,7 +103,8 @@ namespace MDAlgorithms
        DataObjects::TableWorkspace_sptr runPreprocessDetectorsToMDChildUpdatingMasks(Mantid::API::MatrixWorkspace_const_sptr InWS2D,const std::string &OutWSName,
                                                                                            const std::string &dEModeRequested,Kernel::DeltaEMode::Type &Emode);
 
-       void findMinMax(const std::string &QMode, const std::string &dEMode, std::vector<double> &minVal,std::vector<double> &maxVal);
+       void findMinMax(const Mantid::API::MatrixWorkspace_sptr &inWS,const std::string &QMode, const std::string &dEMode,const std::vector<std::string> &otherDim,
+                       std::vector<double> &minVal,std::vector<double> &maxVal);
  };
 
 } // namespace Mantid

@@ -54,7 +54,7 @@ void testExecThrow(){
 }
 
 
-void testExecFailsOnNewWorkspaceNoLimits(){
+void testExecRunsOnNewWorkspaceNoLimits(){
     Mantid::API::MatrixWorkspace_sptr ws2D =WorkspaceCreationHelper::createProcessedWorkspaceWithCylComplexInstrument(100,10,true);
     // add workspace energy
      ws2D->mutableRun().addProperty("Ei",12.,"meV",true);
@@ -71,7 +71,7 @@ void testExecFailsOnNewWorkspaceNoLimits(){
     TSM_ASSERT("Should fail as no  min-max limits were specied ",!pAlg->isExecuted());
 
 }
-void testExecFailsOnNewWorkspaceNoMaxLimits(){
+void testExecWorksAutoLimitsOnNewWorkspaceNoMaxLimits(){
     Mantid::API::MatrixWorkspace_sptr ws2D =WorkspaceCreationHelper::createProcessedWorkspaceWithCylComplexInstrument(100,10,true);
  // add workspace energy
      ws2D->mutableRun().addProperty("Ei",12.,"meV",true);

@@ -59,7 +59,7 @@ void MDWSDescription::buildFromMatrixWS(const API::MatrixWorkspace_const_sptr &p
 
   m_Emode = Kernel::DeltaEMode().fromString(dEMode);
 
-  // get raw pointer to Q-transformation (do not delete this pointer!)
+  // get raw pointer to Q-transformation (do not delete this pointer, it hold by MDTransfFactory!)
   MDTransfInterface* pQtransf =  MDTransfFactory::Instance().create(QMode).get();
 
   // get number of dimensions this Q transformation generates from the workspace. 
