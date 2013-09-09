@@ -206,7 +206,8 @@ namespace Mantid
         /** Create a MDBox or MDGridBoxof the given type
         @param nDimensions  :: number of dimensions
         @param Type         :: enum descibing the box (MDBox or MDGridBox) and the event type (MDEvent or MDLeanEvent)
-        @param splitter     :: shared pointer to the box controller responsible for splitting boxes. The BC is not incremented as boxes take usual pointer from this pointer
+        @param splitter     :: shared pointer to the box controller responsible for splitting boxes. 
+                               The shared pointer counter is not incremented as boxes exctact and use usual pointer from this pointer
         @param extentsVector:: box extents in all n-dimensions (min-max)
         @param depth        :: the depth of the box within the box tree
         @param nBoxEvents   :: if defined, specify the memory the box should allocate to accept events -- not used for MDGridBox
@@ -245,7 +246,7 @@ namespace Mantid
         // static vector, conaining the pointers to the functions creating MD Workspaces
         std::vector<MDEventFactory::fpCreateMDWS> MDEventFactory::wsCreatorFP(MDEventFactory::MAX_MD_DIMENSIONS_NUM+1,NULL);
 
-        //########### Teplate methaprogrammed CODE SOURCE start:  -------------------------------------
+        //########### Template methaprogrammed CODE SOURCE start:  -------------------------------------
 
         //-------------------------------------------------------------- MD Workspace constructor wrapper
         /** Template to create md workspace with specific number of dimentisons

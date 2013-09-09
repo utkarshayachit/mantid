@@ -55,7 +55,7 @@ void testExecThrow(){
 }
 
 /** Calculate min-max value defaults*/
-Mantid::API::IAlgorithm * calcMinMaxValDefaults(const std::string &QMode)
+Mantid::API::IAlgorithm * calcMinMaxValDefaults(const std::string &QMode,const std::string &OtherProperties="")
 {
 
   Mantid::API::IAlgorithm *childAlg = Mantid::API::FrameworkManager::Instance().createAlgorithm("ConvertToMDHelper");
@@ -73,6 +73,8 @@ Mantid::API::IAlgorithm * calcMinMaxValDefaults(const std::string &QMode)
     childAlg->setPropertyValue("InputWorkspace", "testWSProcessed");
     childAlg->setPropertyValue("QDimensions",QMode);
     childAlg->setPropertyValue("dEAnalysisMode","Direct");
+    childAlg->setPropertyValue("OtherDimensions",OtherProperties);
+ 
     childAlg->execute();
     if(!childAlg->isExecuted() )
     {
@@ -136,7 +138,7 @@ void testExecRunsOnNewWorkspaceNoLimits5D()
 
  
     TSM_ASSERT_THROWS_NOTHING("the inital is not in the units of energy transfer",pAlg->setPropertyValue("InputWorkspace", ws2D->getName()));
-    TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("OutputWorkspace", "EnergyTransfer4DWS"));
+    TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("OutputWorkspace", "EnergyTransfer5DWS"));
     TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("QDimensions","Q3D") );
     TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("OtherDimensions","Ei") );
     TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("dEAnalysisMode", "Direct"));
@@ -149,12 +151,12 @@ void testExecRunsOnNewWorkspaceNoLimits5D()
       return;
     }
 
-    auto childAlg = calcMinMaxValDefaults("Q3D");
+    auto childAlg = calcMinMaxValDefaults("Q3D","Ei");
     if (!childAlg) return;
     // get the results
     std::vector<double> minVal = childAlg->getProperty("MinValues");
     std::vector<double> maxVal = childAlg->getProperty("MaxValues");
-    auto outWS = AnalysisDataService::Instance().retrieveWS<IMDWorkspace>("EnergyTransfer4DWS");
+    auto outWS = AnalysisDataService::Instance().retrieveWS<IMDWorkspace>("EnergyTransfer5DWS");
 
     size_t NDims = outWS->getNumDims();
     for(size_t i=0;i<NDims-1;i++)
@@ -188,6 +190,7 @@ void testExecWorksAutoLimitsOnNewWorkspaceNoMaxLimits()
 
     TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("QDimensions","Q3D"));
     TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("dEAnalysisMode", "Direct"));
+    TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("OtherDimensions", ""));
     TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("InputWorkspace", ws2D->getName()));
  
     TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("OutputWorkspace", "EnergyTransfer4DWS"));
