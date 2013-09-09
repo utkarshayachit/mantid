@@ -71,7 +71,7 @@ Mantid::API::IAlgorithm * calcMinMaxValDefaults(const std::string &QMode)
       return NULL;
     }
     childAlg->setPropertyValue("InputWorkspace", "testWSProcessed");
-    childAlg->setPropertyValue("QDimensions","Q3D");
+    childAlg->setPropertyValue("QDimensions",QMode);
     childAlg->setPropertyValue("dEAnalysisMode","Direct");
     childAlg->execute();
     if(!childAlg->isExecuted() )
@@ -122,10 +122,53 @@ void testExecRunsOnNewWorkspaceNoLimits()
         TS_ASSERT_DELTA(minVal[i],pDim->getMinimum(),1.e-4);
         TS_ASSERT_DELTA(maxVal[i],pDim->getMaximum(),1.e-4);
     }
+}
+
+void xestExecRunsOnNewWorkspaceNoLimits5D()
+{
+    Mantid::API::MatrixWorkspace_sptr ws2D =WorkspaceCreationHelper::createProcessedWorkspaceWithCylComplexInstrument(100,10,true);
+    // add workspace energy
+     ws2D->mutableRun().addProperty("Ei",12.,"meV",true);
+
+    AnalysisDataService::Instance().addOrReplace("testWSProcessed", ws2D);
+    // clear stuff from analysis data service for test to work in specified way
+    AnalysisDataService::Instance().remove("EnergyTransfer4DWS");
+
+ 
+    TSM_ASSERT_THROWS_NOTHING("the inital is not in the units of energy transfer",pAlg->setPropertyValue("InputWorkspace", ws2D->getName()));
+    TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("OutputWorkspace", "EnergyTransfer4DWS"));
+    TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("QDimensions","Q3D") );
+    TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("QDimensions","Q3D") );
+    TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("dEAnalysisMode", "Direct"));
+  
+
+    pAlg->execute();
+    if(!pAlg->isExecuted())
+    {
+      TSM_ASSERT("have not executed convertToMD without min-max limits specied ",false);
+      return;
+    }
+
+    auto childAlg = calcMinMaxValDefaults("Q3D");
+    if (!childAlg) return;
+    // get the results
+    std::vector<double> minVal = childAlg->getProperty("MinValues");
+    std::vector<double> maxVal = childAlg->getProperty("MaxValues");
+    auto outWS = AnalysisDataService::Instance().retrieveWS<IMDWorkspace>("EnergyTransfer4DWS");
+
+    size_t NDims = outWS->getNumDims();
+    for(size_t i=0;i<NDims;i++)
+    {
+        const Geometry::IMDDimension *pDim = outWS->getDimension(i).get();
+        TS_ASSERT_DELTA(minVal[i],pDim->getMinimum(),1.e-4);
+        TS_ASSERT_DELTA(maxVal[i],pDim->getMaximum(),1.e-4);
+    }
 
 
 
 }
+
+
 void testExecWorksAutoLimitsOnNewWorkspaceNoMaxLimits()
 {
     Mantid::API::MatrixWorkspace_sptr ws2D =WorkspaceCreationHelper::createProcessedWorkspaceWithCylComplexInstrument(100,10,true);
