@@ -65,19 +65,19 @@ private:
 public:
 
   /// Make a simple group
-  WorkspaceGroup_sptr makeGroup()
+  WorkspaceGroup_sptr makeGroup(const std::string& groupName = "group",const std::string& prefix = "ws")
   {
+    WorkspaceGroup_sptr group(new WorkspaceGroup());
+    AnalysisDataService::Instance().addOrReplace(groupName, group);
+
     for (size_t i=0; i<3; i++)
     {
       boost::shared_ptr<WorkspaceTester> ws(new WorkspaceTester());
       ws->initialize(2,3,4);
-      AnalysisDataService::Instance().addOrReplace("ws" + Strings::toString(i), ws);
+      AnalysisDataService::Instance().addOrReplace(prefix + Strings::toString(i), ws);
+      group->add(prefix + Strings::toString(i));
     }
-    WorkspaceGroup_sptr group(new WorkspaceGroup());
-    AnalysisDataService::Instance().addOrReplace("group", group);
-    group->add("ws0");
-    group->add("ws1");
-    group->add("ws2");
+
     return group;
   }
 
@@ -332,6 +332,78 @@ public:
       group1->addWorkspace( group );
       Workspace_sptr b = boost::make_shared<WorkspaceTester>();
       TS_ASSERT_THROWS( group->isInGroup( *b ), std::runtime_error );
+  }
+
+  void test_renameWorkspaceToWorkspaceGroupChild()
+  {
+    WorkspaceGroup_sptr group = makeGroup();
+    
+    //create new top level workspace
+    boost::shared_ptr<WorkspaceTester> ws(new WorkspaceTester());
+    ws->initialize(5,6,7);
+    AnalysisDataService::Instance().addOrReplace("NewWorkspace", ws);
+
+    //rename workspace should replace child in group
+    TS_ASSERT_THROWS_NOTHING( AnalysisDataService::Instance().rename("NewWorkspace", "ws1") );
+
+    TS_ASSERT( group->getNames().size() == 3 );
+    TS_ASSERT_THROWS_NOTHING( group->getItem("ws1") );
+    auto ws1 = boost::dynamic_pointer_cast<WorkspaceTester>(AnalysisDataService::Instance().retrieve("ws1"));
+    TS_ASSERT( ws->blocksize() == 7 );
+  }
+
+  void test_renameWorkspaceChildToTopLevelWorkspace()
+  {
+    WorkspaceGroup_sptr group = makeGroup();
+    
+    //create new top level workspace
+    boost::shared_ptr<WorkspaceTester> ws(new WorkspaceTester());
+    ws->initialize(5,6,7);
+    AnalysisDataService::Instance().addOrReplace("NewWorkspace", ws);
+
+    //rename child should replace top level workspace
+    TS_ASSERT_THROWS_NOTHING( AnalysisDataService::Instance().rename("ws1", "NewWorkspace") );
+
+    TS_ASSERT_EQUALS( group->getNames().size(), 3 );
+    TS_ASSERT_THROWS( group->getItem("ws1"), std::out_of_range );
+    TS_ASSERT_THROWS_NOTHING( group->getItem("NewWorkspace") );
+    auto ws1 = boost::dynamic_pointer_cast<WorkspaceTester>(group->getItem("NewWorkspace"));
+    TS_ASSERT( ws1->blocksize() == 4 );
+  }
+
+  void test_renameChildFromOneGroupToAnother()
+  {
+    WorkspaceGroup_sptr groupA = makeGroup("wsA", "wsA");
+    WorkspaceGroup_sptr groupB = makeGroup("wsB", "wsB");
+
+    TS_ASSERT_THROWS_NOTHING( AnalysisDataService::Instance().rename("wsA1", "wsB1") );
+
+    TS_ASSERT_EQUALS( groupA->getNames().size(), 3 );
+    TS_ASSERT_EQUALS( groupB->getNames().size(), 3 );
+
+    TS_ASSERT_THROWS( groupA->getItem("wsA1"), std::out_of_range );
+    TS_ASSERT_THROWS_NOTHING( groupB->getItem("wsB1") );
+
+    auto ws = boost::dynamic_pointer_cast<WorkspaceTester>(groupB->getItem("wsB1"));
+    TS_ASSERT( ws->blocksize() == 4 );
+  }
+
+  void test_renameOneGroupToAnother()
+  {
+    WorkspaceGroup_sptr groupA = makeGroup("wsA", "wsA");
+    WorkspaceGroup_sptr groupB = makeGroup("wsB", "wsB");
+
+    TS_ASSERT_THROWS_NOTHING( AnalysisDataService::Instance().rename("wsB", "wsA") );
+
+    TS_ASSERT_THROWS_NOTHING( groupA = boost::dynamic_pointer_cast<WorkspaceGroup>(AnalysisDataService::Instance().retrieve("wsA")) );
+    TS_ASSERT_THROWS( AnalysisDataService::Instance().retrieve("wsB"),  Mantid::Kernel::Exception::NotFoundError );
+
+    TS_ASSERT_THROWS_NOTHING( groupA->getItem("wsB1") );
+    TS_ASSERT_THROWS( groupA->getItem("wsA1"), std::out_of_range );
+
+    //A's workspaces should still exist outside the renamed group
+    TS_ASSERT_THROWS_NOTHING( AnalysisDataService::Instance().retrieve("wsA1") );
+    TS_ASSERT_THROWS_NOTHING( AnalysisDataService::Instance().retrieve("wsA2") );
   }
 
 };

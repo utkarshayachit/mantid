@@ -1,10 +1,11 @@
 /*WIKI* 
 
 
-Renames a workspace to a different name in the data service. If the same name is provided for input and output then the algorithm will fail with an error. The Renaming is implemented as a removal of the original workspace from the data service and re-addition under the new name.
+Renames a workspace to a different name in the data service. If the same name is provided for input and output then the algorithm will fail with an error.
 
 If run on a group workspace, the members of the group will be renamed if their names follow the pattern groupName_1, groupName_2, etc. (they will be renamed to newName_1, newname_2, etc.). Otherwise, only the group itself will be renamed - the members will keep their previous names.
 
+There is a known issue that if a member of a workspace group is renamed to be the same as the member of a different workspace group, two pointers to the same object workspace are created.
 *WIKI*/
 //----------------------------------------------------------------------
 // Includes
