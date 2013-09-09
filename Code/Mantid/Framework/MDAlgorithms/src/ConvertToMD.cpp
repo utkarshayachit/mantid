@@ -761,15 +761,15 @@ void ConvertToMD::findMinMax(const Mantid::API::MatrixWorkspace_sptr &inWS,const
    size_t nDim =nMatrixDim+otherDim.size();
 
    // proabably already have well defined min-max values, so no point of precalculating them
+   bool wellDefined(true);
    if((nDim == minVal.size()) && (minVal.size()==maxVal.size()))
    {
      // are they indeed well defined?
-     bool wellDefined(true);
      for(size_t i=0;i<minVal.size();i++)
      {
        if(minVal[i]>=maxVal[i]) // no it is ill defined
        {
-         g_log.debug()<<" Min Value: "<<minVal[i]<<" for dimension N: "<<i<<" equal or exceeds max value:"<<maxVal[i]<<std::endl;
+         g_log.information()<<" Min Value: "<<minVal[i]<<" for dimension N: "<<i<<" equal or exceeds max value:"<<maxVal[i]<<std::endl;
          wellDefined = false;
          break;
        }
@@ -817,6 +817,8 @@ void ConvertToMD::findMinMax(const Mantid::API::MatrixWorkspace_sptr &inWS,const
         }
       }
     }
+
+    if(!wellDefined) return;
 
     // if only min or only max limits are defined and are well defined workspace, the algorithm will use these limits
     std::vector<double> minAlgValues = this->getProperty("MinValues");
