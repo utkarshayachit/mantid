@@ -124,7 +124,7 @@ void testExecRunsOnNewWorkspaceNoLimits()
     }
 }
 
-void xestExecRunsOnNewWorkspaceNoLimits5D()
+void testExecRunsOnNewWorkspaceNoLimits5D()
 {
     Mantid::API::MatrixWorkspace_sptr ws2D =WorkspaceCreationHelper::createProcessedWorkspaceWithCylComplexInstrument(100,10,true);
     // add workspace energy
@@ -138,7 +138,7 @@ void xestExecRunsOnNewWorkspaceNoLimits5D()
     TSM_ASSERT_THROWS_NOTHING("the inital is not in the units of energy transfer",pAlg->setPropertyValue("InputWorkspace", ws2D->getName()));
     TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("OutputWorkspace", "EnergyTransfer4DWS"));
     TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("QDimensions","Q3D") );
-    TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("QDimensions","Q3D") );
+    TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("OtherDimensions","Ei") );
     TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("dEAnalysisMode", "Direct"));
   
 
@@ -157,12 +157,17 @@ void xestExecRunsOnNewWorkspaceNoLimits5D()
     auto outWS = AnalysisDataService::Instance().retrieveWS<IMDWorkspace>("EnergyTransfer4DWS");
 
     size_t NDims = outWS->getNumDims();
-    for(size_t i=0;i<NDims;i++)
+    for(size_t i=0;i<NDims-1;i++)
     {
         const Geometry::IMDDimension *pDim = outWS->getDimension(i).get();
         TS_ASSERT_DELTA(minVal[i],pDim->getMinimum(),1.e-4);
         TS_ASSERT_DELTA(maxVal[i],pDim->getMaximum(),1.e-4);
     }
+    size_t nun5D=4;
+    const Geometry::IMDDimension *pDim = outWS->getDimension(nun5D).get();
+    TS_ASSERT_DELTA(minVal[nun5D]*0.9,pDim->getMinimum(),1.e-4);
+    TS_ASSERT_DELTA(maxVal[nun5D]*1.1,pDim->getMaximum(),1.e-4);
+
 
 
 

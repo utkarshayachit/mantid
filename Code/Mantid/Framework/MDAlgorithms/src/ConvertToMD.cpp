@@ -698,7 +698,7 @@ DataObjects::TableWorkspace_const_sptr ConvertToMD::preprocessDetectorsPositions
 }
 
 DataObjects::TableWorkspace_sptr  ConvertToMD::runPreprocessDetectorsToMDChildUpdatingMasks(Mantid::API::MatrixWorkspace_const_sptr InWS2D,
-                                                                                                  const std::string &OutWSName,const std::string &dEModeRequested,Kernel::DeltaEMode::Type &Emode)
+                                                                                            const std::string &OutWSName,const std::string &dEModeRequested,Kernel::DeltaEMode::Type &Emode)
 {
    // prospective result
     DataObjects::TableWorkspace_sptr TargTableWS;
@@ -736,15 +736,16 @@ DataObjects::TableWorkspace_sptr  ConvertToMD::runPreprocessDetectorsToMDChildUp
     return TargTableWS;
 }
 /** Method takes min-max values from algorithm parameters if they are present or calculates default min-max values if these values 
-   were not supplied to the algorithm.
+    were not supplied to the method or the supplied value is incorrect.
  *
  *@param inWS    -- the shared pointer to the source workspace
  *@param QMode   -- the string which defines algorithms Q-conversion mode
  *@param dEMode  -- the string describes the algorithms energy conversion mode
  *@param otherDim -- the vector of other dimension names (if any)
+ *  Input-output values: 
+ *@param minVal  -- the vector with min values for the algorithm
+ *@param maxVal  -- the vector with max values for the algorithm
  *
- *@return minVal  -- the vector with min values for the algorithm
- *@return maxVal  -- the vector with max values for the algorithm
  *
 */
 void ConvertToMD::findMinMax(const Mantid::API::MatrixWorkspace_sptr &inWS,const std::string &QMode, const std::string &dEMode,const std::vector<std::string> &otherDim,
