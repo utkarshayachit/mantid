@@ -292,16 +292,18 @@ public:
 
     // delete the object with the old name
     auto object = it->second;
+    
     m_mutex.lock();
     datamap.erase( it );
     m_mutex.unlock();
 
     // if there is another object which has newName delete it
     // this is actually a replace operation, so we send out there notifications as well.
-    notificationCenter.postNotification(new BeforeReplaceNotification(newName, it->second, object));
     it = datamap.find( newName );
     if ( it != datamap.end() )
     {
+      notificationCenter.postNotification(new BeforeReplaceNotification(newName, it->second, object));
+
       m_mutex.lock();
       datamap.erase( it );
       m_mutex.unlock();
@@ -315,10 +317,16 @@ public:
       m_mutex.unlock();
       throw std::runtime_error(error);
     }
+
+    //if we're replacing, send out the post replace notification
+    if(it != datamap.end())
+    {
+      notificationCenter.postNotification(new AfterReplaceNotification(newName,object));
+    }
+
     g_log.information("Data Object '"+ foundName +"' renamed to '" + newName + "'");
     m_mutex.unlock();
 
-    notificationCenter.postNotification(new AfterReplaceNotification(newName,object));
     notificationCenter.postNotification(new RenameNotification(oldName, newName));
 
     return;
