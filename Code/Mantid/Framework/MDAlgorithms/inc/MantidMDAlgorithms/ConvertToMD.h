@@ -101,6 +101,8 @@ namespace MDAlgorithms
 
        DataObjects::TableWorkspace_sptr runPreprocessDetectorsToMDChildUpdatingMasks(Mantid::API::MatrixWorkspace_const_sptr InWS2D,const std::string &OutWSName,
                                                                                            const std::string &dEModeRequested,Kernel::DeltaEMode::Type &Emode);
+
+       void findMinMax(const std::string &QMode, const std::string &dEMode, std::vector<double> &minVal,std::vector<double> &maxVal);
  };
 
 } // namespace Mantid

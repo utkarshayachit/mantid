@@ -710,6 +710,17 @@ DataObjects::TableWorkspace_sptr  ConvertToMD::runPreprocessDetectorsToMDChildUp
 
     return TargTableWS;
 }
+/** Method takes min-max values from algorithm parameters if they are present or calculates default min-max values if these values 
+   were not supplied to the algorithm.
+ *
+ *@param QMode -- the string which defines algorithms Q-mode
+ *@return minVal -- the vector with min values for the algorithm
+ *@return maxVal -- the vector with max values for the algorithm
+ *
+*/
+void ConvertToMD::findMinMax(std::vector<double> &minVal,std::vector<double> &maxVal)
+{
+}
 
 } // namespace Mantid
 } // namespace MDAlgorithms
