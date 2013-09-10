@@ -798,8 +798,8 @@ void ConvertToMD::findMinMax(const Mantid::API::MatrixWorkspace_sptr &inWS,const
     minVal = childAlg->getProperty("MinValues");
     maxVal = childAlg->getProperty("MaxValues");
 
-    // additional dimensions produce ws with 0 width, change it to have some width;
-    for(unsigned int i=nMatrixDim;i<nDim;i++)
+    // if some min-max values for dimensions produce ws with 0 width in this direction, change it to have some width;
+    for(unsigned int i=0;i<nDim;i++)
     {
       if(minVal[i]>=maxVal[i])
       {
