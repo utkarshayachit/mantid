@@ -300,7 +300,8 @@ public:
     // if there is another object which has newName delete it
     // this is actually a replace operation, so we send out there notifications as well.
     it = datamap.find( newName );
-    if ( it != datamap.end() )
+    bool replace = (it != datamap.end());
+    if ( replace )
     {
       notificationCenter.postNotification(new BeforeReplaceNotification(newName, it->second, object));
 
@@ -319,7 +320,7 @@ public:
     }
 
     //if we're replacing, send out the post replace notification
-    if(it != datamap.end())
+    if( replace )
     {
       notificationCenter.postNotification(new AfterReplaceNotification(newName,object));
     }
