@@ -261,8 +261,25 @@ void testCopyMethadata()
 
 
 }
-void xestConvertParamToHelperParam()
+void testConvertParamToHelperParam()
 {
+  /** Test assures integrity between ConvertToMD and ConvertToMDHelper algorithms */ 
+  auto mdHelper = Mantid::API::FrameworkManager::Instance().createAlgorithm("ConvertToMDHelper");
+  TSM_ASSERT("Can not instantiate ConvertToMDHelper algorithm ",mdHelper);
+  if(!mdHelper)return;
+
+  auto QTargetModes = mdHelper->getPointerToProperty("Q3DFrames")->allowedValues();
+  TSM_ASSERT_EQUALS("Number of recognized by ConvertToMDHelper Q3D frames has changed! Modify ConvertToMD::convertParamToHelperParam method",3,QTargetModes.size());
+
+  auto QSourceModes = this->pAlg->getPointerToProperty("QConversionScales")->allowedValues();
+  for(auto it=QSourceModes.begin();it!=QSourceModes.end();it++)
+  {
+    std::string mode = this->pAlg->convertParamToHelperParam(*it);
+    auto targMode = std::find(QTargetModes.begin(),QTargetModes.end(),mode);
+    TSM_ASSERT_DIFFERS(" Can not identify ConvertToMDHelper mode correspondent to ConvertToMD mode "+mode,targMode,QTargetModes.end());
+  }
+
+
 
 }
 
