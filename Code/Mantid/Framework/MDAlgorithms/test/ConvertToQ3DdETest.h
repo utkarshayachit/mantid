@@ -55,7 +55,7 @@ void testExecThrow(){
 }
 
 /** Calculate min-max value defaults*/
-Mantid::API::IAlgorithm * calcMinMaxValDefaults(const std::string &QMode,const std::string &QFrame,std::string &OtherProperties=std::string(""))
+Mantid::API::IAlgorithm * calcMinMaxValDefaults(const std::string &QMode,const std::string &QFrame,std::string OtherProperties=std::string(""))
 {
 
   Mantid::API::IAlgorithm *childAlg = Mantid::API::FrameworkManager::Instance().createAlgorithm("ConvertToMDHelper");
