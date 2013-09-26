@@ -494,7 +494,7 @@ bool ConvertToMD::buildTargetWSDescription(API::IMDEventWorkspace_sptr spws,cons
     if (createNewTargetWs )
     {
       // find min-max dimensions values -- either take them from input parameters or identify the defaults if input parameters are not defined
-      this->findMinMax(m_InWS2D,QModReq,dEModReq,otherDimNames,dimMin,dimMax);
+      this->findMinMax(m_InWS2D,QModReq,dEModReq,convertTo_,otherDimNames,dimMin,dimMax);
     }
     else // get min/max from existing MD workspace ignoring input min/max values
     {
@@ -752,7 +752,7 @@ DataObjects::TableWorkspace_sptr  ConvertToMD::runPreprocessDetectorsToMDChildUp
  *
  *
 */
-void ConvertToMD::findMinMax(const Mantid::API::MatrixWorkspace_sptr &inWS,const std::string &QMode, const std::string &dEMode,const std::vector<std::string> &otherDim,
+void ConvertToMD::findMinMax(const Mantid::API::MatrixWorkspace_sptr &inWS,const std::string &QMode, const std::string &dEMode,const std::string &ConvertTo,const std::vector<std::string> &otherDim,
                              std::vector<double> &minVal,std::vector<double> &maxVal)
 {
 
@@ -790,6 +790,9 @@ void ConvertToMD::findMinMax(const Mantid::API::MatrixWorkspace_sptr &inWS,const
     childAlg->setPropertyValue("InputWorkspace", inWS->getName());
     childAlg->setPropertyValue("QDimensions",QMode);
     childAlg->setPropertyValue("dEAnalysisMode",dEMode);
+
+    std::string QFrames=convertParamToHelperParam(ConvertTo);
+    childAlg->setPropertyValue("Q3DFrames",QFrames);
     childAlg->setProperty("OtherDimensions",otherDim);
 
     childAlg->execute();
@@ -842,6 +845,16 @@ void ConvertToMD::findMinMax(const Mantid::API::MatrixWorkspace_sptr &inWS,const
 
 
 }
+  std::string ConvertToMD::convertParamToHelperParam(const std::string &ConvertTo)
+  {
+    std::string QFrames("AutoSelect");
+    if(ConvertTo.compare("Q") != 0 )
+      QFrames="Q";
+    if(ConvertTo.compare("HKL") != 0 )
+      QFrames="HKL";
+
+    return QFrames;
+  }
 
 } // namespace Mantid
 } // namespace MDAlgorithms

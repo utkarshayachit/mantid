@@ -58,6 +58,11 @@ public:
     {
             return ConvertToMD::createNewMDWorkspace(NewMDWSDescription);
     }
+
+    std::string convertParamToHelperParam(const std::string &convTo)
+    {
+      return ConvertToMD::convertParamToHelperParam(convTo);
+    }
 };
 
 
@@ -256,7 +261,10 @@ void testCopyMethadata()
 
 
 }
+void xestConvertParamToHelperParam()
+{
 
+}
 
 ConvertToMDComponentsTest()
 {
