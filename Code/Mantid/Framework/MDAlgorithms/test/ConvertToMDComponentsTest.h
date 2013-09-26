@@ -59,9 +59,9 @@ public:
             return ConvertToMD::createNewMDWorkspace(NewMDWSDescription);
     }
 
-    std::string convertParamToHelperParam(const std::string &convTo)
+    std::string convertParamToHelperParam(const std::string &targFrame,const std::string &convTo)
     {
-      return ConvertToMD::convertParamToHelperParam(convTo);
+      return ConvertToMD::convertParamToHelperParam(targFrame,convTo);
     }
 };
 
@@ -272,11 +272,16 @@ void testConvertParamToHelperParam()
   TSM_ASSERT_EQUALS("Number of recognized by ConvertToMDHelper Q3D frames has changed! Modify ConvertToMD::convertParamToHelperParam method",3,QTargetModes.size());
 
   auto QSourceModes = this->pAlg->getPointerToProperty("QConversionScales")->allowedValues();
-  for(auto it=QSourceModes.begin();it!=QSourceModes.end();it++)
+  auto TargFrames   = this->pAlg->getPointerToProperty("Q3DFrames")->allowedValues();
+
+  for (auto itf = TargFrames.begin();itf!=TargFrames.end();itf++)
   {
-    std::string mode = this->pAlg->convertParamToHelperParam(*it);
-    auto targMode = std::find(QTargetModes.begin(),QTargetModes.end(),mode);
-    TSM_ASSERT_DIFFERS(" Can not identify ConvertToMDHelper mode correspondent to ConvertToMD mode "+mode,targMode,QTargetModes.end());
+    for(auto it=QSourceModes.begin();it!=QSourceModes.end();it++)
+    {
+      std::string mode = this->pAlg->convertParamToHelperParam(*itf,*it);
+      auto targMode = std::find(QTargetModes.begin(),QTargetModes.end(),mode);
+      TSM_ASSERT_DIFFERS(" Can not identify ConvertToMDHelper mode correspondent to ConvertToMD mode "+mode,targMode,QTargetModes.end());
+    }
   }
 
 
