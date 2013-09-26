@@ -55,7 +55,7 @@ void testExecThrow(){
 }
 
 /** Calculate min-max value defaults*/
-Mantid::API::IAlgorithm * calcMinMaxValDefaults(const std::string &QMode,const std::string &OtherProperties="")
+Mantid::API::IAlgorithm * calcMinMaxValDefaults(const std::string &QMode,const std::string &QFrame,std::string &OtherProperties=std::string(""))
 {
 
   Mantid::API::IAlgorithm *childAlg = Mantid::API::FrameworkManager::Instance().createAlgorithm("ConvertToMDHelper");
@@ -73,6 +73,7 @@ Mantid::API::IAlgorithm * calcMinMaxValDefaults(const std::string &QMode,const s
     childAlg->setPropertyValue("InputWorkspace", "testWSProcessed");
     childAlg->setPropertyValue("QDimensions",QMode);
     childAlg->setPropertyValue("dEAnalysisMode","Direct");
+    childAlg->setPropertyValue("Q3DFrames",QFrame);
     childAlg->setPropertyValue("OtherDimensions",OtherProperties);
  
     childAlg->execute();
@@ -110,7 +111,7 @@ void testExecRunsOnNewWorkspaceNoLimits()
       return;
     }
 
-    auto childAlg = calcMinMaxValDefaults("Q3D");
+    auto childAlg = calcMinMaxValDefaults("Q3D","Q");
     if (!childAlg) return;
     // get the results
     std::vector<double> minVal = childAlg->getProperty("MinValues");
@@ -151,7 +152,7 @@ void testExecRunsOnNewWorkspaceNoLimits5D()
       return;
     }
 
-    auto childAlg = calcMinMaxValDefaults("Q3D","Ei");
+    auto childAlg = calcMinMaxValDefaults("Q3D","Q",std::string("Ei"));
     if (!childAlg) return;
     // get the results
     std::vector<double> minVal = childAlg->getProperty("MinValues");
@@ -204,7 +205,7 @@ void testExecWorksAutoLimitsOnNewWorkspaceNoMaxLimits()
     }
 
 
-    auto childAlg = calcMinMaxValDefaults("Q3D");
+    auto childAlg = calcMinMaxValDefaults("Q3D","Q");
     if (!childAlg) return;
 
     // get the results
@@ -245,7 +246,7 @@ void testExecFailsLimits_MinGeMax(){
     pAlg->execute();
     TSM_ASSERT("Wrong min-max values revert min-max to defaults",pAlg->isExecuted());
 
-    auto childAlg = calcMinMaxValDefaults("Q3D");
+    auto childAlg = calcMinMaxValDefaults("Q3D","Q");
     if (!childAlg) return;
     // get the results
     std::vector<double> minVal = childAlg->getProperty("MinValues");
