@@ -111,7 +111,7 @@ void testExecRunsOnNewWorkspaceNoLimits()
       return;
     }
 
-    auto childAlg = calcMinMaxValDefaults("Q3D","Q");
+    auto childAlg = calcMinMaxValDefaults("Q3D","HKL");
     if (!childAlg) return;
     // get the results
     std::vector<double> minVal = childAlg->getProperty("MinValues");
@@ -152,7 +152,7 @@ void testExecRunsOnNewWorkspaceNoLimits5D()
       return;
     }
 
-    auto childAlg = calcMinMaxValDefaults("Q3D","Q",std::string("Ei"));
+    auto childAlg = calcMinMaxValDefaults("Q3D","HKL",std::string("Ei"));
     if (!childAlg) return;
     // get the results
     std::vector<double> minVal = childAlg->getProperty("MinValues");
@@ -205,7 +205,7 @@ void testExecWorksAutoLimitsOnNewWorkspaceNoMaxLimits()
     }
 
 
-    auto childAlg = calcMinMaxValDefaults("Q3D","Q");
+    auto childAlg = calcMinMaxValDefaults("Q3D","HKL");
     if (!childAlg) return;
 
     // get the results
@@ -246,7 +246,7 @@ void testExecFailsLimits_MinGeMax(){
     pAlg->execute();
     TSM_ASSERT("Wrong min-max values revert min-max to defaults",pAlg->isExecuted());
 
-    auto childAlg = calcMinMaxValDefaults("Q3D","Q");
+    auto childAlg = calcMinMaxValDefaults("Q3D","HKL");
     if (!childAlg) return;
     // get the results
     std::vector<double> minVal = childAlg->getProperty("MinValues");

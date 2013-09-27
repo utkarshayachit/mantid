@@ -848,14 +848,39 @@ void ConvertToMD::findMinMax(const Mantid::API::MatrixWorkspace_sptr &inWS,const
 
 
 }
+ /**Helper method to convert ConvertToMD modes to ConvertToMDHelper modes
+ @param TargFrame -- string describing target frame state
+ @param ConvertTo -- string describing target treansformation
+ *
+ @returns the Q-parameter for ConvertToMDHelper
+
+ TODO: in a future ConvertToMDHelper has to understand convertToMDModes -- this is poor substitute. 
+ */ 
   std::string ConvertToMD::convertParamToHelperParam(const std::string &TargFrame,const std::string &ConvertTo)
   {
     std::string QFrames("AutoSelect");
-    if(TargFrame.compare("HKL") != 0 )
+    if(TargFrame.find_first_of("HKL") != std::string::npos )
+    {
       QFrames="HKL";
+      if (ConvertTo.find("Q")!=std::string::npos)
+      {
+        if(ConvertTo.find("A^-1")!=std::string::npos)
+              QFrames="Q";
+      }
+    }
+    else if(TargFrame.find("Q") != std::string::npos)
+    {
+        QFrames="Q";
+        if(ConvertTo.find("HKL")!=std::string::npos)
+             QFrames="HKL";
+        else if(ConvertTo.find("lattice")!=std::string::npos)
+               QFrames="HKL";
+     }
 
-    if(ConvertTo.compare("Q") != 0 || TargFrame.compare("Q") != 0)
-      QFrames="Q";
+
+
+
+
 
     return QFrames;
   }

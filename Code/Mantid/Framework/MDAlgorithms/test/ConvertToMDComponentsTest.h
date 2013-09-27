@@ -284,6 +284,12 @@ void testConvertParamToHelperParam()
     }
   }
 
+  TS_ASSERT_EQUALS("HKL",pAlg->convertParamToHelperParam("HKL","HKL"));
+  TS_ASSERT_EQUALS("HKL",pAlg->convertParamToHelperParam("HKL","Q"));
+  TS_ASSERT_EQUALS("Q",pAlg->convertParamToHelperParam("HKL","Q in A^-1"));
+  TS_ASSERT_EQUALS("Q",pAlg->convertParamToHelperParam("Q","anything"));
+  TS_ASSERT_EQUALS("HKL",pAlg->convertParamToHelperParam("Q"," HKL"));
+  TS_ASSERT_EQUALS("HKL",pAlg->convertParamToHelperParam("Q"," lattice "));
 
 
 }
