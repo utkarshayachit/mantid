@@ -133,7 +133,7 @@ namespace Mantid
       if (offsetWS != NULL)
       {
           // Check that the offset workspace has the same number of histograms as the input workspace.
-          if (offsetWS->getNumberHistograms() != histnumber)
+          if (offsetWS->getNumberHistograms() != inputW->getNumberHistograms())
           {
               g_log.error("The offset workspace does not contain the same number of elements as the input workspace.");
           }
