@@ -66,6 +66,9 @@ namespace Mantid
       declareProperty("Offset", 0.0, isDouble,
         "The amount to change each time bin by");
 
+      declareProperty(new WorkspaceProperty<MatrixWorkspace>("OffsetWorkspace","",Direction::Input),
+                      "Name of a single valued workspace containing offset values.");
+
       auto mustBePositive = boost::make_shared<BoundedValidator<int> >();
       mustBePositive->setLower(0);
       declareProperty("IndexMin", 0, mustBePositive,
@@ -123,18 +126,47 @@ namespace Mantid
         return;
       }
 
+      bool useWorkspaceForOffsets = false;
+
+      // Check if we are using a workspace for the offsets
+      const MatrixWorkspace_sptr offsetWS = getProperty("OffsetWorkspace");
+      if (offsetWS != NULL)
+      {
+          // Check that the offset workspace has the same number of histograms as the input workspace.
+          if (offsetWS->getNumberHistograms() != histnumber)
+          {
+              g_log.error("The offset workspace does not contain the same number of elements as the input workspace.");
+          }
+          else
+          {
+              useWorkspaceForOffsets = true;
+          }
+      }
 
       // do the shift in X
       PARALLEL_FOR2(inputW, outputW)
       for (int64_t i=0; i < histnumber; ++i)
-      {
-        PARALLEL_START_INTERUPT_REGION
+      {   
+        PARALLEL_START_INTERUPT_REGION        
         //Do the offsetting
         for (size_t j=0; j <  inputW->readX(i).size(); ++j)
         {
           //Change bin value by offset
-          if ((i >= wi_min) && (i <= wi_max)) outputW->dataX(i)[j] = inputW->readX(i)[j] + offset;
-          else outputW->dataX(i)[j] = inputW->readX(i)[j];
+          if ((i >= wi_min) && (i <= wi_max))
+          {
+              if (useWorkspaceForOffsets)
+              {
+                  outputW->dataX(i)[j] = inputW->readX(i)[j] + offsetWS->dataY(i)[0] + offset;
+              }
+              else
+              {
+                  outputW->dataX(i)[j] = inputW->readX(i)[j] + offset;
+              }
+          }
+          else
+          {
+              outputW->dataX(i)[j] = inputW->readX(i)[j];
+          }
         }
         //Copy y and e data
         outputW->dataY(i) = inputW->dataY(i);
