@@ -221,7 +221,7 @@ void FitPropertyBrowser::init()
 
   m_enumManager->setEnumNames(m_minimizer, m_minimizers);
   m_costFunction = m_enumManager->addProperty("Cost function");
-  m_costFunctions << "Least squares";
+  m_costFunctions << "Least squares" << "Rwp";
                   //<< "Ignore positive peaks";
   m_enumManager->setEnumNames(m_costFunction,m_costFunctions);
 
@@ -544,6 +544,7 @@ void FitPropertyBrowser::executeSetupManageMenu(const QString& item)
 /// Destructor
 FitPropertyBrowser::~FitPropertyBrowser()
 {
+  m_compositeFunction.reset();
 }
 
 /// Get handler to the root composite function
