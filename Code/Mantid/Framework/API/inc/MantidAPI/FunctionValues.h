@@ -122,6 +122,7 @@ protected:
 
 /// typedef for a shared pointer
 typedef boost::shared_ptr<FunctionValues> FunctionValues_sptr;
+// typedef boost::shared_ptr<const FunctionValues> FunctionValues_const_sptr;
 
 } // namespace API
 } // namespace Mantid
