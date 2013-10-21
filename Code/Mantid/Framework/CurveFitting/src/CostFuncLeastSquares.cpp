@@ -523,7 +523,7 @@ void CostFuncLeastSquares::calActiveCovarianceMatrix(GSLMatrix& covar, double ep
 //----------------------------------------------------------------------------------------------
 /** Get weight of data point i(1/sigma)
   */
-double CostFuncLeastSquares::getWeight(const API::FunctionValues_sptr values, size_t i, double sqrtW) const
+double CostFuncLeastSquares::getWeight(const API::FunctionValues_sptr& values, size_t i, double sqrtW) const
 {
   UNUSED_ARG(sqrtW);
   return (values->getFitWeight(i));
@@ -532,7 +532,7 @@ double CostFuncLeastSquares::getWeight(const API::FunctionValues_sptr values, si
 //----------------------------------------------------------------------------------------------
 /** Get square root of normalization weight (W)
   */
-double CostFuncLeastSquares::calSqrtW(const API::FunctionValues_sptr values) const
+double CostFuncLeastSquares::calSqrtW(const API::FunctionValues_sptr& values) const
 {
   UNUSED_ARG(values);
 

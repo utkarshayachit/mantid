@@ -32,7 +32,7 @@ CostFuncRwp::CostFuncRwp() : CostFuncLeastSquares()
 //----------------------------------------------------------------------------------------------
 /** Get weight of data point i(1/sigma)
   */
-double CostFuncRwp::getWeight(API::FunctionValues_sptr values, size_t i, double sqrtW) const
+double CostFuncRwp::getWeight(const API::FunctionValues_sptr& values, size_t i, double sqrtW) const
 {
   return (values->getFitWeight(i)/sqrtW);
 }
@@ -40,11 +40,12 @@ double CostFuncRwp::getWeight(API::FunctionValues_sptr values, size_t i, double 
 //----------------------------------------------------------------------------------------------
 /** Get square root of normalization weight (W)
   */
-double CostFuncRwp::calSqrtW(API::FunctionValues_sptr values) const
+double CostFuncRwp::calSqrtW(const API::FunctionValues_sptr &values) const
 {
   double weight = 0.0;
 
   // FIXME : This might give a wrong answer in case of multiple-domain
+  // TODO : Test it later with multi-domain in another ticket.
   size_t ny = values->size();
   for (size_t i = 0; i < ny; ++i)
   {
@@ -53,7 +54,9 @@ double CostFuncRwp::calSqrtW(API::FunctionValues_sptr values) const
     weight += obsval * obsval * inv_sigma * inv_sigma;
   }
 
-  return sqrt(weight);
+  double rvalue = sqrt(weight);
+
+  return rvalue;
 }
 
 

@@ -61,10 +61,10 @@ public:
 private:
 
   /// Get weight (1/sigma)
-  virtual double getWeight(API::FunctionValues_sptr values, size_t i, double sqrtW=1.0) const;
+  virtual double getWeight(const API::FunctionValues_sptr &values, size_t i, double sqrtW=1.0) const;
 
   /// Calcualte sqrt(W). Final cost function = sum_i [ (obs_i - cal_i) / (sigma * sqrt(W))]**2
-  virtual double calSqrtW(API::FunctionValues_sptr values) const;
+  virtual double calSqrtW(const API::FunctionValues_sptr& values) const;
 
 };
 
