@@ -536,7 +536,7 @@ double CostFuncLeastSquares::calSqrtW(const API::FunctionValues_sptr& values) co
 {
   UNUSED_ARG(values);
 
-  return 1.0;
+  return 1.;
 }
 
 } // namespace CurveFitting

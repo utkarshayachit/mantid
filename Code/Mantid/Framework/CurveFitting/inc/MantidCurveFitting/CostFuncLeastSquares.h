@@ -56,7 +56,7 @@ public:
   virtual std::string name() const { return "Least squares";}
 
   /// Get short name of minimizer - useful for say labels in guis
-  virtual std::string shortName() const {return "Chi-sq";};
+  virtual std::string shortName() const {return "Chi-sq";}
 
   /// Calculate value of cost function
   virtual double val() const;

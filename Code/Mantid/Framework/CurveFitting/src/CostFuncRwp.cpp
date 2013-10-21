@@ -18,8 +18,7 @@ namespace CurveFitting
 DECLARE_COSTFUNCTION(CostFuncRwp,Rwp)
 
 //----------------------------------------------------------------------------------------------
-/**
- * Constructor
+/** Constructor
  */
 CostFuncRwp::CostFuncRwp() : CostFuncLeastSquares()
 {
@@ -31,22 +30,28 @@ CostFuncRwp::CostFuncRwp() : CostFuncLeastSquares()
 
 //----------------------------------------------------------------------------------------------
 /** Get weight of data point i(1/sigma)
+  * @param values :: function values
+  * @param i :: index of the data point
+  * @param sqrtW :: pre-calculated sqrt(sum(y*w)^2)
   */
 double CostFuncRwp::getWeight(const API::FunctionValues_sptr& values, size_t i, double sqrtW) const
 {
-  return (values->getFitWeight(i)/sqrtW);
+  double fitweight = values->getFitWeight(i);
+
+  return (fitweight/sqrtW);
 }
 
 //----------------------------------------------------------------------------------------------
 /** Get square root of normalization weight (W)
+  * @param values :: function values to calculated weight for
   */
 double CostFuncRwp::calSqrtW(const API::FunctionValues_sptr &values) const
 {
   double weight = 0.0;
+  size_t ny = values->size();
 
   // FIXME : This might give a wrong answer in case of multiple-domain
   // TODO : Test it later with multi-domain in another ticket.
-  size_t ny = values->size();
   for (size_t i = 0; i < ny; ++i)
   {
     double obsval = values->getFitData(i);

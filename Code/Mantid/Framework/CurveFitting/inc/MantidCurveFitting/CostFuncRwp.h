@@ -59,7 +59,6 @@ public:
   virtual std::string shortName() const {return "Rwp";}
 
 private:
-
   /// Get weight (1/sigma)
   virtual double getWeight(const API::FunctionValues_sptr &values, size_t i, double sqrtW=1.0) const;
 
