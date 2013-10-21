@@ -4,6 +4,7 @@ set ( TEST_PY_FILES
       test/ReducerTest.py
       test/DgreduceTest.py
       test/DirectEnergyConversionTest.py
+      test/MantidHoraceCommandGenSQWTest.py
       test/ReflectometryQuickAuxiliaryTest.py 
       test/ReflectometryQuickToLamTest.py
       test/ExtendedUnitCellTest.py
