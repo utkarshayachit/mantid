@@ -197,6 +197,7 @@ void testExecWorksAutoLimitsOnNewWorkspaceNoMaxLimits()
     TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("OutputWorkspace", "EnergyTransfer4DWS"));
     TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("MinValues", "-50.,-50.,-50,-2"));
 
+//  pAlg->setRethrows(true);
     pAlg->execute();
     if(!pAlg->isExecuted())
     {
