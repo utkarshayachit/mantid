@@ -178,6 +178,37 @@ namespace MDAlgorithms
 //
 // Register the algorithm into the AlgorithmFactory
 DECLARE_ALGORITHM(ConvertToMD)
+void ConvertToMD::init()
+{
+    ConvertToMDParent::init();
+    
+    declareProperty(new ArrayProperty<double>("MinValues"),
+"It has to be N comma separated values, where N is the number of dimensions of the target workspace. Values "
+"smaller then specified here will not be added to workspace.\n Number N is defined by properties 4,6 and 7 and "
+"described on [[MD Transformation factory]] page. See also [[ConvertToMDHelper]]");
+
+//TODO:    " If a minimal target workspace range is higher then the one specified here, the target workspace range will be used instead " );
+
+   declareProperty(new ArrayProperty<double>("MaxValues"),
+"A list of the same size and the same units as MinValues list. Values higher or equal to the specified by "
+"this list will be ignored");
+//TODO:    "If a maximal target workspace range is lower, then one of specified here, the target workspace range will be used instead" );
+    
+   // Box controller properties. These are the defaults
+    this->initBoxControllerProps("5" /*SplitInto*/, 1000 /*SplitThreshold*/, 20 /*MaxRecursionDepth*/);
+    // additional box controller settings property. 
+    auto mustBeMoreThen1 = boost::make_shared<BoundedValidator<int> >();
+    mustBeMoreThen1->setLower(1);
+
+    declareProperty(
+      new PropertyWithValue<int>("MinRecursionDepth", 1,mustBeMoreThen1),
+"Optional. If specified, then all the boxes will be split to this minimum recursion depth. 0 = no splitting, "
+"1 = one level of splitting, etc. \n Be careful using this since it can quickly create a huge number of boxes = "
+"(SplitInto ^ (MinRercursionDepth * NumDimensions)). \n But setting this property equal to MaxRecursionDepth "
+"property is necessary if one wants to generate multiple file based workspaces in order to merge them later.");
+    setPropertyGroup("MinRecursionDepth", getBoxSettingsGroupName());
+ 
+}
 
 
 // Sets documentation strings for this algorithm
@@ -199,13 +230,6 @@ void ConvertToMD::initDocs()
  */
 ConvertToMD::~ConvertToMD()
 {
-}
-/// Template to check if a variable equal to NaN
-template <class T>
-inline bool isNaN(T val)
-{
-  volatile T buf=val;
-  return (val!=buf);
 }
 
 const std::string ConvertToMD::name() const
@@ -312,16 +336,16 @@ void ConvertToMD::exec()
     //DO THE JOB:
      // get pointer to appropriate  algorithm, (will throw if logic is wrong and ChildAlgorithm is not found among existing)
      ConvToMDSelector AlgoSelector;
-     m_Convertor  = AlgoSelector.convSelector(m_InWS2D,m_Convertor);
+     this->m_Convertor  = AlgoSelector.convSelector(m_InWS2D,this->m_Convertor);
 
      bool ignoreZeros = getProperty("IgnoreZeroSignals");
     // initate conversion and estimate amout of job to do
-     size_t n_steps = m_Convertor->initialize(targWSDescr,m_OutWSWrapper,ignoreZeros);
+     size_t n_steps = this->m_Convertor->initialize(targWSDescr,m_OutWSWrapper,ignoreZeros);
     // progress reporter
      m_Progress.reset(new API::Progress(this,0.0,1.0,n_steps)); 
 
      g_log.information()<<" conversion started\n";
-     m_Convertor->runConversion(m_Progress.get());
+     this->m_Convertor->runConversion(m_Progress.get());
   
 
      //JOB COMPLETED:
@@ -525,131 +549,7 @@ bool ConvertToMD::doWeNeedNewTargetWorkspace(API::IMDEventWorkspace_sptr spws)
   return createNewWs;
 }
 
-/**
- * The method responsible for analyzing input workspace parameters and preprocessing detectors positions into reciprocal space
- * @param InWS2D -- input Matrix workspace with defined instrument
- * @param dEModeRequested
- * @param updateMasks
- * @return
- */
-DataObjects::TableWorkspace_const_sptr ConvertToMD::preprocessDetectorsPositions( Mantid::API::MatrixWorkspace_const_sptr InWS2D,const std::string &dEModeRequested,bool updateMasks)
-{
 
-    DataObjects::TableWorkspace_sptr TargTableWS;
-    Kernel::DeltaEMode::Type Emode;
-
-    // Do we need to reuse output workspace
-    bool storeInDataService(true);
-    std::string OutWSName = std::string(getProperty("PreprocDetectorsWS"));
-    if(OutWSName=="-"||OutWSName.empty()) // TargTableWS is recalculated each time;
-    {
-      storeInDataService = false;
-      OutWSName = "ServiceTableWS";  // TODO: should be hidden?
-    }
-    else
-    {
-      storeInDataService = true;
-    }
-
-     // if output workspace exists in dataservice, we may try to use it
-    if(storeInDataService && API::AnalysisDataService::Instance().doesExist(OutWSName) ) 
-    {
-        TargTableWS = API::AnalysisDataService::Instance().retrieveWS<DataObjects::TableWorkspace>(OutWSName);
-        // get number of all histograms (may be masked or invalid)
-        size_t nHist = InWS2D->getNumberHistograms();
-        size_t nDetMap=TargTableWS->rowCount();
-        if(nHist==nDetMap)
-        {
-          // let's take at least some precaution to ensure that instrument have not changed
-          std::string currentWSInstrumentName = InWS2D->getInstrument()->getName();
-          std::string oldInstrName            = TargTableWS->getLogs()->getPropertyValueAsType<std::string>("InstrumentName");
-
-          if(oldInstrName==currentWSInstrumentName)
-          { 
-            if(!updateMasks) return TargTableWS;
-            //Target workspace with preprocessed detectors exists and seems is correct one. 
-            // We still need to update masked detectors information
-            TargTableWS = this->runPreprocessDetectorsToMDChildUpdatingMasks(InWS2D,OutWSName,dEModeRequested,Emode);
-            return TargTableWS;
-          }
-        }
-        else // there is a workspace in the data service with the same name but this ws is not suitable as target for this algorithm. 
-        {    // Should delete this WS from the dataservice
-          API::AnalysisDataService::Instance().remove(OutWSName);
-        }
-    }
-    // No result found in analysis data service or the result is unsatisfactory. Try to calculate target workspace.  
-    TargTableWS =this->runPreprocessDetectorsToMDChildUpdatingMasks(InWS2D,OutWSName,dEModeRequested,Emode);
-
-    if(storeInDataService)
-      API::AnalysisDataService::Instance().addOrReplace(OutWSName,TargTableWS);
-//    else
-//      TargTableWS->setName(OutWSName);
-
-  
-   // check if we got what we wanted:
-
-   // in direct or indirect mode input ws has to have input energy
-    if(Emode==Kernel::DeltaEMode::Direct||Emode==Kernel::DeltaEMode::Indirect)
-    {
-       double   m_Ei  = TargTableWS->getLogs()->getPropertyValueAsType<double>("Ei");
-       if(isNaN(m_Ei))
-       {
-         // Direct mode needs Ei
-         if(Emode==Kernel::DeltaEMode::Direct)throw(std::invalid_argument("Input neutron's energy has to be defined in inelastic mode "));
-
-         // Do we have at least something for Indirect?
-         float *eFixed = TargTableWS->getColDataArray<float>("eFixed");
-         if(!eFixed)
-           throw(std::invalid_argument("Input neutron's energy has to be defined in inelastic mode "));
-
-         uint32_t NDetectors = TargTableWS->getLogs()->getPropertyValueAsType<uint32_t>("ActualDetectorsNum");
-         for(uint32_t i=0;i<NDetectors;i++)
-           if(isNaN(*(eFixed+i)))throw(std::invalid_argument("Undefined eFixed energy for detector N: "+boost::lexical_cast<std::string>(i)));
-       }
-    }
-
-    return TargTableWS;
-}
-
-DataObjects::TableWorkspace_sptr  ConvertToMD::runPreprocessDetectorsToMDChildUpdatingMasks(Mantid::API::MatrixWorkspace_const_sptr InWS2D,
-                                                                                            const std::string &OutWSName,const std::string &dEModeRequested,Kernel::DeltaEMode::Type &Emode)
-{
-   // prospective result
-    DataObjects::TableWorkspace_sptr TargTableWS;
-
-    // if input workspace does not exist in analysis data service, we have to add it there to work with the Child Algorithm 
-    std::string InWSName = InWS2D->getName();
-    if(!API::AnalysisDataService::Instance().doesExist(InWSName))
-    {
-       if(InWSName.empty())InWSName = "ImputMatrixWS";
-       // wery bad, but what can we do otherwise... -> pool out the class pointer which is not const 
-       // add input matrix ws to the analysis data service in order for ChildAlgorithm to retrieve it. 
-       API::AnalysisDataService::Instance().addOrReplace(InWSName,m_InWS2D);
-    }
-
-    Mantid::API::Algorithm_sptr childAlg = createChildAlgorithm("PreprocessDetectorsToMD",0.,1.);
-    if(!childAlg)throw(std::runtime_error("Can not create child ChildAlgorithm to preprocess detectors"));
-    childAlg->setProperty("InputWorkspace",InWSName);
-    childAlg->setProperty("OutputWorkspace",OutWSName);
-    childAlg->setProperty("GetMaskState",true);
-    childAlg->setProperty("UpdateMasksInfo",true);
-    childAlg->setProperty("OutputWorkspace",OutWSName);
-
- // check and get energy conversion mode to define additional ChildAlgorithm parameters
-    Emode = Kernel::DeltaEMode().fromString(dEModeRequested);
-    if(Emode == Kernel::DeltaEMode::Indirect) 
-      childAlg->setProperty("GetEFixed",true); 
-
-
-    childAlg->execute();
-    if(!childAlg->isExecuted())throw(std::runtime_error("Can not properly execute child algorithm PreprocessDetectorsToMD"));
-
-    TargTableWS = childAlg->getProperty("OutputWorkspace");
-    if(!TargTableWS)throw(std::runtime_error("Can not retrieve results of child algorithm PreprocessDetectorsToMD"));
-
-    return TargTableWS;
-}
 /** Method takes min-max values from algorithm parameters if they are present or calculates default min-max values if these values 
     were not supplied to the method or the supplied value is incorrect.
  *
@@ -701,13 +601,14 @@ void ConvertToMD::findMinMax(const Mantid::API::MatrixWorkspace_sptr &inWS,const
     Mantid::API::Algorithm_sptr childAlg = createChildAlgorithm("ConvertToMDHelper");
     if(!childAlg)throw(std::runtime_error("Can not create child ChildAlgorithm to found min/max values"));
 
+    m_InWS2D = getProperty("InputWorkspace");
+    
     childAlg->setPropertyValue("InputWorkspace", inWS->getName());
     childAlg->setPropertyValue("QDimensions",QMode);
     childAlg->setPropertyValue("dEAnalysisMode",dEMode);
-
-    std::string QH=convertParamToHelperParam(QFrame,ConvertTo);
-    childAlg->setPropertyValue("Q3DFrames",QH);
+    childAlg->setPropertyValue("Q3DFrames",QFrame);
     childAlg->setProperty("OtherDimensions",otherDim);
+    childAlg->setProperty("QConversionScales",ConvertTo);
 
     childAlg->execute();
     if(!childAlg->isExecuted())throw(std::runtime_error("Can not properly execute child algorithm to find min/max values"));
@@ -759,42 +660,7 @@ void ConvertToMD::findMinMax(const Mantid::API::MatrixWorkspace_sptr &inWS,const
 
 
 }
- /**Helper method to convert ConvertToMD modes to ConvertToMDHelper modes
- @param TargFrame -- string describing target frame state
- @param ConvertTo -- string describing target treansformation
- *
- @returns the Q-parameter for ConvertToMDHelper
 
- TODO: in a future ConvertToMDHelper has to understand convertToMDModes -- this is poor substitute. 
- */ 
-  std::string ConvertToMD::convertParamToHelperParam(const std::string &TargFrame,const std::string &ConvertTo)
-  {
-    std::string QFrames("AutoSelect");
-    if(TargFrame.find_first_of("HKL") != std::string::npos )
-    {
-      QFrames="HKL";
-      if (ConvertTo.find("Q")!=std::string::npos)
-      {
-        if(ConvertTo.find("A^-1")!=std::string::npos)
-              QFrames="Q";
-      }
-    }
-    else if(TargFrame.find("Q") != std::string::npos)
-    {
-        QFrames="Q";
-        if(ConvertTo.find("HKL")!=std::string::npos)
-             QFrames="HKL";
-        else if(ConvertTo.find("lattice")!=std::string::npos)
-               QFrames="HKL";
-     }
-
-
-
-
-
-
-    return QFrames;
-  }
 
 } // namespace Mantid
 } // namespace MDAlgorithms
