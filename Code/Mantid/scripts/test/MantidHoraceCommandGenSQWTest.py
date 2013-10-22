@@ -13,29 +13,32 @@ class MantidHoraceCommandGenSQWTest(unittest.TestCase):
         
     
     def test_units_of_deltae_only(self):
-        from MantidHorace.Command import gen_sqw 
+        from MantidHorace.Command import gen_sqw, MantidHoraceInputException 
       
         tofWS = CreateWorkspace(DataX=[1,2], DataY=[1],DataE=[1],UnitX='TOF')
         try:
             gen_sqw(input_workspaces=tofWS)
-            self.assertTrue(False, "Should have thrown with an input workspace in TOF")
-        except ValueError:
+        except MantidHoraceInputException:
             pass
+        else:
+            self.assertTrue(False, "Should have thrown with an input workspace in TOF")
         finally:
             DeleteWorkspace(tofWS)
         
     def test_known_emode_only(self):
-        from MantidHorace.Command import gen_sqw 
+        from MantidHorace.Command import gen_sqw, MantidHoraceInputException 
         in_ws = CreateWorkspace(DataX=[1,2], DataY=[1],DataE=[1],UnitX='DeltaE')
         try:
             gen_sqw(input_workspaces=in_ws, emode='Unknown')
-        except ValueError:
+        except MantidHoraceInputException:
             pass
+        else:
+            self.assertTrue(False, "Should have thrown with an unknown emode")
         finally:
             DeleteWorkspace(in_ws)
             
     def test_single_workspace(self):
-        from MantidHorace.Command import gen_sqw 
+        from MantidHorace.Command import gen_sqw, MantidHoraceInputException 
         
         source_ws = Load(Filename='CNCS_7860_event')
         source_ws = ConvertUnits(InputWorkspace=source_ws, Target='DeltaE', EMode='Direct', EFixed=3)
@@ -55,7 +58,7 @@ class MantidHoraceCommandGenSQWTest(unittest.TestCase):
         DeleteWorkspace(source_ws)
     
     def test_overwrite_ub(self):
-        from MantidHorace.Command import gen_sqw 
+        from MantidHorace.Command import gen_sqw, MantidHoraceInputException 
         
         source_ws = Load(Filename='CNCS_7860_event')
         source_ws = ConvertUnits(InputWorkspace=source_ws, Target='DeltaE', EMode='Direct', EFixed=3)
@@ -75,16 +78,28 @@ class MantidHoraceCommandGenSQWTest(unittest.TestCase):
         DeleteWorkspace(source_ws)
   
     def test_partial_ub_throws(self):
-        from MantidHorace.Command import gen_sqw 
+        from MantidHorace.Command import gen_sqw, MantidHoraceInputException 
         in_ws = CreateWorkspace(DataX=[1,2], DataY=[1],DataE=[1],UnitX='DeltaE')
         try:
-            gen_sqw(input_workspaces=in_ws, emode='Direct', alatt=[1,1,1], angdeg=[90, 90, 90], u=[1,0,0])         # Note that no v parameter is given, so ub info is incomplete.
-        except ValueError:
+            gen_sqw(input_workspaces=in_ws, emode='Direct', alatt=[1,1,1], angdeg=[90, 90, 90], u=[1,0,0]) # Note that no v parameter is given, so ub info is incomplete.
+        except MantidHoraceInputException:
             pass
+        else:
+            self.assertTrue(False, "Should have thrown. No v parameter is given, so ub info is incomplete")
         finally:
             DeleteWorkspace(in_ws)
-        
-        
+            
+    def test_partial_goniometer_throws(self):
+        from MantidHorace.Command import gen_sqw, MantidHoraceInputException 
+        in_ws = CreateWorkspace(DataX=[1,2], DataY=[1],DataE=[1],UnitX='DeltaE')
+        try:
+            gen_sqw(input_workspaces=in_ws, emode='Direct', psi=[0,1,0,1])  # partial specification of goniometer settings
+        except MantidHoraceInputException:
+            pass
+        else:
+            self.assertTrue(False, "Should have thrown. Not enough information provided for the goniometer settings")
+        finally:
+            DeleteWorkspace(in_ws)
      
 
         
