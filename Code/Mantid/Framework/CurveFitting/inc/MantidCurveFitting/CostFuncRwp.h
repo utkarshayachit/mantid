@@ -58,7 +58,18 @@ public:
   /// Get short name of minimizer - useful for say labels in guis
   virtual std::string shortName() const {return "Rwp";}
 
-private:
+  virtual void addVal(
+    API::FunctionDomain_sptr domain,
+    API::FunctionValues_sptr values
+    )const;
+
+  virtual void addValDerivHessian(
+    API::IFunction_sptr function,
+    API::FunctionDomain_sptr domain,
+    API::FunctionValues_sptr values,
+    bool evalFunction = true, bool evalDeriv = true, bool evalHessian = true) const;
+
+protected:
   /// Get weight (1/sigma)
   virtual double getWeight(const API::FunctionValues_sptr &values, size_t i, double sqrtW=1.0) const;
 
