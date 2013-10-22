@@ -177,7 +177,7 @@ void testExecRunsOnNewWorkspaceNoLimits5D()
 }
 
 
-void testExecWorksAutoLimitsOnNewWorkspaceNoMaxLimits()
+void testExecWorksAutoLimitsOnNewWorkspaceNoMinMaxLimits()
 {
     Mantid::API::MatrixWorkspace_sptr ws2D =WorkspaceCreationHelper::createProcessedWorkspaceWithCylComplexInstrument(100,10,true);
  // add workspace energy
@@ -195,7 +195,8 @@ void testExecWorksAutoLimitsOnNewWorkspaceNoMaxLimits()
     TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("InputWorkspace", ws2D->getName()));
  
     TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("OutputWorkspace", "EnergyTransfer4DWS"));
-    TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("MinValues", "-50.,-50.,-50,-2"));
+    TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("MaxValues", ""));
+    TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("MinValues", ""));
 
 //  pAlg->setRethrows(true);
     pAlg->execute();
@@ -210,48 +211,9 @@ void testExecWorksAutoLimitsOnNewWorkspaceNoMaxLimits()
     if (!childAlg) return;
 
     // get the results
-    std::vector<double> minVal(4,-50.);
-    minVal[3]=-2;
-    std::vector<double> maxVal = childAlg->getProperty("MaxValues");
-
-    auto outWS = AnalysisDataService::Instance().retrieveWS<IMDWorkspace>("EnergyTransfer4DWS");
-
-    size_t NDims = outWS->getNumDims();
-    for(size_t i=0;i<NDims;i++)
-    {
-        const Geometry::IMDDimension *pDim = outWS->getDimension(i).get();
-        TS_ASSERT_DELTA(minVal[i],pDim->getMinimum(),1.e-4);
-        TS_ASSERT_DELTA(maxVal[i],pDim->getMaximum(),1.e-4);
-    }
-
-
-
-
-}
-void testExecFailsLimits_MinGeMax(){
-    Mantid::API::MatrixWorkspace_sptr ws2D =WorkspaceCreationHelper::createProcessedWorkspaceWithCylComplexInstrument(100,10,true);
- // add workspace energy
-     ws2D->mutableRun().addProperty("Ei",12.,"meV",true);
-
-    AnalysisDataService::Instance().addOrReplace("testWSProcessed", ws2D);
-
- 
-    TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("QDimensions","Q3D"));
-    TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("dEAnalysisMode", "Direct"));
-    TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("InputWorkspace", ws2D->getName()));
- 
-    TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("OutputWorkspace", "EnergyTransfer4DWS"));
-    TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("MinValues", "-50.,-50.,-50,-2"));
-    TS_ASSERT_THROWS_NOTHING(pAlg->setPropertyValue("MaxValues", " 50., 50.,-50,-2"));
-
-    pAlg->execute();
-    TSM_ASSERT("Wrong min-max values revert min-max to defaults",pAlg->isExecuted());
-
-    auto childAlg = calcMinMaxValDefaults("Q3D","HKL");
-    if (!childAlg) return;
-    // get the results
     std::vector<double> minVal = childAlg->getProperty("MinValues");
     std::vector<double> maxVal = childAlg->getProperty("MaxValues");
+
     auto outWS = AnalysisDataService::Instance().retrieveWS<IMDWorkspace>("EnergyTransfer4DWS");
 
     size_t NDims = outWS->getNumDims();
@@ -261,6 +223,8 @@ void testExecFailsLimits_MinGeMax(){
         TS_ASSERT_DELTA(minVal[i],pDim->getMinimum(),1.e-4);
         TS_ASSERT_DELTA(maxVal[i],pDim->getMaximum(),1.e-4);
     }
+
+
 
 
 }
