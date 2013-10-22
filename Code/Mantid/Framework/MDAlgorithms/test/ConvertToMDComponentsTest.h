@@ -265,39 +265,7 @@ void testCopyMethadata()
 
 
 }
-void xestConvertParamToHelperParam()
-{
-  // this is hopefully redundant
-  /** Test assures integrity between ConvertToMD and ConvertToMDHelper algorithms */ 
-  auto mdHelper = Mantid::API::FrameworkManager::Instance().createAlgorithm("ConvertToMDHelper",1);
-  TSM_ASSERT("Can not instantiate ConvertToMDHelper algorithm ",mdHelper);
-  if(!mdHelper)return;
 
-  auto QTargetModes = mdHelper->getPointerToProperty("Q3DFrames")->allowedValues();
-  TSM_ASSERT_EQUALS("Number of recognized by ConvertToMDHelper Q3D frames has changed! Modify ConvertToMD::convertParamToHelperParam method",3,QTargetModes.size());
-
-  auto QSourceModes = this->pAlg->getPointerToProperty("QConversionScales")->allowedValues();
-  auto TargFrames   = this->pAlg->getPointerToProperty("Q3DFrames")->allowedValues();
-
-  for (auto itf = TargFrames.begin();itf!=TargFrames.end();itf++)
-  {
-    for(auto it=QSourceModes.begin();it!=QSourceModes.end();it++)
-    {
-      std::string mode = this->pAlg->convertParamToHelperParam(*itf,*it);
-      auto targMode = std::find(QTargetModes.begin(),QTargetModes.end(),mode);
-      TSM_ASSERT_DIFFERS(" Can not identify ConvertToMDHelper mode correspondent to ConvertToMD mode "+mode,targMode,QTargetModes.end());
-    }
-  }
-
-  TS_ASSERT_EQUALS("HKL",pAlg->convertParamToHelperParam("HKL","HKL"));
-  TS_ASSERT_EQUALS("HKL",pAlg->convertParamToHelperParam("HKL","Q"));
-  TS_ASSERT_EQUALS("Q",pAlg->convertParamToHelperParam("HKL","Q in A^-1"));
-  TS_ASSERT_EQUALS("Q",pAlg->convertParamToHelperParam("Q","anything"));
-  TS_ASSERT_EQUALS("HKL",pAlg->convertParamToHelperParam("Q"," HKL"));
-  TS_ASSERT_EQUALS("HKL",pAlg->convertParamToHelperParam("Q"," lattice "));
-
-
-}
 
 ConvertToMDComponentsTest()
 {
