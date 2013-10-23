@@ -136,7 +136,7 @@ namespace MDAlgorithms
      size_t nd = bc->getNDims();
 
      // let it be all in one box
-     bc->setSplitThreshold(m_MinMaxWS2D->getNumberHistograms()*3);
+     bc->setSplitThreshold(m_MinMaxWS2D->getNumberHistograms()*3+1);
      bc->setMaxDepth( 2 ); // just in case
 
     // Build MDGridBox
@@ -179,7 +179,7 @@ namespace MDAlgorithms
      // initate conversion and estimate amout of job to do
      size_t n_steps = m_Convertor->initialize(targWSDescr,m_HelperWSWrapper,false);
     // progress reporter
-     auto progress = std::auto_ptr<API::Progress>(new API::Progress(this,0.0,0.1,n_steps)); 
+     auto progress = std::auto_ptr<API::Progress>(new API::Progress(this,0.0,1.,n_steps)); 
 
      m_Convertor->runConversion(progress.get());
   
