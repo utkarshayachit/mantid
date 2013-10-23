@@ -1,4 +1,8 @@
 /*WIKI*
+Helper algorithm to calculate min-max values for ConvertToMD algorithm, using ConvertToMD algorithm factory. 
+
+Buils simplified matrix workspace, which contains min-max input histogram values for the instrument, attached to the input workspace and returns the min-max values
+of the transformed workspace.
 
 *WIKI*/
 
@@ -105,7 +109,7 @@ namespace MDAlgorithms
    // total number of dimensions
    size_t nDim =nMatrixDim+otherDimNames.size();
 
-   // u
+   // build simplified workspace with min-max histogram values from input workspace and the same instument as the initial ws. 
     buildMinMaxWorkspaceWithMinInstrument(InWS2D,otherDimNames,true);
 
     std::vector<double> MinValues,MaxValues;
@@ -132,7 +136,7 @@ namespace MDAlgorithms
      size_t nd = bc->getNDims();
 
      // let it be all in one box
-     bc->setSplitThreshold(m_MinMaxWS2D->getNumberHistograms()*2);
+     bc->setSplitThreshold(m_MinMaxWS2D->getNumberHistograms()*3);
      bc->setMaxDepth( 2 ); // just in case
 
     // Build MDGridBox
@@ -323,7 +327,8 @@ namespace MDAlgorithms
       throw(std::runtime_error(" Can not get Workspace 2D from the matrix workspace"));
     }
 
-    //size_t nHist = 2+4; // -- for spherical instrument number of histograms (detectors) in the min-max workspace -- more precise workspace would have the same number of detectors as the input one
+    // This option depends on useWorkspace and is currently disabled.
+    //size_t nHist = 2+4; // for spherical instrument number of histograms (detectors) in the min-max workspace -- more precise workspace would have the same number of detectors as the input one
     size_t nHist = InWS2D->getNumberHistograms(); // number of histograms (detectors) in the min-max workspace -- more precise workspace would have the same number of detectors as the input one
     size_t nBins = 2; // number of bins in min-max workspace
 
@@ -352,19 +357,8 @@ namespace MDAlgorithms
       m_MinMaxWS2D->setData(i,Y,ERR);
     }
 
-    //m_MinMaxWS2D->getAxis(0)->setUnit(InWS2D->getAxis(0)->unit()->unitID());
-    //auto yAxis = InWS2D->getAxis(1);
-    //if (!yAxis)
-    //  m_MinMaxWS2D->setYUnit("Counts");
-    //else
-    //  m_MinMaxWS2D->setYUnit(yAxis->unit()->unitID());
-
-
+   
     if (!useWorkspace) 
-      //m_MinMaxWS2D->mutableRun() = InWS2D->cloneExperimentInfo();
-      //m_MinMaxWS2D->setInstrument(InWS2D->getInstrument());
-      //m_MinMaxWS2D->mutableRun().setGoniometer(InWS2D->run().getGoniometer());
-      //else
     {
       // create spherical instrument has range of problems at the moment as detectors should be placed in RUB matrix egenvectors directions
       // this is for the future
