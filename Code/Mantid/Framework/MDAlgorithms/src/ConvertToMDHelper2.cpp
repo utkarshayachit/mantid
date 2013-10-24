@@ -109,8 +109,8 @@ namespace MDAlgorithms
    // total number of dimensions
    size_t nDim =nMatrixDim+otherDimNames.size();
 
-   // build simplified workspace with min-max histogram values from input workspace and the same instument as the initial ws. 
-    buildMinMaxWorkspaceWithMinInstrument(InWS2D,otherDimNames,true);
+   // build simplified workspace with min-max histogram values from input workspace and the same instument as the initial ws.true parameter 
+    buildMinMaxWorkspaceWithMinInstrument(InWS2D,true);
 
     std::vector<double> MinValues,MaxValues;
     MinValues.resize(nDim,-FLT_MAX/10);
@@ -133,8 +133,7 @@ namespace MDAlgorithms
      Mantid::API::BoxController_sptr bc = m_HelperWSWrapper->pWorkspace()->getBoxController();
     // Build up the box controller, using the properties in BoxControllerSettingsAlgorithm
      //this->setBoxController(bc, m_MinMaxWS2D->getInstrument());
-     size_t nd = bc->getNDims();
-
+     //----> this all converts as follows:
      // let it be all in one box
      bc->setSplitThreshold(m_MinMaxWS2D->getNumberHistograms()*3+1);
      bc->setMaxDepth( 2 ); // just in case
@@ -146,6 +145,7 @@ namespace MDAlgorithms
      // split boxes;
      spws->splitBox();
      spws->setMinRecursionDepth(1);  
+     //<---- this all converts as follows: END
 
 
   // instanciate class, responsible for defining Mslice-type projection
@@ -314,14 +314,16 @@ namespace MDAlgorithms
 }
 
   /**Build min-max instrument with 2 detectors*/
-   void ConvertToMDHelper2::buildMinMaxWorkspaceWithMinInstrument(Mantid::API::MatrixWorkspace_const_sptr &InWS2D,const std::vector<std::string> &oterDimNames,bool useWorkspace)
+   void ConvertToMDHelper2::buildMinMaxWorkspaceWithMinInstrument(Mantid::API::MatrixWorkspace_const_sptr &InWS2D,bool useWorkspace)
    {
 
      // Create workspace with min-max values
     double xMin,xMax;
     InWS2D->getXMinMax(xMin,xMax);
 
+    // we expect it also to copy all log files correspondent to ,const std::vector<std::string> &oterDimNames
     m_MinMaxWS2D=boost::dynamic_pointer_cast<DataObjects::Workspace2D>(WorkspaceFactory::Instance().create(InWS2D));
+
     if(!m_MinMaxWS2D)
     {
       throw(std::runtime_error(" Can not get Workspace 2D from the matrix workspace"));
@@ -351,7 +353,7 @@ namespace MDAlgorithms
 
     m_MinMaxWS2D->initialize(nHist,nBins,nBins);
     //m_MinMaxWS2D->initialize(nHist,nBins+1,nBins);
-    for (int i=0; i< nHist; i++)
+    for (size_t i=0; i< nHist; i++)
     {
       m_MinMaxWS2D->setX(i,X);
       m_MinMaxWS2D->setData(i,Y,ERR);
