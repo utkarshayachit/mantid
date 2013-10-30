@@ -608,8 +608,6 @@ void ConvertToMD::findMinMax(const Mantid::API::MatrixWorkspace_sptr &inWS,const
     Mantid::API::Algorithm_sptr childAlg = createChildAlgorithm("ConvertToMDHelper");
     if(!childAlg)throw(std::runtime_error("Can not create child ChildAlgorithm to found min/max values"));
 
-    m_InWS2D = getProperty("InputWorkspace");
-    
     childAlg->setPropertyValue("InputWorkspace", inWS->getName());
     childAlg->setPropertyValue("QDimensions",QMode);
     childAlg->setPropertyValue("dEAnalysisMode",dEMode);
