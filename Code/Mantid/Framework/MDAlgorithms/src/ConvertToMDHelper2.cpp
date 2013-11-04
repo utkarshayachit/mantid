@@ -409,7 +409,7 @@ namespace MDAlgorithms
 
    /***/
    bool ConvertToMDHelper2::findConversionRange(const MDEvents::MDWSDescription &InWSDescription,const std::string & wsUnitID,
-                              const double &xMin,const double &xMax,std::vector<double> &range)const
+                              const std::string & targetUnitID,const double &xMin,const double &xMax,std::vector<double> &range)const
    {
 
      MDEvents::UnitsConversionHelper unitsConverter;
@@ -423,7 +423,7 @@ namespace MDAlgorithms
      range.resize(nHist,DBL_MAX);
      unitsConverter.initialize("TOF",wsUnitID,InWSDescription.m_PreprDetTable,Emode);
 
-     PRAGMA_OMP(parallel for reduction(||:rangeChanged))
+     //PRAGMA_OMP(parallel for reduction(||:rangeChanged))
      for(long i=0;i<nHist;i++)
      {
          unitsConverter.updateConversion(i);
