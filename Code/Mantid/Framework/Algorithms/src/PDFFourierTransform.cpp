@@ -26,6 +26,13 @@ transforms to
 
 <math>g(r) = \frac{G(r)}{4 \pi \rho_0 r} + 1</math>
 
+A new Fourier transform from Joerg is
+
+<math>g(r) = \sum_{Q} S(Q)\cdot Q \frac{\sin(Q\cdot r)}{r}\Delta Q</math>
+
+With a damping function
+<math>g(r) = \sum_{Q} S(Q)\cdot Q \frac{\sin(Q\cdot r}{r} \frac{\sin(\pi\cdot Q/Q_{max})}{\pi\cdot Q/Q_{max}}\Delta Q</math>
+
 =====RDF(r)=====
 
 <math>RDF(r) = 4 \pi \rho_0 r^2 g(r)</math>
