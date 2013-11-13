@@ -234,30 +234,30 @@ namespace Algorithms
     {
       std::stringstream msg;
       msg << "Input data x-axis with unit \"" << inputXunit
-        << "\" is not supported (use \"MomentumTransfer\" or \"dSpacing\")";
-      throw std::invalid_argument(msg.str());
+          << "\" is not supported (use \"MomentumTransfer\" or \"dSpacing\")";
+      throw runtime_error(msg.str());
     }
 
-    const MantidVec& inputQ = m_dataWS->readX(m_wsIndex);
+    const MantidVec& vecQ = m_dataWS->readX(m_wsIndex);
 
     // determine Q-range
     qmin = getProperty("Qmin");
     if (isEmpty(qmin))
     {
-      qmin = inputQ.front();
+      qmin = vecQ.front();
     }
-    else if (qmin < inputQ.front())
+    else if (qmin < vecQ.front())
     {
       g_log.debug() << "Specified Qmin < range of data. Adjusting to data range.\n";
-      qmin = inputQ.front();
+      qmin = vecQ.front();
     }
 
     qmax = getProperty("Qmax");
     if (isEmpty(qmax))
     {
-      qmax = inputQ.back();
+      qmax = vecQ.back();
     }
-    else if (qmax > inputQ.back())
+    else if (qmax > vecQ.back())
     {
       g_log.debug() << "Specified Qmax > range of data. Adjusting to data range.\n";
     }
@@ -268,18 +268,18 @@ namespace Algorithms
     // get pointers for the data range
     {
       // keep variable scope small
-      auto qmin_ptr = std::upper_bound(inputQ.begin(), inputQ.end(), qmin);
-      qmin_index = std::distance(inputQ.begin(), qmin_ptr);
+      auto qmin_ptr = std::upper_bound(vecQ.begin(), vecQ.end(), qmin);
+      qmin_index = std::distance(vecQ.begin(), qmin_ptr);
       if (qmin_index == 0)
         qmin_index += 1; // so there doesn't have to be a check below
-      auto qmax_ptr = std::lower_bound(inputQ.begin(), inputQ.end(), qmax);
-      qmax_index = std::distance(inputQ.begin(), qmax_ptr);
+      auto qmax_ptr = std::lower_bound(vecQ.begin(), vecQ.end(), qmax);
+      qmax_index = std::distance(vecQ.begin(), qmax_ptr);
     }
     size_t qmi_out = qmax_index;
-    if (qmi_out == inputQ.size())
+    if (qmi_out == vecQ.size())
       qmi_out--; // prevent unit test problem under windows (and probably other hardly identified problem)
-    g_log.information() << "Adjusting to data: Qmin = " << inputQ[qmin_index]
-                        << " Qmax = " << inputQ[qmi_out] << "\n";
+    g_log.information() << "Adjusting to data: Qmin = " << vecQ[qmin_index]
+                        << " Qmax = " << vecQ[qmi_out] << "\n";
 
     return;
   }
@@ -312,9 +312,8 @@ namespace Algorithms
     }
     g_log.information() << "Using rmin = " << outputR.front() << "Angstroms and rmax = "
                         << outputR.back() << "Angstroms\n";
-    // always calculate G(r) then convert
-    // MantidVec& outputY = outputWS->dataY(0);
-    // MantidVec& outputE = outputWS->dataE(0);
+
+    return;
   }
 
   //----------------------------------------------------------------------------------------------
@@ -390,7 +389,9 @@ namespace Algorithms
     return;
   }
 
-
+  //----------------------------------------------------------------------------------------------
+  /** Do Foureir transform to Q[S(Q)-1]
+    */
   void PDFFourierTransform::doFourierTransform()
   {
     // do the math
@@ -423,7 +424,9 @@ namespace Algorithms
     return;
   }
 
-
+  //----------------------------------------------------------------------------------------------
+  /** Add some constant or multiply factor to the Fourier transformed vector
+    */
   void PDFFourierTransform::postProcess()
   {
     // convert to the correct form of PDF
@@ -488,58 +491,17 @@ namespace Algorithms
     */
   void PDFFourierTransform::exec()
   {
+    // Process input properties (esp. Q)
     processProperties();
 
+    // Determine the output R range
     determineRrange();
 
-#if 0
-    // get input data
-    const MantidVec& inputQ = m_dataWS->readX(0);     //  x for input
-    MantidVec& inputDQ = m_dataWS->dataDx(0);   // dx for input
-    const MantidVec& SofQ = m_dataWS->readY(0);  //  y for input
-    const MantidVec& SofQError = m_dataWS->readE(0); // dy for input
-    if (inputDQ.empty())
-      inputDQ.assign(inputQ.size(), 0.);
-#endif
-
-#if 0
-    // transform input data into Q/MomentumTransfer
-      const std::string inputXunit = m_dataWS->getAxis(0)->unit()->unitID();
-      if (inputXunit == "MomentumTransfer")
-      {
-        // nothing to do
-      }
-      else if (inputXunit == "dSpacing")
-      {
-        // convert the x-units to Q/MomentumTransfer
-        std::transform(inputDQ.begin(), inputDQ.end(), inputQ.begin(), inputDQ.begin(),
-          std::divides<double>());
-        const double PI_2(2.*M_PI);
-        std::transform(inputQ.begin(), inputQ.end(), inputQ.begin(),
-          std::bind1st(std::divides<double>(), PI_2));
-
-
-        // reverse all of the arrays
-        std::reverse(inputQ.begin(), inputQ.end());
-        std::reverse(inputDQ.begin(), inputDQ.end());
-        std::reverse(SofQ.begin(), SofQ.end());
-        std::reverse(SofQError.begin(), SofQError.end());
-      }
-      else
-      {
-        std::stringstream msg;
-        msg << "Input data x-axis with unit \"" << inputXunit
-          << "\" is not supported (use \"MomentumTransfer\" or \"dSpacing\")";
-        throw std::invalid_argument(msg.str());
-      }
-      g_log.debug() << "Input unit is " << inputXunit << "\n";
-#endif
-
-      // convert from histogram to density
-      if (!m_dataWS->isHistogramData())
-      {
-        g_log.warning() << "This algorithm has not been tested on density data (only on histograms)\n";
-        /* Don't do anything for now
+    // convert from histogram to density
+    if (!m_dataWS->isHistogramData())
+    {
+      g_log.warning() << "This algorithm has not been tested on density data (only on histograms)\n";
+      /* Don't do anything for now
         double deltaQ;
         for (size_t i = 0; i < inputFOfQ.size(); ++i)
         {
@@ -552,17 +514,17 @@ namespace Algorithms
         inputQ.push_back(inputQ.back()+deltaQ);
         inputDQ.push_back(inputDQ.back()); // copy last value
         */
-      }
+    }
 
-      // convert to Q[S(Q)-1]
-      convertToQSm1();
+    // convert to Q[S(Q)-1]
+    convertToQSm1();
 
-      doFourierTransform();
+    doFourierTransform();
 
-      postProcess();
+    postProcess();
 
-      // set property
-      setProperty("OutputWorkspace", outputWS);
+    // set property
+    setProperty("OutputWorkspace", outputWS);
   }
 
 } // namespace Mantid
