@@ -33,6 +33,39 @@ namespace Algorithms
     void init();
     /// Run the algorithm
     void exec();
+
+    /// Process input properties
+    void processProperties();
+
+    /// Create output workspace
+    void determineRrange();
+
+    /// Convert inpt to Q[S(Q)-1]
+    void convertToQSm1();
+
+    /// Do Fourier transform
+    void doFourierTransform();
+
+    void postProcess();
+
+    /// Input workspace
+    API::MatrixWorkspace_const_sptr m_dataWS;
+    /// Input data index
+    size_t m_wsIndex;
+    /// Output workspace
+    API::MatrixWorkspace_sptr outputWS;
+
+    /// Q-min
+    double qmin;
+    /// Q-max
+    double qmax;
+    size_t qmin_index;
+    size_t qmax_index;
+
+    /// Vector of Q[S(Q)-1]
+    std::vector<double> m_vecQSm1;
+    /// Vector of error of Q[S(Q)-1]
+    std::vector<double> m_vecErrQSm1;
   };
 
 
