@@ -71,7 +71,8 @@ namespace Algorithms
   using namespace Mantid::Kernel;
   using namespace Mantid::API;
 
-  namespace { // anonymous namespace
+  namespace
+  { // anonymous namespace
     /// Crystalline PDF
     const string BIG_G_OF_R("G(r)");
     /// Liquids PDF
@@ -181,6 +182,14 @@ namespace Algorithms
     setPropertyGroup("DeltaR", realGroup);
     setPropertyGroup("Rmax", realGroup);
     setPropertyGroup("rho0", realGroup);
+
+    // Damping function
+    vector<string> dampingfuncs;
+    dampingfuncs.push_back("N/A");
+    dampingfuncs.push_back("Lorch");
+    declareProperty("DampingFunction", "N/A", boost::make_shared<StringListValidator>(dampingfuncs),
+                    "Damping function applied on the PDF function. ");
+
   }
 
   //----------------------------------------------------------------------------------------------
@@ -320,6 +329,24 @@ namespace Algorithms
     g_log.information() << "Using rmin = " << outputR.front() << "Angstroms and rmax = "
                         << outputR.back() << "Angstroms\n";
 
+    // Output type of PDF
+    m_pdfType = getPropertyValue("PDFType");
+
+    // Damping function type
+    string dampfunctiontype = getProperty("DampingFunction");
+    if (dampfunctiontype == "Lorch")
+    {
+      m_dampingFunction = lorchDampFunction();
+      g_log.information() << "**** 1" << "\n";
+      g_log.information() << m_dampingFunction(1.0, 2.0) << "\n";
+    }
+    else
+    {
+      m_dampingFunction = noDampFunction();
+      g_log.information() << "**** 2" << "\n";
+      g_log.information() << m_dampingFunction(1.0, 2.0) << "\n";
+    }
+
     return;
   }
 
@@ -397,7 +424,7 @@ namespace Algorithms
   }
 
   //----------------------------------------------------------------------------------------------
-  /** Do Foureir transform to Q[S(Q)-1]
+  /** Do Foureir transform to Q[S(Q)-1] for G(r) and RDF G(r)
     */
   void PDFFourierTransform::doFourierTransform()
   {
@@ -432,12 +459,140 @@ namespace Algorithms
   }
 
   //----------------------------------------------------------------------------------------------
+  /** Convert to S(Q)
+   */
+  void PDFFourierTransform::convertToSofQ()
+  {
+    // Init
+    const MantidVec& vecY = m_dataWS->readY(m_wsIndex);
+    const MantidVec& vecE = m_dataWS->readE(m_wsIndex);
+    m_vecSofQ.resize(vecY.size(), 0.);
+    m_vecErrSofQ.resize(vecY.size(), 0.);
+
+    // Input type
+    string soqType = getProperty("InputSofQType");
+
+    if (soqType == S_OF_Q)
+    {
+      // Input is S(Q):  duplicate the vector
+      ::copy(vecY.begin(), vecY.end(), m_vecSofQ.begin());
+      ::copy(vecE.begin(), vecE.end(), m_vecErrSofQ.begin());
+    }
+    else if (soqType == Q_S_OF_Q_MINUS_ONE || soqType == S_OF_Q_MINUS_ONE)
+    {
+      // Input is S(Q) or S(Q)-1
+      if (soqType == Q_S_OF_Q_MINUS_ONE)
+      {
+        // Input is Q[S(Q)-1]: calculate S(Q)-1. There is no error propagation for subtracting one
+        g_log.debug("Divided by Q.");
+        const MantidVec& vecQ = m_dataWS->readX(m_wsIndex);
+        ::transform(vecY.begin(), vecY.end(), vecQ.begin(), m_vecSofQ.begin(),
+                    ::divides<double>());
+        // Error propagation: vecE now is error for S(Q) (same to S(Q)-1)
+        const MantidVec& inputDQ = m_dataWS->readDx(m_wsIndex);
+        if (inputDQ.size() >= vecE.size())
+        {
+          for (size_t i = 0; i < vecE.size(); ++i)
+          {
+            m_vecErrQSm1[i] = vecQ[i] * vecE[i] + m_vecQSm1[i] * inputDQ[i];
+          }
+        }
+        else
+        {
+          for (size_t i = 0; i < vecE.size(); ++i)
+          {
+            m_vecErrQSm1[i] = vecQ[i] * vecE[i];
+          }
+        }
+
+        soqType = S_OF_Q_MINUS_ONE;
+      }
+
+      // At this point, vecQSm1 = S(Q)-1
+      if (soqType == S_OF_Q_MINUS_ONE)
+      {
+        // Calculate Q[S(Q)-1] from S(Q)-1
+        g_log.debug("Add all values by 1.");
+
+        // Do [S(Q)-1] + 1
+        ::transform(vecY.begin(), vecY.end(), m_vecQSm1.begin(), ::bind2nd(::plus<double>(), 1.));
+      }
+    }
+    else
+    {
+      // Exception check!
+      std::stringstream msg;
+      msg << "Do not understand InputSofQType = " << soqType;
+      throw std::runtime_error(msg.str());
+    }
+
+    return;
+  }
+
+
+
+  //----------------------------------------------------------------------------------------------
+  /** No damping function
+
+  inline double noDamp(double q, double qmax)
+  {
+    return 1.;
+  }
+ */
+
+  //----------------------------------------------------------------------------------------------
+  /** Do Foureir transform to S(Q) for G(r)
+    * <math>g(r) = \sum_{Q} S(Q)\cdot Q \frac{\sin(Q\cdot r)}{r}\Delta Q</math>
+    * With a damping function
+    * <math>g(r) = \sum_{Q} S(Q)\cdot Q \frac{\sin(Q\cdot r}{r} \frac{\sin(\pi\cdot Q/Q_{max})}{\pi\cdot Q/Q_{max}}\Delta Q</math>
+    */
+  void PDFFourierTransform::doFourierTransformSmallGofR(boost::function<double(double, double)> dampfunction)
+  {
+    const MantidVec& vecR = outputWS->readX(0);
+    MantidVec& vecGofR = outputWS->dataY(0);
+    MantidVec& vecErrG = outputWS->dataE(0);
+    const MantidVec& vecQ = m_dataWS->readX(m_wsIndex);
+
+    size_t sizer = vecR.size();
+    for (size_t r_index = 0; r_index < sizer; r_index ++)
+    {
+      const double r = vecR[r_index];
+      double fs = 0;
+      double error = 0;
+
+      for (size_t q_index = qmin_index; q_index < qmax_index; q_index++)
+      {
+        double q = vecQ[q_index];
+        double deltaq = vecQ[q_index] - vecQ[q_index - 1];
+        double SofQ = m_vecSofQ[q_index];
+        double ft = SofQ * q * j0(q*r) * deltaq * dampfunction(q, qmax);
+        fs += ft;
+        // FIXME - NEED TO REDO
+        // error += q * q * (sinus*m_vecErrQSm1[q_index]) * (sinus*m_vecErrQSm1[q_index]);
+      }
+
+      // put the information into the output
+      vecGofR[r_index] = fs * 2 / M_PI;
+      vecErrG[r_index] = error*2/M_PI; //TODO: Wrong!
+    }
+
+    return;
+  }
+
+  //----------------------------------------------------------------------------------------------
   /** Add some constant or multiply factor to the Fourier transformed vector
     */
-  void PDFFourierTransform::postProcess()
+  void PDFFourierTransform::postProcessRDFofR()
+  {
+
+  }
+
+  //----------------------------------------------------------------------------------------------
+  /** Add some constant or multiply factor to the Fourier transformed vector
+    */
+  void PDFFourierTransform::postProcessBigGofR()
   {
     // convert to the correct form of PDF
-    string pdfType = getProperty("PDFType");
     double rho0 = getProperty("rho0");
     if (isEmpty(rho0))
     {
@@ -449,7 +604,7 @@ namespace Algorithms
       else
         rho0 = 1.;
       // write out that it was reset if the value is coming into play
-      if (pdfType == LITTLE_G_OF_R || pdfType == RDF_OF_R)
+      if (m_pdfType == LITTLE_G_OF_R || m_pdfType == RDF_OF_R)
         g_log.information() << "Using rho0 = " << rho0 << "\n";
     }
 
@@ -458,11 +613,11 @@ namespace Algorithms
     MantidVec& vecGofR = outputWS->dataY(0);
     MantidVec& vecErrG = outputWS->dataE(0);
 
-    if (pdfType == BIG_G_OF_R)
+    if (m_pdfType == BIG_G_OF_R)
     {
       // nothing to do
     }
-    else if (pdfType == LITTLE_G_OF_R)
+    else if (m_pdfType == LITTLE_G_OF_R)
     {
       const double factor = 1./(4.*M_PI*rho0);
       for (size_t i = 0; i < vecGofR.size(); ++i)
@@ -473,7 +628,7 @@ namespace Algorithms
         vecGofR[i] = 1. + factor*vecGofR[i]/vecR[i];
       }
     }
-    else if (pdfType == RDF_OF_R)
+    else if (m_pdfType == RDF_OF_R)
     {
       const double factor = 4.*M_PI*rho0;
       for (size_t i = 0; i < vecGofR.size(); ++i)
@@ -488,7 +643,7 @@ namespace Algorithms
     {
       // should never get here
       std::stringstream msg;
-      msg << "Do not understand PDFType = " << pdfType;
+      msg << "Do not understand PDFType = " << m_pdfType;
       throw std::runtime_error(msg.str());
     }
   }
@@ -523,15 +678,39 @@ namespace Algorithms
         */
     }
 
-    // convert to Q[S(Q)-1]
-    convertToQSm1();
-
-    doFourierTransform();
-
-    postProcess();
+    if (m_pdfType == BIG_G_OF_R)
+    {
+      // convert to Q[S(Q)-1]
+      convertToQSm1();
+      doFourierTransform();
+      postProcessBigGofR();
+    }
+    else if (m_pdfType == RDF_OF_R)
+    {
+      convertToQSm1();
+      doFourierTransform();
+      postProcessRDFofR();
+    }
+    else if (m_pdfType == LITTLE_G_OF_R)
+    {
+      // Convert to S(Q)
+      convertToSofQ();
+      g_log.information("Check point 1");
+      doFourierTransformSmallGofR(m_dampingFunction);
+      postProcessSmallGofR();
+    }
+    else
+    {
+      throw runtime_error("Unsupported case. ");
+    }
 
     // set property
     setProperty("OutputWorkspace", outputWS);
+  }
+
+  void PDFFourierTransform::postProcessSmallGofR()
+  {
+
   }
 
 } // namespace Mantid

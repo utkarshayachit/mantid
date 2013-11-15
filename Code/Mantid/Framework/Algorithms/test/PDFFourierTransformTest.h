@@ -51,10 +51,11 @@ public:
     pdfft.execute();
 
     TS_ASSERT(pdfft.isExecuted());
-
+    
+    Mantid::API::AnalysisDataService::Instance().remove("TesetInput1");
   }
 
-  void test_CheckResult(){
+  void test_GofRCheckResult(){
 
     API::Workspace_sptr ws = createWS(20, 0.1, "TestInput2", "MomentumTransfer");
 
@@ -82,7 +83,31 @@ public:
     TS_ASSERT_DELTA(GofR[0], 0.022981, 0.0001);
     TS_ASSERT_DELTA(GofR[249], -0.616449, 0.0001);
 
+    Mantid::API::AnalysisDataService::Instance().remove("TesetInput2");
   }
+
+  void test_calSmallGofR()
+  {
+
+    API::Workspace_sptr ws = createWS(20, 0.1, "TestInput1", "MomentumTransfer");
+
+    PDFFourierTransform pdfft;
+    pdfft.initialize();
+    pdfft.setProperty("InputWorkspace", ws);
+    pdfft.setProperty("OutputWorkspace", "PDFgofR");
+    pdfft.setProperty("InputSofQType", "S(Q)");
+    pdfft.setProperty("Rmax", 20.0);
+    pdfft.setProperty("DeltaR", 0.01);
+    pdfft.setProperty("Qmin", 0.0);
+    pdfft.setProperty("Qmax", 30.0);
+    pdfft.setProperty("PDFType", "g(r)");
+
+    pdfft.execute();
+
+    TS_ASSERT(pdfft.isExecuted());
+
+  }
+
 
 private:
   /**
@@ -107,7 +132,7 @@ private:
 
     ws->getAxis(0)->unit() = Mantid::Kernel::UnitFactory::Instance().create(unitlabel);
 
-    Mantid::API::AnalysisDataService::Instance().add(name, ws);
+    Mantid::API::AnalysisDataService::Instance().addOrReplace(name, ws);
 
     return ws;
   }

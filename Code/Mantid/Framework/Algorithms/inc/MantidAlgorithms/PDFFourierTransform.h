@@ -8,6 +8,31 @@ namespace Mantid
 {
 namespace Algorithms
 {
+  // inline static double lorchDamp(double, double);
+
+  /// Zeroth order Bessell function  Consider the case x = 0
+  inline static double j0(double x)
+  {
+    if (fabs(x) > 1.0E-20)
+    {
+      return sin(x)/x;
+    }
+    return 1.0;
+  }
+
+  /// Lorch damping function
+  struct lorchDampFunction
+  {
+    inline double operator()(double q, double qmax)
+    {
+      return j0(M_PI*q/qmax);
+    }
+  };
+
+  struct noDampFunction
+  {
+    double operator()(double, double) const { return 1.; }
+  };
 
   /** PDFFourierTransform : TODO: DESCRIPTION
    */
@@ -42,11 +67,17 @@ namespace Algorithms
 
     /// Convert inpt to Q[S(Q)-1]
     void convertToQSm1();
+    /// Convert input to S(Q)
+    void convertToSofQ();
 
     /// Do Fourier transform
     void doFourierTransform();
+    /// Do Foureir transform to S(Q) for g(r)
+    void doFourierTransformSmallGofR(boost::function<double(double, double)> dampfunction);
 
-    void postProcess();
+    void postProcessBigGofR();
+    void postProcessRDFofR();
+    void postProcessSmallGofR();
 
     /// Input workspace
     API::MatrixWorkspace_const_sptr m_dataWS;
@@ -66,6 +97,15 @@ namespace Algorithms
     std::vector<double> m_vecQSm1;
     /// Vector of error of Q[S(Q)-1]
     std::vector<double> m_vecErrQSm1;
+    /// Vector of S(Q)
+    std::vector<double> m_vecSofQ;
+    /// Vector of error of S(Q)
+    std::vector<double> m_vecErrSofQ;
+    /// Type of PDF
+    std::string m_pdfType;
+
+    boost::function<double(double, double)> m_dampingFunction;
+
   };
 
 
