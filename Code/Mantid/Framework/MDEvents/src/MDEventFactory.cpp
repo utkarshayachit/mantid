@@ -230,7 +230,8 @@ namespace Mantid
                 std::vector<Mantid::Geometry::MDDimensionExtents<coord_t> > defaultExtents(nDimensions);
                 for(size_t i=0;i<nDimensions;i++)
                 {
-                    defaultExtents[i].setExtents(-FLT_MAX,FLT_MAX);
+										//set to smaller than float max, so the entire range fits in a float.
+                    defaultExtents[i].setExtents(-1e30f,1e30f);
                 }
                 return (*(boxCreatorFP[id]))(splitter.get(),defaultExtents,depth,nBoxEvents,boxID);
             }
@@ -338,7 +339,7 @@ namespace Mantid
         public:
             LOOP()
             {
-                LOOP::EXEC();
+                EXEC();
             }
             static inline void EXEC()
             {

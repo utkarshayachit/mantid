@@ -5,7 +5,6 @@ set ( SRC_FILES
 	#end TMP
 	src/AndMD.cpp
 	src/BinMD.cpp
-	src/BinToMDHistoWorkspace.cpp
 	src/BinaryOperationMD.cpp
 	src/BooleanBinaryOperationMD.cpp
 	src/CentroidPeaksMD.cpp
@@ -78,7 +77,6 @@ set ( INC_FILES
 	# inc/MantidMDAlgorithms/CreateMDFitWorkspace.h
 	inc/MantidMDAlgorithms/AndMD.h
 	inc/MantidMDAlgorithms/BinMD.h
-	inc/MantidMDAlgorithms/BinToMDHistoWorkspace.h
 	inc/MantidMDAlgorithms/BinaryOperationMD.h
 	inc/MantidMDAlgorithms/BooleanBinaryOperationMD.h
 	inc/MantidMDAlgorithms/CentroidPeaksMD.h
@@ -100,7 +98,7 @@ set ( INC_FILES
 	inc/MantidMDAlgorithms/FakeMDEventData.h
 	inc/MantidMDAlgorithms/FindPeaksMD.h
 	inc/MantidMDAlgorithms/GreaterThanMD.h
-        inc/MantidMDAlgorithms/GSLFunctions.h
+    inc/MantidMDAlgorithms/GSLFunctions.h
 	inc/MantidMDAlgorithms/IDynamicRebinning.h
 	inc/MantidMDAlgorithms/IntegratePeaksMD.h
 	inc/MantidMDAlgorithms/InvalidParameter.h
@@ -153,7 +151,6 @@ set ( TEST_FILES
 	# these tests are as they test verify different parts of the CPR algorithms
 	#CreateMDFitWorkspaceTest.h
 	AndMDTest.h
-	BinToMDHistoWorkspaceTest.h
 	BooleanBinaryOperationMDTest.h
 	CachedExperimentInfoTest.h
 	CentroidPeaksMDTest.h
