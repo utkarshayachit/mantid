@@ -1684,7 +1684,15 @@ namespace DataObjects
         totalTof = it->m_tof;
         weight = it->weight();
         errorSquared = it->errorSquared();
-        lastTof = it->m_tof;
+
+        // Move up the time boundary by an integer * tolerance (but with a special case if tolerance is zero)
+        if ( tolerance == 0.0 ) lastTof = it->m_tof;
+        else
+        {
+          do {
+            lastTof += tolerance;
+          } while (lastTof+tolerance < it->m_tof);
+        }
       }
     }
 
