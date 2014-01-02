@@ -1647,18 +1647,22 @@ namespace DataObjects
     // We will make a starting guess of 1/20th of the number of input events.
     out.reserve( events.size() / 20 );
 
-    // The last TOF to which we are comparing.
-    double lastTof = -std::numeric_limits<double>::max();
-    // For getting an accurate average TOF
-    double totalTof = 0;
-    int num = 0;
-    // Carrying weight and error
-    double weight = 0;
-    double errorSquared = 0;
+    // If the event list is empty then there's nothing to do
+    if ( events.empty() ) return;
 
-    typename std::vector<T>::const_iterator it;
-    typename std::vector<T>::const_iterator it_end = events.end(); //cache for speed
-    for (it = events.begin(); it != it_end; it++)
+    // Initialize things with the first event
+    auto it = events.begin();
+    // The last TOF to which we are comparing.
+    double lastTof = it->m_tof;
+    // For getting an accurate average TOF
+    double totalTof = it->m_tof;
+    int num = 1;
+    // Carrying weight and error
+    double weight = it->weight();
+    double errorSquared = it->errorSquared();
+
+    // The loop starts with the second event
+    for ( ++it; it != events.end(); ++it )
     {
       if ((it->m_tof - lastTof) <= tolerance)
       {
@@ -1672,11 +1676,9 @@ namespace DataObjects
       else
       {
         // We exceeded the tolerance
-        if (num > 0)
-        {
-          // Create a new event with the average TOF and summed weights and squared errors.
-          out.push_back( WeightedEventNoTime( totalTof/num, weight, errorSquared ) );
-        }
+        // Create a new event with the average TOF and summed weights and squared errors.
+        out.push_back( WeightedEventNoTime( totalTof/num, weight, errorSquared ) );
+
         // Start a new combined object
         num = 1;
         totalTof = it->m_tof;
@@ -1687,11 +1689,7 @@ namespace DataObjects
     }
 
     // Put the last event in there too.
-    if (num > 0)
-    {
-      // Create a new event with the average TOF and summed weights and squared errors.
-      out.push_back( WeightedEventNoTime( totalTof/num, weight, errorSquared ) );
-    }
+    out.push_back( WeightedEventNoTime( totalTof/num, weight, errorSquared ) );
 
     // If you have over-allocated by more than 5%, reduce the size.
     size_t excess_limit = out.size() / 20;
