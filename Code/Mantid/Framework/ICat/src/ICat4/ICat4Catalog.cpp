@@ -30,8 +30,10 @@ namespace Mantid
     {
       // Store the soap end-point in the session for use later.
       ICat::Session::Instance().setSoapEndPoint(url);
-      // Obtain the ICAT proxy that has been securely set, including soap-endpoint.
-      ICat4::ICATPortBindingProxy icat = getICATProxy();
+      // Securely set, including soap-endpoint.
+      ICat4::ICATPortBindingProxy icat;
+      setICATProxySettings(icat);
+
       // Output the soap end-point in use for debugging purposes.
       g_log.debug() << "The ICAT soap end-point is: " << icat.soap_endpoint << "\n";
 
@@ -87,7 +89,8 @@ namespace Mantid
      */
     void ICat4Catalog::logout()
     {
-      ICat4::ICATPortBindingProxy icat = getICATProxy();
+      ICat4::ICATPortBindingProxy icat;
+      setICATProxySettings(icat);
 
       ns1__logout request;
       ns1__logoutResponse response;
@@ -257,7 +260,8 @@ namespace Mantid
 
       g_log.debug() << "ICat4Catalog::search -> Query is: { " << query << " }" << std::endl;
 
-      ICat4::ICATPortBindingProxy icat = getICATProxy();
+      ICat4::ICATPortBindingProxy icat;
+      setICATProxySettings(icat);
 
       ns1__search request;
       ns1__searchResponse response;
@@ -284,7 +288,8 @@ namespace Mantid
      */
     int64_t ICat4Catalog::getNumberOfSearchResults(const CatalogSearchParam& inputs)
     {
-      ICat4::ICATPortBindingProxy icat = getICATProxy();
+      ICat4::ICATPortBindingProxy icat;
+      setICATProxySettings(icat);
 
       ns1__search request;
       ns1__searchResponse response;
@@ -326,12 +331,15 @@ namespace Mantid
      */
     void ICat4Catalog::myData(Mantid::API::ITableWorkspace_sptr& outputws)
     {
-      ICat4::ICATPortBindingProxy icat = getICATProxy();
+      ICat4::ICATPortBindingProxy icat;
+      setICATProxySettings(icat);
 
       ns1__search request;
       ns1__searchResponse response;
 
       std::string sessionID = Session::Instance().getSessionId();
+      // Prevents any calls to myData from hanging due to sending a request to icat without a session ID.
+      if (sessionID.empty()) return;
       request.sessionId     = &sessionID;
 
       std::string query = "Investigation INCLUDE InvestigationInstrument, Instrument, InvestigationParameter <-> InvestigationUser <-> User[name = :user]";
@@ -431,7 +439,8 @@ namespace Mantid
      */
     void ICat4Catalog::getDataSets(const long long& investigationId, Mantid::API::ITableWorkspace_sptr& outputws)
     {
-      ICat4::ICATPortBindingProxy icat = getICATProxy();
+      ICat4::ICATPortBindingProxy icat;
+      setICATProxySettings(icat);
 
       ns1__search request;
       ns1__searchResponse response;
@@ -499,7 +508,8 @@ namespace Mantid
      */
     void ICat4Catalog::getDataFiles(const long long& investigationId, Mantid::API::ITableWorkspace_sptr& outputws)
     {
-      ICat4::ICATPortBindingProxy icat = getICATProxy();
+      ICat4::ICATPortBindingProxy icat;
+      setICATProxySettings(icat);
 
       ns1__search request;
       ns1__searchResponse response;
@@ -536,6 +546,7 @@ namespace Mantid
       outputws->addColumn("str","Location");
       outputws->addColumn("str","Create Time");
       outputws->addColumn("long64","Id");
+      outputws->addColumn("long64","File size(bytes)");
       outputws->addColumn("str","File size");
 
       std::vector<xsd__anyType*>::const_iterator iter;
@@ -555,6 +566,8 @@ namespace Mantid
             savetoTableWorkspace(&createDate, table);
 
             savetoTableWorkspace(datafile->id, table);
+            savetoTableWorkspace(datafile->fileSize, table);
+
             std::string fileSize = bytesToString(*datafile->fileSize);
             savetoTableWorkspace(&fileSize, table);
           }
@@ -576,7 +589,8 @@ namespace Mantid
      */
     void ICat4Catalog::listInstruments(std::vector<std::string>& instruments)
     {
-      ICat4::ICATPortBindingProxy icat = getICATProxy();
+      ICat4::ICATPortBindingProxy icat;
+      setICATProxySettings(icat);
 
       ns1__search request;
       ns1__searchResponse response;
@@ -616,7 +630,8 @@ namespace Mantid
      */
     void ICat4Catalog::listInvestigationTypes(std::vector<std::string>& invstTypes)
     {
-      ICat4::ICATPortBindingProxy icat = getICATProxy();
+      ICat4::ICATPortBindingProxy icat;
+      setICATProxySettings(icat);
 
       ns1__search request;
       ns1__searchResponse response;
@@ -657,7 +672,8 @@ namespace Mantid
      */
     void ICat4Catalog::getFileLocation(const long long & fileID, std::string & fileLocation)
     {
-      ICat4::ICATPortBindingProxy icat = getICATProxy();
+      ICat4::ICATPortBindingProxy icat;
+      setICATProxySettings(icat);
 
       ns1__get request;
       ns1__getResponse response;
@@ -714,6 +730,74 @@ namespace Mantid
       g_log.debug() << "ICat4Catalog::getDownloadURL -> { " << urlToBuild << " }" << std::endl;
 
       url = urlToBuild;
+    }
+
+    /**
+     * Get the URL where the datafiles will be uploaded to.
+     * @param investigationID :: The investigation used to obtain the related dataset ID.
+     * @param createFileName  :: The name to give to the file being saved.
+     * @return URL to PUT datafiles to.
+     */
+    const std::string ICat4Catalog::getUploadURL(const std::string &investigationID, const std::string &createFileName)
+    {
+      // Obtain the URL from the Facilities.xml file.
+      std::string url = ConfigService::Instance().getFacility().catalogInfo().externalDownloadURL();
+
+      std::string sessionID = Session::Instance().getSessionId();
+      // Set the elements of the URL.
+      std::string session   = "sessionId="  + sessionID;
+      if (sessionID.empty()) throw std::runtime_error("You are not currently logged into the cataloging system.");
+      std::string name      = "&name="      + createFileName;
+      std::string datasetId = "&datasetId=" + boost::lexical_cast<std::string>(getDatasetId(investigationID));
+
+      // Add pieces of URL together.
+      url += ("put?" + session + name + datasetId + "&datafileFormatId=1");
+      g_log.debug() << "ICat4Catalog::getUploadURL url is: " << url << std::endl;
+      return url;
+    }
+
+
+    /**
+     * Search the archive & obtain the dataset ID for a specific investigation.
+     * @param investigationID :: Used to obtain the related dataset ID.
+     * @return Dataset ID of the provided investigation.
+     */
+    int64_t ICat4Catalog::getDatasetId(const std::string &investigationID)
+    {
+      ICat4::ICATPortBindingProxy icat;
+      setICATProxySettings(icat);
+
+      ns1__search request;
+      ns1__searchResponse response;
+
+      std::string sessionID = Session::Instance().getSessionId();
+      request.sessionId     = &sessionID;
+
+      std::string query = "Dataset <-> Investigation[id = '" + investigationID + "']";
+      request.query     = &query;
+
+      g_log.debug() << "ICat4Catalog::getDatasetIdFromFileName -> { " << query << " }" << std::endl;
+      
+      int64_t datasetID = 0;
+      
+      int result = icat.search(&request, &response);
+
+      if (result == 0)
+      {
+        if (response.return_.size() <= 0)
+        {
+          throw std::runtime_error("The datafile you tried to publish has no related dataset."
+              " (Based on investigation ID: " + investigationID + ")");
+        }
+        ns1__dataset * dataset = dynamic_cast<ns1__dataset*>(response.return_.at(0));
+        if (dataset && dataset->id) datasetID = *(dataset->id);
+      }
+      else
+      {
+        throwErrorMessage(icat);
+      }
+
+      return datasetID;
     }
 
     /**
@@ -810,17 +894,17 @@ namespace Mantid
     }
 
     /**
-     * Sets the soap-endpoint & SSL context for the proxy being returned.
-     * @return ICATPortBindingProxy :: The proxy with set endpoint & SSL context.
+     * Sets the soap-endpoint & SSL context for the given ICAT proxy.
      */
-    ICat4::ICATPortBindingProxy ICat4Catalog::getICATProxy()
+    void ICat4Catalog::setICATProxySettings(ICat4::ICATPortBindingProxy& icat)
     {
-      ICat4::ICATPortBindingProxy icat;
+      // The soapEndPoint is only set when the user logs into the catalog.
+      // If it's not set the correct error is returned (invalid sessionID) from the ICAT server.
+      if (ICat::Session::Instance().getSoapEndPoint().empty()) return;
       // Set the soap-endpoint of the catalog we want to use.
       icat.soap_endpoint = ICat::Session::Instance().getSoapEndPoint().c_str();
       // Sets SSL authentication scheme
       setSSLContext(icat);
-      return icat;
     }
   }
 }
