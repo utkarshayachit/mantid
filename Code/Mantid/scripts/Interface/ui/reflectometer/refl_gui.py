@@ -73,6 +73,10 @@ class ReflGui(refl_window.Ui_windowRefl):
             self.comboInstrument.addItem(inst)
         self.labelStatus = QtGui.QLabel("Ready")
         self.statusMain.addWidget(self.labelStatus)
+        self.progbarProc = QtGui.QProgressBar(self.statusMain) 
+        self.progbarProc.setMaximumSize(170,19)
+        self.progbarProc.setMinimum(0)
+        self.statusMain.addPermanentWidget(self.progbarProc)
         self.initTable()
         self.populateList()
         self.windowRefl = windowRefl
@@ -245,7 +249,11 @@ class ReflGui(refl_window.Ui_windowRefl):
             else:
                 rowIndexes = range(self.tableMain.rowCount())
         if willProcess:
-            for row in rowIndexes:  # range(self.tableMain.rowCount()):
+            self.progbarProc.setMaximum(100)
+            toproc = len(rowIndexes)
+            prognum = 0.0
+            self.progbarProc.setValue(0)
+            for row in rowIndexes:
                 runno = []
                 wksp = []
                 wkspBinned = []
@@ -362,6 +370,8 @@ class ReflGui(refl_window.Ui_windowRefl):
                             gcomb.activeLayer().setTitle(titl)
                             gcomb.activeLayer().setAxisScale(Layer.Left, 1e-8, 100.0, Layer.Log10)
                             gcomb.activeLayer().setAxisScale(Layer.Bottom, Qmin * 0.9, Qmax * 1.1, Layer.Log10)
+                prognum += 1.0
+                self.progbarProc.setValue((prognum/toproc)*100)
     def dorun(self, runno, row, which):
         g = ['g1', 'g2', 'g3']
         transrun = str(self.tableMain.item(row, which * 5 + 2).text())
