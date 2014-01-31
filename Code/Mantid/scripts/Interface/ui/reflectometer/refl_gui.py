@@ -7,8 +7,10 @@ import csv
 from PyQt4 import QtCore, QtGui
 from mantid.simpleapi import *
 from isis_reflectometry.quick import *
+from isis_reflectometry import load_live_runs
 from isis_reflectometry.combineMulti import *
 from latest_isis_runs import *
+
 from mantid.api import Workspace, WorkspaceGroup
 
 try:
@@ -83,6 +85,7 @@ class ReflGui(refl_window.Ui_windowRefl):
         self.connectSlots()
     def initTable(self):
         self.currentTable = None
+        self.accMethod = None
         self.tableMain.resizeColumnsToContents()
         currentInstrument = config['default.instrument'].upper()
         if currentInstrument in self.instrumentList:
@@ -234,6 +237,22 @@ class ReflGui(refl_window.Ui_windowRefl):
     def unTickAll(self,state):
         for row in range(self.tableMain.rowCount()):
             self.tableMain.cellWidget(row, 17).children()[1].setCheckState(state)
+    def getAccMethod(self):
+        msgBox = QtGui.QMessageBox()
+        msgBox.setText("The Data to be processed required that a Live Data service be started. What accumulation method would you like it to use?")
+        msgBox.setIcon(QtGui.QMessageBox.Question)
+        AddButton = msgBox.addButton("Add", QtGui.QMessageBox.ActionRole | QtGui.QMessageBox.AcceptRole)
+        ReplaceButton = msgBox.addButton("Replace", QtGui.QMessageBox.ActionRole | QtGui.QMessageBox.AcceptRole)
+        AppendButton = msgBox.addButton("Append", QtGui.QMessageBox.ActionRole | QtGui.QMessageBox.AcceptRole)
+        msgBox.setDefaultButton(AddButton)
+        msgBox.setEscapeButton(AddButton)
+        reply = msgBox.exec_()
+        if msgBox.clickedButton() == AppendButton:
+            return "Append"
+        elif msgBox.clickedButton() == ReplaceButton:
+            return "Replace"
+        else:
+            return "Add"
     def process(self):
 #--------- If "Process" button pressed, convert raw files to IvsLam and IvsQ and combine if checkbox ticked -------------
         willProcess = True
@@ -255,6 +274,7 @@ class ReflGui(refl_window.Ui_windowRefl):
             self.progbarProc.setValue(0)
             for row in rowIndexes:
                 runno = []
+                loadedRuns = []
                 wksp = []
                 wkspBinned = []
                 overlapLow = []
@@ -274,9 +294,17 @@ class ReflGui(refl_window.Ui_windowRefl):
                             overlapHigh.append(float(ovHigh))
                     print len(runno), "runs: ", runno
                     # Determine resolution
-                    # if (runno[0] != ''):
                     if (self.tableMain.item(row, 15).text() == ''):
-                        dqq = calcRes(runno[0])
+                        loadedRun = None
+                        if load_live_runs.is_live_run(runno[0]):
+                            if not self.accMethod:
+                            #reply = QtGui.QMessageBox.question(self.tableMain, 'Accumulation Method?',"The Data to be processed required that a Live Data service be started. What accumulation method would you like it to use?", QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+                                self.accMethod = self.getAccMethod()
+                            loadedRun = load_live_runs.get_live_data(config['default.instrument'], Accumulation = self.accMethod)
+                        else:
+                            Load(Filename=run, outputWorkspace="run")
+                            loadedRun = mtd["run"]
+                        dqq = calcRes(loadedRun)
                         item = QtGui.QTableWidgetItem()
                         item.setText(str(dqq))
                         self.tableMain.setItem(row, 15, item)
@@ -353,8 +381,6 @@ class ReflGui(refl_window.Ui_windowRefl):
                         w1 = getWorkspace(wksp[0])
                         w2 = getWorkspace(wksp[len(wksp) - 1])
                         begoverlap = w2.readX(0)[0]
-                        # Qmin = w1.readX(0)[0]
-                        # Qmax = max(w2.readX(0))
                         # get Qmax
                         if (self.tableMain.item(row, i * 5 + 4).text() == ''):
                             overlapHigh = 0.3 * max(w1.readX(0))
@@ -372,17 +398,21 @@ class ReflGui(refl_window.Ui_windowRefl):
                             gcomb.activeLayer().setAxisScale(Layer.Bottom, Qmin * 0.9, Qmax * 1.1, Layer.Log10)
                 prognum += 1.0
                 self.progbarProc.setValue((prognum/toproc)*100)
+        self.accMethod = None
     def dorun(self, runno, row, which):
         g = ['g1', 'g2', 'g3']
         transrun = str(self.tableMain.item(row, which * 5 + 2).text())
         angle = str(self.tableMain.item(row, which * 5 + 1).text())
-        names = mtd.getObjectNames()
-        [wlam, wq, th] = quick(runno, trans=transrun, theta=angle)
+        loadedRun = runno
+        if load_live_runs.is_live_run(runno):
+            if not self.accMethod:
+                self.accMethod = self.getAccMethod()
+            loadedRun = load_live_runs.get_live_data(InstrumentName = config['default.instrument'], Accumulation = self.accMethod)
+        [wlam, wq, th] = quick(loadedRun, trans=transrun, theta=angle)
         if ':' in runno:
             runno = runno.split(':')[0]
         if ',' in runno:
             runno = runno.split(',')[0]
-
         ws_name = str(runno) + '_IvsQ'
         inst = groupGet(ws_name, 'inst')
         lmin = inst.getNumberParameter('LambdaMin')[0] + 1
@@ -511,11 +541,15 @@ class ReflGui(refl_window.Ui_windowRefl):
         webbrowser.open('http://www.mantidproject.org/ISIS_Reflectometry_GUI')
 
 def calcRes(run):
-    runno = '_' + str(run) + 'temp'
-    if type(run) == type(int()):
-        Load(Filename=run, OutputWorkspace=runno)
+    runno = None
+    if not type(run) == type(Workspace):
+        runno = '_' + str(run) + 'temp'
+        if type(run) == type(int()):
+            Load(Filename=run, OutputWorkspace=runno)
+        else:
+            Load(Filename=run.replace("raw", "nxs", 1), OutputWorkspace=runno)
     else:
-        Load(Filename=run.replace("raw", "nxs", 1), OutputWorkspace=runno)
+        runno = str(run)
     # Get slits and detector angle theta from NeXuS
     theta = groupGet(runno, 'samp', 'THETA')
     inst = groupGet(runno, 'inst')
@@ -533,7 +567,8 @@ def calcRes(run):
     #1500.0 is the S1-S2 distance in mm for SURF!!!
     resolution = math.atan((s1vg + s2vg) / (2 * (s2z - s1z))) * 180 / math.pi / th
     print "dq/q=", resolution
-    DeleteWorkspace(runno)
+    if not type(run) == type(Workspace):
+        DeleteWorkspace(runno)
     return resolution
 def groupGet(wksp, whattoget, field=''):
     '''
