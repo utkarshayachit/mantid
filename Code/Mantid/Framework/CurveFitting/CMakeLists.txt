@@ -7,6 +7,7 @@ set ( SRC_FILES
 	src/BFGS_Minimizer.cpp
 	src/BSpline.cpp
 	src/BackToBackExponential.cpp
+	src/BackToBackExponentialPV.cpp
 	src/BackgroundFunction.cpp
 	src/BivariateNormal.cpp
 	src/Bk2BkExpConvPV.cpp
@@ -105,6 +106,7 @@ set ( INC_FILES
 	inc/MantidCurveFitting/BFGS_Minimizer.h
 	inc/MantidCurveFitting/BSpline.h
 	inc/MantidCurveFitting/BackToBackExponential.h
+	inc/MantidCurveFitting/BackToBackExponentialPV.h
 	inc/MantidCurveFitting/BackgroundFunction.h
 	inc/MantidCurveFitting/BivariateNormal.h
 	inc/MantidCurveFitting/Bk2BkExpConvPV.h

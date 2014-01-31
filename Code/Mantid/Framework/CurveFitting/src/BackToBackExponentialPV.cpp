@@ -1,0 +1,205 @@
+/*WIKI*
+A back-to-back exponentialPV peakshape function is defined as:
+
+:<math>  I\frac{AB}{2(A+B)}\left[ \exp \left( \frac{A[AS^2+2(x-X0)]}{2}\right) \mbox{erfc}\left( \frac{AS^2+(x-X0)}{S\sqrt{2}} \right) + \exp \left( \frac{B[BS^2-2(x-X0)]}{2} \right) \mbox{erfc} \left( \frac{[BS^2-(x-X0)]}{S\sqrt{2}} \right) \right]. </math>
+
+This peakshape function represent the convolution of back-to-back exponentialPVs and a gaussian function and is designed to
+be used for the data analysis of time-of-flight neutron powder diffraction data, see Ref. 1.
+
+The parameters <math>A</math> and <math>B</math> represent the absolute value of the exponentialPV rise and decay constants (modelling the neutron pulse coming from the moderator)
+and <math>S</math> represent the standard deviation of the gaussian. The parameter <math>X0</math> is the location of the peak; more specifically it represent 
+the point where the exponentialPVly modelled neutron pulse goes from being exponentially rising to exponentially decaying. <math>I</math> is the integrated intensity.
+
+For information about how to convert Fullprof back-to-back exponentialPV parameters into those used for this function see [[CreateBackToBackParameters]].
+
+References
+
+1. R.B. Von Dreele, J.D. Jorgensen & C.G. Windsor, J. Appl. Cryst., 15, 581-589, 1982
+
+The figure below illustrate this peakshape function fitted to a TOF peak:
+
+[[Image:BackToBackExponentialWithConstBackground.png]]
+
+== Properties ==
+
+''Note the initial default guesses for in particular A and B are only based on fitting a couple of peaks in a dataset collected on the ISIS's HRPD instrument.''
+ *WIKI*/
+//----------------------------------------------------------------------
+// Includes
+//----------------------------------------------------------------------
+#include "MantidCurveFitting/BackToBackExponentialPV.h"
+#include "MantidAPI/FunctionFactory.h"
+
+#include <gsl/gsl_sf_erf.h>
+#include <gsl/gsl_multifit_nlin.h>
+#include <boost/math/special_functions/fpclassify.hpp>
+#include <cmath>
+#include <limits>
+
+namespace Mantid
+{
+namespace CurveFitting
+{
+
+  using namespace Kernel;
+  using namespace API;
+
+  DECLARE_FUNCTION(BackToBackExponentialPV)
+
+  const double PEAKEXTENT = 100;
+
+  //----------------------------------------------------------------------------------------------
+  /** Initialization
+    */
+  void BackToBackExponentialPV::init()
+  {
+    // Do not change the order of these parameters!
+    declareParameter("I", 0.0, "integrated intensity of the peak");                          // 0
+    declareParameter("A", 1.0, "exponentialPV constant of rising part of neutron pulse");      // 1
+    declareParameter("B", 0.05, "exponentialPV constant of decaying part of neutron pulse");   // 2
+    declareParameter("X0", 0.0, "peak position");                                            // 3
+    declareParameter("S", 1.0, "standard deviation of gaussian part of peakshape function"); // 4
+    declareParameter("Gamma", 0.0, "standard deviation of Lorentzian part of the peak function"); // 5
+  }
+
+  //----------------------------------------------------------------------------------------------
+  /** Get approximate height of the peak: function value at X0.
+   */
+  double BackToBackExponentialPV::height()const
+  {
+    double x0 = getParameter(3);
+    std::vector<double> vec(1, x0);
+    FunctionDomain1DVector domain(vec);
+    FunctionValues values(domain);
+
+    function(domain, values);
+
+    return values[0];
+  }
+
+  //----------------------------------------------------------------------------------------------
+   /** Set new height of the peak. This method does this approximately.
+    * @param h :: New value for the height.
+    */
+   void BackToBackExponentialPV::setHeight(const double h)
+   {
+     double h0 = height();
+     if ( h0 == 0.0 )
+     {
+       setParameter( 0, 1e-6 );
+       h0 = height();
+     }
+     double area = getParameter( 0 ); // == I
+     area *= h / h0;
+     if ( area <= 0.0 )
+     {
+       area = 1e-6;
+     }
+     if ( boost::math::isnan( area ) || boost::math::isinf( area ) )
+     {
+       area = std::numeric_limits<double>::max() / 2;
+     }
+     setParameter( 0, area );
+   }
+  
+   //----------------------------------------------------------------------------------------------
+   /** Get approximate peak width.
+    */
+   double BackToBackExponentialPV::fwhm()const
+   {
+     // TODO/FIXME : ASAP
+     throw std::runtime_error("ASAP");
+     return 2*getParameter("S");
+   }
+  
+   //----------------------------------------------------------------------------------------------
+   /** Set new peak width approximately.
+     * @param w :: New value for the width.
+     */
+   void BackToBackExponentialPV::setFwhm(const double w)
+   {
+     setParameter("S",w/2.0);
+   }
+  
+   //----------------------------------------------------------------------------------------------
+   /** Calculate function for an array of x values
+     */
+   void BackToBackExponentialPV::function1D(double* out, const double* xValues, const size_t nData)const
+   {
+     // Get parameters
+     const double I = getParameter(0);
+     const double a = getParameter(1);
+     const double b = getParameter(2);
+     const double x0 = getParameter(3);
+     const double s = getParameter(4);
+     const double gamma = getParameter(5);
+ 
+     // Find the reasonable extent of the peak ~100 fwhm
+     double extent = expWidth();
+     if ( s > extent ) extent = s;
+     extent *= PEAKEXTENT;
+ 
+     // Prepare constants
+#if 1
+     // FIXME/TODO ASAP
+     throw std::runtime_error("ASAP F450");
+#else
+     double s2 = s*s;
+     double normFactor = a * b / (a + b) / 2;
+     //Needed for IntegratePeaksMD for cylinder profile fitted with b=0
+     if (normFactor == 0.0) normFactor = 1.0;
+#endif
+
+     // Loop around
+     for (size_t i = 0; i < nData; i++)
+     {
+       double diff=xValues[i]-x0;
+       if ( fabs(diff) < extent )
+       {
+#if 1
+       // FIXME/TODO ASAP
+         throw std::runtime_error("ASAP F451");
+#else
+         double val = 0.0;
+         double arg1 = a/2*(a*s2+2*diff);
+         val += exp(  arg1 + gsl_sf_log_erfc((a*s2+diff)/sqrt(2*s2)) ); //prevent overflow
+         double arg2 = b/2*(b*s2-2*diff);
+         val += exp( arg2 + gsl_sf_log_erfc((b*s2-diff)/sqrt(2*s2)) ); //prevent overflow
+         out[i] = I*val*normFactor;        
+#endif
+       }
+       else
+       {
+         // Outside of extent
+         out[i] = 0.0;
+       }
+     } // ENDFOR loop on all data points
+
+     return;
+   }
+  
+   //----------------------------------------------------------------------------------------------
+   /** Evaluate function derivatives numerically.
+    */
+   void BackToBackExponentialPV::functionDeriv1D(Jacobian* jacobian, const double* xValues, const size_t nData)
+   {
+     FunctionDomain1DView domain(xValues,nData);
+     this->calNumericalDeriv(domain,*jacobian);
+   }
+ 
+   //----------------------------------------------------------------------------------------------
+   /** Calculate contribution to the width by the exponentials.
+    *  @return :: if a*b is 0, log(2); otherwise, log(2)*(a+b)/(a*b)
+    */
+   double BackToBackExponentialPV::expWidth() const
+   {
+     const double a = getParameter(1);
+     const double b = getParameter(2);
+     //Needed for IntegratePeaksMD for cylinder profile fitted with b=0
+     if (a * b == 0.0)
+       return M_LN2;
+     return M_LN2 * (a + b) / (a * b);
+   }
+
+} // namespace CurveFitting
+} // namespace Mantid
