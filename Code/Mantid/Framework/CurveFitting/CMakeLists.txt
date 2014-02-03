@@ -209,6 +209,7 @@ set ( TEST_FILES
 	BFGSTest.h
 	BSplineTest.h
 	BackToBackExponentialTest.h
+	BackToBackExponentialPVTest.h
 	BivariateNormalTest.h
 	Bk2BkExpConvPVTest.h
 	BoundaryConstraintTest.h
