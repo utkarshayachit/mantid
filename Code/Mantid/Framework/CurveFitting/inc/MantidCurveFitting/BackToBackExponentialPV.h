@@ -6,6 +6,8 @@
 //----------------------------------------------------------------------
 #include "MantidAPI/IPeakFunction.h"
 
+#include <complex>
+
 namespace Mantid
 {
   namespace CurveFitting
@@ -68,6 +70,11 @@ namespace Mantid
       virtual void function1D(double* out, const double* xValues, const size_t nData)const;
       virtual void functionDeriv1D(API::Jacobian* out, const double* xValues, const size_t nData);
 
+      /// Override setting a new value to the i-th parameter
+      virtual void setParameter(size_t i, const double& value, bool explicitlySet=true);
+      /// Override setting a new value to a parameter by name
+      virtual void setParameter(const std::string& name, const double& value, bool explicitlySe=true);
+
     protected:
       /// overwrite IFunction base class method, which declare function parameters
       virtual void init();
@@ -76,6 +83,26 @@ namespace Mantid
       /// Derivative evaluation method to be implemented in the inherited classes
       virtual void functionDerivLocal(API::Jacobian*, const double*, const size_t){}
       double expWidth() const;
+
+      /// Calculate function value of a single
+      double calOmega(const double x,  const double alpha, const double beta,
+                      const double sigma2, const double invert_sqrt2sigma,
+                      const double H, const double eta, const double N) const;
+
+      /// Calcualte H and eta for the peak
+      void calHandEta(double sigma2, double gamma, double& H, double& eta) const;
+
+      /// Implementation of complex integral E_1
+      std::complex<double> E1(std::complex<double> z) const;
+
+    private:
+      /// Calculated peak width
+      mutable double m_fwhm;
+      /// Calcualte Lorentian width ratio
+      mutable double m_eta;
+      /// Flag that parameters have been changed
+      mutable bool m_hasNewParameterValue;
+
     };
 
     typedef boost::shared_ptr<BackToBackExponentialPV> BackToBackExponentialPV_sptr;

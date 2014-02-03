@@ -48,6 +48,9 @@ namespace CurveFitting
 
   const double PEAKEXTENT = 100;
 
+  const double TWO_OVER_PI = 2./M_PI;
+  const double PI = M_PI;
+
   //----------------------------------------------------------------------------------------------
   /** Initialization
     */
@@ -107,9 +110,19 @@ namespace CurveFitting
     */
    double BackToBackExponentialPV::fwhm()const
    {
-     // TODO/FIXME : ASAP
-     throw std::runtime_error("ASAP");
-     return 2*getParameter("S");
+     // Re-calcualte peak width if any parameter value has been changed since last calculation
+     if (m_hasNewParameterValue)
+     {
+       // FIXME - 1. Think of make m_hasNewParameterValue to m_hasNewSigmaGamma
+       // FIXME - 2. Think of moving m_fhwm, m_eta and m_hasNewSigmaGamma into calHandEta()
+       const double s = getParameter(4);
+       const double gamma = getParameter(5);
+       double sigma2 = s*s;
+       calHandEta(sigma2, gamma, m_fwhm, m_eta);
+       m_hasNewParameterValue = false;
+     }
+
+     return m_fwhm;
    }
   
    //----------------------------------------------------------------------------------------------
@@ -118,7 +131,10 @@ namespace CurveFitting
      */
    void BackToBackExponentialPV::setFwhm(const double w)
    {
+     if (w <= 0.0)
+       throw std::runtime_error("Peak width cannot be equal or less than 0. ");
      setParameter("S",w/2.0);
+     setParameter("Gamma", 0.);
    }
   
    //----------------------------------------------------------------------------------------------
@@ -141,8 +157,12 @@ namespace CurveFitting
  
      // Prepare constants
 #if 1
-     // FIXME/TODO ASAP
-     throw std::runtime_error("ASAP F450");
+     // Calcualte H for the peak
+     calHandEta(s*s, gamma, m_fwhm, m_eta);
+     double sigma_square = s*s;
+     double invert_sqrt2_sigma = 1./(sqrt(2.)*s);
+
+     const double N = a*b*0.5/(a+b);
 #else
      double s2 = s*s;
      double normFactor = a * b / (a + b) / 2;
@@ -157,8 +177,7 @@ namespace CurveFitting
        if ( fabs(diff) < extent )
        {
 #if 1
-       // FIXME/TODO ASAP
-         throw std::runtime_error("ASAP F451");
+         out[i] = I * calOmega(diff, a, b, sigma_square, invert_sqrt2_sigma, m_fwhm, m_eta, N);
 #else
          double val = 0.0;
          double arg1 = a/2*(a*s2+2*diff);
@@ -176,6 +195,130 @@ namespace CurveFitting
      } // ENDFOR loop on all data points
 
      return;
+   }
+
+   //----------------------------------------------------------------------------------------------
+   /** Calcualte peak width (H) and Lorenzian weight (eta) for the peak
+    */
+   void BackToBackExponentialPV::calHandEta(double sigma2, double gamma, double& H, double& eta) const
+   {
+     // 1. Calculate H
+     double H_G = sqrt(8.0 * sigma2 * log(2.0));
+     double H_L = gamma;
+
+     double temp1 = std::pow(H_L, 5) + 0.07842*H_G*std::pow(H_L, 4) + 4.47163*std::pow(H_G, 2)*std::pow(H_L, 3) +
+         2.42843*std::pow(H_G, 3)*std::pow(H_L, 2) + 2.69269*std::pow(H_G, 4)*H_L + std::pow(H_G, 5);
+
+     H = std::pow(temp1, 0.2);
+
+     // 2. Calculate eta
+     double gam_pv = H_L/H;
+     eta = 1.36603 * gam_pv - 0.47719 * std::pow(gam_pv, 2) + 0.11116 * std::pow(gam_pv, 3);
+
+     if (eta > 1 || eta < 0)
+     {
+       g_log.warning() << "Calculated eta = " << eta << " is out of range [0, 1].\n";
+     }
+     else
+     {
+       g_log.debug() << "[DBx121] Eta = " << eta << "; Gamma = " << gamma << ".\n";
+     }
+
+     return;
+   }
+
+   //----------------------------------------------------------------------------------------------
+   /** Calculate the function value of a single data point without peak height
+     * @param x :: tof-tof_h
+     * @param alpha :: a
+     * @param beta :: b
+     * @param sigma2 :: sigma^2
+     * @param invert_sigma2 :: 1/sigma^2
+     * @param H :: effective peak width considering both gaussian and lorentzian
+     * @param N :: amplitude of ... ...
+     * @param eta :: ratio of Lorenzian part
+     */
+   double BackToBackExponentialPV::calOmega(const double x,  const double alpha, const double beta,
+                                            const double sigma2, const double invert_sqrt2sigma,
+                                            const double H, const double eta, const double N) const
+   {
+     //------------------------------------------
+     // Calculate Gaussian part
+     //------------------------------------------
+     // rising part
+     const double u = 0.5*alpha*(alpha*sigma2+2.*x);
+     const double y = (alpha*sigma2 + x)*invert_sqrt2sigma;
+
+     const double erfcy = gsl_sf_erfc(y);
+     double part1(0.);
+     if (fabs(erfcy) > DBL_MIN)
+       part1 = exp(u)*erfcy;
+
+     // decaying part
+     const double v = 0.5*beta*(beta*sigma2 - 2.*x);
+     const double z = (beta*sigma2 - x)*invert_sqrt2sigma;
+
+     const double erfcz = gsl_sf_erfc(z);
+     double part2(0.);
+     if (fabs(erfcz) > DBL_MIN)
+       part2 = exp(v)*erfcz;
+
+     const double omega_gauss = (1.-eta)*N*(part1 + part2);
+
+     // g_log.debug() << "Eta = " << eta << "; X = " << x << " N = " << N << ".\n";
+
+     //------------------------------------------
+     // Calculate Lorenzian part
+     //------------------------------------------
+     double omega_lorenz(0.);
+
+     if (eta >= 1.0E-8)
+     {
+       const double SQRT_H_5 = sqrt(H)*.5;
+       std::complex<double> p(alpha*x, alpha*SQRT_H_5);
+       std::complex<double> q(-beta*x, beta*SQRT_H_5);
+       double omega2a = imag(exp(p)*E1(p));
+       double omega2b = imag(exp(q)*E1(q));
+       omega_lorenz = -1.0*N*eta*(omega2a + omega2b)*TWO_OVER_PI;
+
+       /*
+       g_log.debug() << "Exp(p) = " << exp(p) << ", Exp(q) = " << exp(q) << ".\n";
+
+       if (omega_lorenz != omega_lorenz)
+       {
+         g_log.debug() << "Omega2 is not physical.  Omega2a = " << omega2a
+                       << ", Omega2b = " << omega2b << ", p = " << p.real() << ", " << p.imag() << ".\n";
+       }
+       else
+       {
+         g_log.debug() << "X = " << x << " is OK. Omega 2 = " << omega_lorenz << ", Omega2A = " << omega2a
+                       << ", Omega2B = " << omega2b << "\n";
+       }
+       */
+     }
+
+     // Add 2 gaussian and lorenzian together
+     const double omega = omega_gauss+omega_lorenz;
+
+     /*
+     if (explicitoutput || omega != omega)
+     {
+       if (omega <= NEG_DBL_MAX || omega >= DBL_MAX || omega != omega)
+       {
+         stringstream errss;
+         errss << "Peak (" << mH << mK << mL << "): TOF = " << m_centre << ", dX = " << x << ", (" << x/m_fwhm << " FWHM) ";
+         errss << "Omega = " << omega << " is infinity! omega1 = " << omega_gauss << ", omega2 = " << omega_lorenz << "\n";
+         errss << "  u = " << u << ", v = " << v << ", erfc(y) = " << gsl_sf_erfc(y)
+               << ", erfc(z) = " << gsl_sf_erfc(z) << "\n";
+         errss << "  alpha = " << alpha << ", beta = " << beta << " sigma2 = " << sigma2
+               << ", N = " << N << "\n";
+         g_log.warning(errss.str());
+       }
+     }
+     g_log.debug() << "[DB] Final Value of Omega = " << omega << ".\n";
+     */
+
+     return omega;
    }
   
    //----------------------------------------------------------------------------------------------
@@ -199,6 +342,92 @@ namespace CurveFitting
      if (a * b == 0.0)
        return M_LN2;
      return M_LN2 * (a + b) / (a * b);
+   }
+
+   //----------------------------------------------------------------------------------------------
+   /** Calculate contour integral E1
+    */
+   std::complex<double> BackToBackExponentialPV::E1(std::complex<double> z) const
+   {
+     std::complex<double> exp_e1;
+
+     double rz = real(z);
+     double az = abs(z);
+
+     if (fabs(az) < 1.0E-8)
+     {
+       // If z = 0, then the result is infinity... diverge!
+       std::complex<double> r(1.0E300, 0.0);
+       exp_e1 = r;
+     }
+     else if (az <= 10.0 || (rz < 0.0 && az < 20.0))
+     {
+       // Some interesting region, equal to integrate to infinity, converged
+       // cout << "[DB] Type 1" << endl;
+
+       std::complex<double> r(1.0, 0.0);
+       exp_e1 = r;
+       std::complex<double> cr = r;
+
+       for (size_t k = 1; k <= 150; ++k)
+       {
+         double dk = double(k);
+         cr = -cr * dk * z / ( (dk+1.0)*(dk+1.0) );
+         exp_e1 += cr;
+         if (abs(cr) < abs(exp_e1)*1.0E-15)
+         {
+           // cr is converged to zero
+           break;
+         }
+       } // ENDFOR k
+
+
+       const double el = 0.5772156649015328;
+       exp_e1 = -el - log(z) + (z*exp_e1);
+     }
+     else
+     {
+       // Rest of the region
+       std::complex<double> ct0(0.0, 0.0);
+       for (int k = 120; k > 0; --k)
+       {
+         std::complex<double> dk(double(k), 0.0);
+         ct0 = dk / (10.0 + dk / (z + ct0));
+       } // ENDFOR k
+
+       exp_e1 = 1.0 / (z + ct0);
+       exp_e1 = exp_e1 * exp(-z);
+       if (rz < 0.0 && fabs(imag(z)) < 1.0E-10 )
+       {
+         std::complex<double> u(0.0, 1.0);
+         exp_e1 = exp_e1 - (PI * u);
+       }
+     }
+
+     return exp_e1;
+   }
+
+   //----------------------------------------------------------------------------------------------
+   /** Override setting parameter by parameter index
+     */
+   void BackToBackExponentialPV::setParameter(size_t i, const double& value, bool explicitlySet)
+   {
+     // Non lattice parameter
+     ParamFunction::setParameter(i, value, explicitlySet);
+     m_hasNewParameterValue = true;
+
+     return;
+   }
+
+   //----------------------------------------------------------------------------------------------
+   /** Overriding setting parameter by parameter name
+     */
+   void BackToBackExponentialPV::setParameter(const std::string& name, const double& value, bool explicitlySet)
+   {
+     ParamFunction::setParameter(name, value, explicitlySet);
+     m_hasNewParameterValue = true;
+
+     return;
    }
 
 } // namespace CurveFitting
