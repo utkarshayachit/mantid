@@ -98,9 +98,9 @@ namespace Mantid
      * This method sets Investigator name
      * @param investigatorName :: name of the investigator
      */
-    void CatalogSearchParam::setInvestigatorSurName(const std::string& investigatorName)
+    void CatalogSearchParam::setInvestigatorName(const std::string& investigatorName)
     {
-      m_investigatorSurname = investigatorName;
+      m_investigatorName = investigatorName;
     }
 
     /**
@@ -215,9 +215,9 @@ namespace Mantid
      * Gets the input from the investigator name field.
      * @return Surname of the investigator
      */
-    const std::string& CatalogSearchParam::getInvestigatorSurName() const
+    const std::string& CatalogSearchParam::getInvestigatorName() const
     {
-      return m_investigatorSurname;
+      return m_investigatorName;
     }
 
     /**

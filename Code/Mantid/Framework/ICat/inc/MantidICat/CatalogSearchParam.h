@@ -58,7 +58,7 @@ namespace Mantid
       /// Set the sample name to search for.
       void setSampleName(const std::string& sampleName);
       /// Set the investigators name to search for.
-      void setInvestigatorSurName(const std::string& investigatorName);
+      void setInvestigatorName(const std::string& investigatorName);
       /// Set the investigation type to search for.
       void setInvestigationType(const std::string& invstType);
       /// Set the "my data only" flag to search only user's data if true.
@@ -85,7 +85,7 @@ namespace Mantid
       /// Get the sample name.
       const std::string& getSampleName() const;
       /// Get the investigators name.
-      const std::string& getInvestigatorSurName() const;
+      const std::string& getInvestigatorName() const;
       /// Get the investigation type.
       const std::string& getInvestigationType() const;
       /// Get the "my data only" flag.
@@ -114,8 +114,8 @@ namespace Mantid
       std::string m_datafileName;
       /// sample name
       std::string m_sampleName;
-      /// investigator surname
-      std::string m_investigatorSurname;
+      /// investigator name
+      std::string m_investigatorName;
       /// investigation type
       std::string m_investigationType;
       /// My data checkbox
