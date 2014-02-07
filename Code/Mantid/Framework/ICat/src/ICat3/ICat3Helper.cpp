@@ -836,9 +836,9 @@ namespace Mantid
       }
 
       //investigator's surname
-      if(!inputs.getInvestigatorSurName().empty())
+      if(!inputs.getInvestigatorName().empty())
       {
-        advancedSearchDetails->investigators.push_back(inputs.getInvestigatorSurName());
+        advancedSearchDetails->investigators.push_back(inputs.getInvestigatorName());
       }
 
       return advancedSearchDetails;

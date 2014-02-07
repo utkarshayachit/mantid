@@ -199,12 +199,12 @@ namespace Mantid
       }
 
       // Investigators complete name.
-      if (!inputs.getInvestigatorSurName().empty())
+      if (!inputs.getInvestigatorName().empty())
       {
         // We join another investigationUsers & user tables as we need two aliases.
         joinClause.push_back("JOIN inves.investigationUsers usrs");
         joinClause.push_back("JOIN usrs.user usr");
-        whereClause.push_back("usr.fullName LIKE '%" + inputs.getInvestigatorSurName() + "%'");
+        whereClause.push_back("usr.fullName LIKE '%" + inputs.getInvestigatorName() + "%'");
       }
 
       // Similar to above. We check if either has been input,
