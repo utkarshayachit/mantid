@@ -437,7 +437,7 @@ namespace MantidQt
       {
         searchFieldInput.insert(std::pair<std::string, std::string>("RunRange", m_icatUiForm.RunRange->text().toStdString()));
       }
-      searchFieldInput.insert(std::pair<std::string, std::string>("InvestigatorSurname", m_icatUiForm.InvestigatorSurname->text().toStdString()));
+      searchFieldInput.insert(std::pair<std::string, std::string>("InvestigatorName", m_icatUiForm.InvestigatorName->text().toStdString()));
       searchFieldInput.insert(std::pair<std::string, std::string>("DataFileName", m_icatUiForm.DataFileName->text().toStdString()));
       searchFieldInput.insert(std::pair<std::string, std::string>("InvestigationId", m_icatUiForm.InvestigationId->text().toStdString()));
 
@@ -539,7 +539,7 @@ namespace MantidQt
       if (m_icatUiForm.advSearchCbox->isChecked())
       {
         m_icatUiForm.advNameLbl->show();
-        m_icatUiForm.InvestigatorSurname->show();
+        m_icatUiForm.InvestigatorName->show();
         m_icatUiForm.advDatafileLbl->show();
         m_icatUiForm.DataFileName->show();
         m_icatUiForm.advSampleLbl->show();
@@ -550,7 +550,7 @@ namespace MantidQt
       else
       {
         m_icatUiForm.advNameLbl->hide();
-        m_icatUiForm.InvestigatorSurname->hide();
+        m_icatUiForm.InvestigatorName->hide();
         m_icatUiForm.advDatafileLbl->hide();
         m_icatUiForm.DataFileName->hide();
         m_icatUiForm.advSampleLbl->hide();
@@ -655,7 +655,7 @@ namespace MantidQt
       m_icatUiForm.RunRange_err->setVisible(false);
       m_icatUiForm.InvestigationId_err->setVisible(false);
       m_icatUiForm.InvestigatorSurname_err->setVisible(false);
-      m_icatUiForm.InvestigationAbstract_err->setVisible(false);
+      m_icatUiForm.DataFileName_err->setVisible(false);
       // Right side of form.
       m_icatUiForm.StartDate_err->setVisible(false);
       m_icatUiForm.EndDate_err->setVisible(false);
