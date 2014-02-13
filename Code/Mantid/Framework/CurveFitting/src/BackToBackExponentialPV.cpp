@@ -1,22 +1,55 @@
 /*WIKI*
-A back-to-back exponentialPV peakshape function is defined as:
+A back-to-back exponential convoluted with pseudo-voigt peakshape function is defined as: 
 
-:<math>  I\frac{AB}{2(A+B)}\left[ \exp \left( \frac{A[AS^2+2(x-X0)]}{2}\right) \mbox{erfc}\left( \frac{AS^2+(x-X0)}{S\sqrt{2}} \right) + \exp \left( \frac{B[BS^2-2(x-X0)]}{2} \right) \mbox{erfc} \left( \frac{[BS^2-(x-X0)]}{S\sqrt{2}} \right) \right]. </math>
+:<math>F(X) = I\cdot\Omega(X) </math>
 
-This peakshape function represent the convolution of back-to-back exponentialPVs and a gaussian function and is designed to
+where
+
+:<math>\Omega(X) = (1-\eta)N\{e^uerfc(y)+e^verfc(z)\} - \frac{2N\eta}{\pi}\{\Im[e^pE_1(p)]+\Im[e^qE_1(q)]\} </math>
+
+----
+
+:<math> N = \frac{A\cdot B}{2(A+B)} </math>
+
+----
+:<math> H_G = \sqrt{8 \cdot \log(2)}\cdot S;
+:<math> H^5 = H_G^5 +2.69269H_G^4\cdot\gamma +2.42843H_G^3\gamma^2 +4.47163H_G^2\gamma^3 + 0.07842H_G\gamma^4 +\gamma^5 </math>
+:<math> \eta = 1.36603\cdot \frac{\gamma}{H} - 0.47719 \cdot (\frac{\gamma}{H})^2 + 0.11116 \cdot (\frac{\gamma}{H})^3 </math>
+
+----
+
+:<math> u = \frac{1}{2}A(A\cdot S^2+2(X-X_0)) </math>
+:<math> y = \frac{A\cdot S^2+(X-X_0)}{\sqrt{2}S} </math>
+:<math> v = \frac{1}{2}B(B\cdot S^2 - 2(X-X_0))   </math>
+:<math> z = \frac{B\cdot S^2-(X-X_0)}{\sqrt{2}S} </math>
+
+----
+
+:<math> p = A(X-X_0) + \frac{iA\cdot H}{2}  </math>
+:<math> q = -B(X-X_0) + \frac{iB\cdot H}{2}   </math>
+
+----
+:<math>erfc(x) = 1-erf(x) = 1-\frac{2}{\sqrt{\pi}}\int_0^xe^{-u^2}du = \frac{2}{\sqrt{\pi}}\int_x^{\infty}e^{-u^2}du </math>
+
+:<math> E_1(z) = \int_z^{\infty}\frac{e^{-t}}{t}dt </math>
+
+
+This peakshape function represent the convolution of back-to-back exponential and a pseudo-voigt function and is designed to
 be used for the data analysis of time-of-flight neutron powder diffraction data, see Ref. 1.
 
-The parameters <math>A</math> and <math>B</math> represent the absolute value of the exponentialPV rise and decay constants (modelling the neutron pulse coming from the moderator)
-and <math>S</math> represent the standard deviation of the gaussian. The parameter <math>X0</math> is the location of the peak; more specifically it represent 
-the point where the exponentialPVly modelled neutron pulse goes from being exponentially rising to exponentially decaying. <math>I</math> is the integrated intensity.
+The parameters <math>A</math> and <math>B</math> represent the absolute value of the exponential rise and decay constants (modelling the neutron pulse coming from the moderator)
+and <math>S</math> and <math>\gamma</math> represent the standard deviation of the gaussian and Lorentzian respectively. The parameter <math>X_0</math> is the location of the peak; more specifically it represent 
+the point where the exponentially modelled neutron pulse goes from being exponentially rising to exponentially decaying. <math>I</math> is the integrated intensity.
 
-For information about how to convert Fullprof back-to-back exponentialPV parameters into those used for this function see [[CreateBackToBackParameters]].
+If the lorentzian <math>\gamma</math> goes to zero, then this peak profile is same as [[BackToBackExponential|Back to back exponential convoluted with Gaussian]].
+
+For information about how to convert Fullprof back-to-back exponential convoluted pseudo-voigt parameters into those used for this function see [[CreateBackToBackParameters]].
 
 References
 
 1. R.B. Von Dreele, J.D. Jorgensen & C.G. Windsor, J. Appl. Cryst., 15, 581-589, 1982
 
-The figure below illustrate this peakshape function fitted to a TOF peak:
+The figure below illustrate this peakshape function fitted to a TOF peak when Lorentzian is equal to zero:
 
 [[Image:BackToBackExponentialWithConstBackground.png]]
 
