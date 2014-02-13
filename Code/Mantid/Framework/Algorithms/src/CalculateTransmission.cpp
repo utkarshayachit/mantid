@@ -14,7 +14,7 @@ The resulting fraction as a function of wavelength is created as the OutputUnfit
 
 === ChildAlgorithms used ===
 
-Uses the algorithm [[linear]] to fit to the calculated transmission fraction.
+Uses the algorithm [[Fit]] to fit to the calculated transmission fraction.
 
 
 *WIKI*/
@@ -85,7 +85,7 @@ void CalculateTransmission::init()
   options[2] = "Polynomial"; 
    
   declareProperty("FitMethod","Log",boost::make_shared<StringListValidator>(options),
-    "Whether to fit directly to the transmission curve using Linear, Log or Polynomial.");
+    "Whether to fit directly to the transmission curve using Linear, Log or Polynomial. Obs: Polynomial is applyied to the Log(trans).");
   auto twoOrMore = boost::make_shared<BoundedValidator<int> >();
   twoOrMore->setLower(2); 
   declareProperty("PolynomialOrder", 2, twoOrMore, "Order of the polynomial to fit. It is considered only for FitMethod=Polynomial"); 
@@ -238,7 +238,7 @@ API::MatrixWorkspace_sptr CalculateTransmission::fit(API::MatrixWorkspace_sptr r
   //these are calculated by the call to fit below
   double grad(0.0), offset(0.0);
   std::vector<double> coeficients;
-  const bool logFit = ( fitMethod == "Log" );
+  const bool logFit = ( fitMethod == "Log" || fitMethod == "Polynomial" );
   if (logFit)
   {
     g_log.debug("Fitting to the logarithm of the transmission");
@@ -255,19 +255,23 @@ API::MatrixWorkspace_sptr CalculateTransmission::fit(API::MatrixWorkspace_sptr r
       progress.report("Fitting to the logarithm of the transmission");
     }
   
-    // Now fit this to a straight line
-    output = fitData(output, grad, offset);
+    if (fitMethod == "Log")
+      {
+      // Now fit this to a straight line
+      output = fitData(output, grad, offset);
+    }
+    else // fitMethod == Polynomial
+    {
+      int order = getProperty("PolynomialOrder");
+      g_log.debug() << "Fitting the transmission to polynomial order=" 
+           << order << std::endl;  
+      output = fitPolynomial(output, order, coeficients);
+    }
   } // logFit true
-  else if (fitMethod == "Linear")
+  else //if (fitMethod == "Linear")
   { // Linear fit
     g_log.debug("Fitting directly to the data (i.e. linearly)");
     output = fitData(output, grad, offset);
-  }else{ // fitMethod Polynomial
-    int order = getProperty("PolynomialOrder");
-    std::stringstream info; 
-    info << "Fitting the transmission to polynomial order=" << order ; 
-    g_log.information(info.str());
-    output = fitPolynomial(output, order, coeficients);
   }
 
   progress.report("CalculateTransmission: Performing fit");
@@ -280,11 +284,11 @@ API::MatrixWorkspace_sptr CalculateTransmission::fit(API::MatrixWorkspace_sptr r
   progress.report("CalculateTransmission: Performing fit");
 
   // if there was rebinnning or log fitting we need to recalculate the Ys, otherwise we can just use the workspace kicked out by the fitData()'s call to Linear
-  if ( (! rebinParams.empty()) || logFit)
+  if ( (! rebinParams.empty()) || logFit )
   {
     const MantidVec & X = output->readX(0);
     MantidVec & Y = output->dataY(0);
-    if (logFit)
+    if (fitMethod == "Log")
     {
       // Need to transform back to 'unlogged'
       const double m(std::pow(10,grad));
@@ -309,6 +313,7 @@ API::MatrixWorkspace_sptr CalculateTransmission::fit(API::MatrixWorkspace_sptr r
     }
     else 
     { // the polynomial fit
+      MantidVec & E = output->dataE(0);
       for (size_t i=0; i<Y.size(); ++i)
       {
         double aux=0;
@@ -318,7 +323,9 @@ API::MatrixWorkspace_sptr CalculateTransmission::fit(API::MatrixWorkspace_sptr r
         {
           aux += coeficients[j]*std::pow(x_v,j);
         }
-        Y[i] = aux;
+        Y[i] = std::pow(10.0, aux);
+        E[i] = std::abs(E[i]*Y[i]);
+        progress.report();
       }
     }
   }

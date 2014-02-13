@@ -229,6 +229,47 @@ public:
     Mantid::API::AnalysisDataService::Instance().remove("CalculateTransmissionTest_linear");
   }
 
+  /// fitting with polynomial of order 1 should give the same result as log.
+  void testComparePolyLog(){
+    CalculateTransmission trans;
+    trans.initialize();
+    trans.setPropertyValue("SampleRunWorkspace", m_transWS);
+    trans.setPropertyValue("DirectRunWorkspace", m_dirWS);    
+    trans.setProperty("IncidentBeamMonitor",1);
+    trans.setProperty("TransmissionMonitor",2);
+    trans.setProperty("RebinParams","7.8, 0.1, 8");
+    trans.setPropertyValue("OutputWorkspace","CalculateTransmissionTest_log");
+
+    TS_ASSERT_THROWS_NOTHING( trans.execute() );
+    TS_ASSERT( trans.isExecuted() );
+
+    trans.setPropertyValue("SampleRunWorkspace", m_transWS);
+    trans.setPropertyValue("DirectRunWorkspace", m_dirWS);
+    trans.setProperty("FitMethod","Polynomial");
+    trans.setProperty("PolynomialOrder",2); 
+    trans.setPropertyValue("OutputWorkspace","CalculateTransmissionTest_poly");
+    TS_ASSERT_THROWS_NOTHING( trans.execute() );
+    TS_ASSERT( trans.isExecuted() );
+
+    Mantid::API::MatrixWorkspace_const_sptr logged, poly;
+    TS_ASSERT_THROWS_NOTHING(logged = boost::dynamic_pointer_cast<MatrixWorkspace>(
+      Mantid::API::AnalysisDataService::Instance().retrieve("CalculateTransmissionTest_log")) );
+    TS_ASSERT_THROWS_NOTHING(poly = boost::dynamic_pointer_cast<MatrixWorkspace>(
+      Mantid::API::AnalysisDataService::Instance().retrieve("CalculateTransmissionTest_poly")) );
+
+    const Mantid::MantidVec &log = logged->readY(0), &polyv = poly->readY(0);
+
+    TS_ASSERT_EQUALS(log.size(), polyv.size())
+    for (unsigned int i = 0; i < polyv.size(); ++i)
+    {
+      //these are not expected to match exactly but, for sensible data, they should be close
+      TS_ASSERT_DELTA( log[i]/polyv[i], 1.0, 0.02 )
+    }
+
+    Mantid::API::AnalysisDataService::Instance().remove("CalculateTransmissionTest_log");
+    Mantid::API::AnalysisDataService::Instance().remove("CalculateTransmissionTest_poly");
+  }
+
   void testPolyFit(){
     CalculateTransmission trans;
     trans.initialize();
@@ -256,11 +297,12 @@ public:
      
     //  TS_ASSERT_EQUALS(fitted_y.size(), unfitted_y.size());
       double x;
-    
+      double logy;
       for (unsigned int i = 0; i < fitted_y.size(); ++i)
         {
-          x = fitted_x[i]; //(fitted_x[i] + fitted_x[i+1])* 0.5;
-          TS_ASSERT_DELTA(fitted_y[i], 26.6936 -9.31494*x + 1.11532*x*x -0.044502*x*x*x, 0.01);
+          x = (fitted_x[i] + fitted_x[i+1])* 0.5;
+          logy = 13.4727 -4.87664 * x + 0.583312 * std::pow(x,2) -0.0232521 * std::pow(x,3);
+          TS_ASSERT_DELTA(fitted_y[i], std::pow(10,logy), 0.01);
         }
     }
     Mantid::API::AnalysisDataService::Instance().remove(outputWS);
@@ -294,11 +336,12 @@ public:
      
     //  TS_ASSERT_EQUALS(fitted_y.size(), unfitted_y.size());
       double x;
-    
+      double logy;
       for (unsigned int i = 0; i < fitted_y.size(); ++i)
         {
           x = (fitted_x[i] + fitted_x[i+1])* 0.5;
-          TS_ASSERT_DELTA(fitted_y[i], 26.6936 -9.31494*x + 1.11532*x*x -0.044502*x*x*x, 0.01);
+          logy = 13.4727 -4.87664 * x + 0.583312 * std::pow(x,2) -0.0232521 * std::pow(x,3);
+          TS_ASSERT_DELTA(fitted_y[i], std::pow(10,logy) , 0.01);
         }
     }
 
