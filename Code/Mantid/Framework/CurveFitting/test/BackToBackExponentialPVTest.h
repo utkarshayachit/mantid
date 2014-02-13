@@ -51,7 +51,7 @@ public:
   //----------------------------------------------------------------------------------------------
   /** test that parameter I equals integrated intensity of the peak: NO... IT IS NOT NORMALIZED!
     */
-  void test_integrated_intensity()
+  void test_integrated_intensity_gaussian()
   {
     BackToBackExponentialPV b2bExp;
     b2bExp.initialize();
@@ -76,6 +76,38 @@ public:
     for(size_t i = 0; i < x.size(); ++i) sum += y[i];
     sum *= x[1] - x[0];
     TS_ASSERT_DELTA(sum, 2.3, 0.00001);
+  }
+
+  //----------------------------------------------------------------------------------------------
+  /** test that parameter I equals integrated intensity of the peak: NO... IT IS NOT NORMALIZED!
+    */
+  void test_integrated_intensity_voigt()
+  {
+    BackToBackExponentialPV b2bExp;
+    b2bExp.initialize();
+    b2bExp.setParameter("I", 1.0);
+    b2bExp.setParameter("A", 1.1);
+    b2bExp.setParameter("B", 2.2);
+    b2bExp.setParameter("X0",0.0);
+    b2bExp.setParameter("S", 4.0);
+    b2bExp.setParameter("Gamma", 2.0);
+
+    // I = 1.0
+    Mantid::API::FunctionDomain1DVector x(-60,60,100);
+    Mantid::API::FunctionValues y(x);
+    b2bExp.function(x,y);
+    double sum = 0.0;
+    for(size_t i = 0; i < x.size(); ++i) sum += y[i];
+    sum *= x[1] - x[0];
+    TS_ASSERT_DELTA(sum, 1.0, 0.004);
+
+    // I = 2.3
+    b2bExp.setParameter("I", 2.3);
+    b2bExp.function(x,y);
+    sum = 0.0;
+    for(size_t i = 0; i < x.size(); ++i) sum += y[i];
+    sum *= x[1] - x[0];
+    TS_ASSERT_DELTA(sum, 2.3, 0.008);
   }
 
   //----------------------------------------------------------------------------------------------
@@ -112,7 +144,7 @@ public:
   }
 
   //----------------------------------------------------------------------------------------------
-  /** Test 1
+  /** Test back to back exponential convoluted with gaussian
    */
   void test_functionCalculator()
   {
