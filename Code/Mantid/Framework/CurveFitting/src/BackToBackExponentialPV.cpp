@@ -185,23 +185,15 @@ namespace CurveFitting
  
      // Find the reasonable extent of the peak ~100 fwhm
      double extent = expWidth();
-     if ( s > extent ) extent = s;
+     if ( m_fwhm > extent ) extent = 2.35*m_fwhm;
      extent *= PEAKEXTENT;
- 
-     // Prepare constants
-#if 1
-     // Calcualte H for the peak
+
+     // Calcualte H for the peak, and other constants
      calHandEta(s*s, gamma, m_fwhm, m_eta);
      double sigma_square = s*s;
      double invert_sqrt2_sigma = 1./(sqrt(2.)*s);
 
      const double N = a*b*0.5/(a+b);
-#else
-     double s2 = s*s;
-     double normFactor = a * b / (a + b) / 2;
-     //Needed for IntegratePeaksMD for cylinder profile fitted with b=0
-     if (normFactor == 0.0) normFactor = 1.0;
-#endif
 
      // Loop around
      for (size_t i = 0; i < nData; i++)
@@ -209,16 +201,7 @@ namespace CurveFitting
        double diff=xValues[i]-x0;
        if ( fabs(diff) < extent )
        {
-#if 1
          out[i] = I * calOmega(diff, a, b, sigma_square, invert_sqrt2_sigma, m_fwhm, m_eta, N);
-#else
-         double val = 0.0;
-         double arg1 = a/2*(a*s2+2*diff);
-         val += exp(  arg1 + gsl_sf_log_erfc((a*s2+diff)/sqrt(2*s2)) ); //prevent overflow
-         double arg2 = b/2*(b*s2-2*diff);
-         val += exp( arg2 + gsl_sf_log_erfc((b*s2-diff)/sqrt(2*s2)) ); //prevent overflow
-         out[i] = I*val*normFactor;        
-#endif
        }
        else
        {
