@@ -99,13 +99,13 @@ namespace Mantid
         std::ifstream hasAccessToArchives(fileLocation.c_str());
         if(hasAccessToArchives)
         {
-          g_log.information() << "File (" << *fileName << ") located in archives (" << fileLocation << ")." << std::endl;
-
+          g_log.notice() << "The file (" << *fileName << ") that you have selected is located in the archives at ("
+              << fileLocation << "If you wish to transfer this file from the archives to your hard-drive please do this manually." << std::endl;
           fileLocations.push_back(fileLocation);
         }
         else
         {
-          g_log.information() << "Unable to open file (" << *fileName << ") from archive. Beginning to download over Internet." << std::endl;
+          g_log.notice() << "Unable to open " << *fileName << " from archives. Beginning to download over Internet." << std::endl;
 
           progress(prog/2,"getting the url ....");
 
@@ -116,6 +116,8 @@ namespace Mantid
           progress(prog,"downloading over internet...");
 
           std::string fullPathDownloadedFile = doDownloadandSavetoLocalDrive(url,*fileName);
+
+          g_log.notice() << "File: " << *fileName << "downloaded and saved to: " << fullPathDownloadedFile << "\n";
 
           fileLocations.push_back(fullPathDownloadedFile);
         }
