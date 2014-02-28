@@ -28,6 +28,7 @@
 #include <Poco/ScopedLock.h>
 #include <nexus/NeXusException.hpp>
 
+
 using namespace Mantid::Geometry;
 using namespace Mantid::Kernel;
 using namespace Poco::XML;
@@ -681,11 +682,102 @@ namespace API
     }
   }
 
+  /**
+   * Easy access to the TwoTheta value for this run & detector ID
+   * @param detID :: The detector ID to ask for the TwoTheta value. The
+   * detector with ID matching that given is pulled from the instrument with this method and it will
+   * throw a Exception::NotFoundError if the ID is unknown.
+   * @return The current TwoTheta value
+   */
+  double ExperimentInfo::getTwoTheta(const detid_t detID) const
+  {
+    IDetector_const_sptr det = getInstrument()->getDetector(detID);
+    return getTwoTheta(det);
+  }
+
+  /**
+   * Easy access to the TwoTheta value for this run & detector
+   * @param detector :: The detector object to ask for the TwoTheta value.
+   * @return The current TwoTheta value
+   */
+  double ExperimentInfo::getTwoTheta(const Geometry::IDetector_const_sptr detector) const
+  {
+	  return getParameter(detector, "TwoTheta");
+  }
+
+
+  /**
+   * Easy access to the L1 value for this run & detector ID
+   * @param detID :: The detector ID to ask for the L1 value. The
+   * detector with ID matching that given is pulled from the instrument with this method and it will
+   * throw a Exception::NotFoundError if the ID is unknown.
+   * @return The current L1 value
+   */
+  double ExperimentInfo::getL1(const detid_t detID) const
+  {
+    IDetector_const_sptr det = getInstrument()->getDetector(detID);
+    return getL1(det);
+  }
+
+  /**
+   * Easy access to the L1 value for this run & detector
+   * @param detector :: The detector object to ask for the L1 value.
+   * @return The current L1 value
+   */
+  double ExperimentInfo::getL1(const Geometry::IDetector_const_sptr detector) const
+  {
+	  return getParameter(detector, "L1");
+  }
+
+  /**
+   * Easy access to the L2 value for this run & detector ID
+   * @param detID :: The detector ID to ask for the L2 value. The
+   * detector with ID matching that given is pulled from the instrument with this method and it will
+   * throw a Exception::NotFoundError if the ID is unknown.
+   * @return The current L2 value
+   */
+  double ExperimentInfo::getL2(const detid_t detID) const
+  {
+    IDetector_const_sptr det = getInstrument()->getDetector(detID);
+    return getL2(det);
+  }
+
+  /**
+   * Easy access to the L2 value for this run & detector
+   * @param detector :: The detector object to ask for the L2 value.
+   * @return The current L2 value
+   */
+  double ExperimentInfo::getL2(const Geometry::IDetector_const_sptr detector) const
+  {
+	  return getParameter(detector, "L2");
+  }
+
   void ExperimentInfo::setEFixed(const detid_t detID, const double value)
   {
       IDetector_const_sptr det = getInstrument()->getDetector(detID);
       Geometry::ParameterMap& pmap = instrumentParameters();
       pmap.addDouble(det.get(), "Efixed", value);
+  }
+
+  void ExperimentInfo::setTwoTheta(const detid_t detID, const double value)
+  {
+      IDetector_const_sptr det = getInstrument()->getDetector(detID);
+      Geometry::ParameterMap& pmap = instrumentParameters();
+      pmap.addDouble(det.get(), "TwoTheta", value);
+  }
+
+  void ExperimentInfo::setL1(const detid_t detID, const double value)
+  {
+      IDetector_const_sptr det = getInstrument()->getDetector(detID);
+      Geometry::ParameterMap& pmap = instrumentParameters();
+      pmap.addDouble(det.get(), "L1", value);
+  }
+
+  void ExperimentInfo::setL2(const detid_t detID, const double value)
+  {
+      IDetector_const_sptr det = getInstrument()->getDetector(detID);
+      Geometry::ParameterMap& pmap = instrumentParameters();
+      pmap.addDouble(det.get(), "L2", value);
   }
 
   // used to terminate SAX process
@@ -1126,6 +1218,47 @@ namespace API
     }
   }
   
+/**
+ * Get a named parameter from a detector.
+ * @param detector A pointer to the detector.
+ * @param parameterName The name of the parameter to return.
+ */
+  double ExperimentInfo::getParameter(const Geometry::IDetector_const_sptr detector, const std::string & parameterName) const
+  {
+  	if(!detector)
+  	{
+  		std::ostringstream os;
+  		os << "ExperimentInfo::getParameter '" << parameterName << "' requested without a valid detector.";
+  		throw std::runtime_error(os.str());
+  	}
+
+  		Parameter_sptr par = constInstrumentParameters().getRecursive(detector.get(), parameterName);
+  		  if (par)
+  		  {
+  			  return par->value<double>();
+  		  }
+  		  else
+  		  {
+  			  std::vector<double> parVec = detector->getNumberParameter(parameterName);
+  			  if ( parVec.empty() )
+  			  {
+  				  int detid = detector->getID();
+  				  IDetector_const_sptr detectorSingle = getInstrument()->getDetector(detid);
+  				  parVec = detectorSingle->getNumberParameter(parameterName);
+  			  }
+  			  if (! parVec.empty() )
+  			  {
+  				  return parVec.at(0);
+  			  }
+  			  else
+  			  {
+  				  std::ostringstream os;
+  				  os << "ExperimentInfo::getParameter - The detector (ID="<< detector->getID() << ") has no parameter named '"<< parameterName <<"' attached to it.";
+  				  throw std::runtime_error(os.str());
+  			  }
+  		  }
+  }
+
 } // namespace Mantid
 } // namespace API
 

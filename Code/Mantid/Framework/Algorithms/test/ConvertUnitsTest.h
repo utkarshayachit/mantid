@@ -17,6 +17,8 @@
 #include "MantidAPI/FrameworkManager.h"
 #include "MantidGeometry/Instrument.h"
 
+#include "MantidAPI/ExperimentInfo.h"
+
 using namespace Mantid::Kernel;
 using namespace Mantid::API;
 using namespace Mantid::Algorithms;
@@ -60,7 +62,7 @@ public:
     Mantid::DataHandling::LoadInstrument loader;
     loader.initialize();
     // Path to test input file assumes Test directory checked out from SVN
-    const std::string inputFile = ConfigService::Instance().getInstrumentDirectory() + "HET_Definition.xml";
+    const std::string inputFile = ExperimentInfo::getInstrumentFilename("HET")
     loader.setPropertyValue("Filename", inputFile);
     loader.setPropertyValue("Workspace", this->inputSpace);
     loader.setProperty("RewriteSpectraMap",false);

@@ -41,9 +41,24 @@ void export_ExperimentInfo()
                "Returns the run identifier for this run.")
 
           .def("getEFixed", (double (ExperimentInfo::*)(const Mantid::detid_t) const) &ExperimentInfo::getEFixed,
-               args("self", "detId"))
+                    args("self", "detId"))
+
+          .def("getTwoTheta", (double (ExperimentInfo::*)(const Mantid::detid_t) const) &ExperimentInfo::setTwoTheta,
+                    args("self", "detId"))
+
+          .def("getL1", (double (ExperimentInfo::*)(const Mantid::detid_t) const) &ExperimentInfo::setL2,
+               		args("self", "detId"))
+
+          .def("getL2", (double (ExperimentInfo::*)(const Mantid::detid_t) const) &ExperimentInfo::setL2,
+          			args("self", "detId"))
 
           .def("setEFixed", &ExperimentInfo::setEFixed, args("self", "detId", "value"))
+
+          .def("setTwoTheta", &ExperimentInfo::setTwoTheta, args("self", "detId", "value"))
+
+          .def("setL1", &ExperimentInfo::setL1, args("self", "detId", "value"))
+
+          .def("setL2", &ExperimentInfo::setL2, args("self", "detId", "value"))
 
           .def("getEMode", &ExperimentInfo::getEMode, args("self"), "Returns the energy mode.")
           ;

@@ -113,8 +113,29 @@ namespace API
     double getEFixed(const detid_t detID) const;
     /// Easy access to the efixed value for this run & optional detector
     double getEFixed(const Geometry::IDetector_const_sptr detector = Geometry::IDetector_const_sptr()) const;
+    /// Easy access to the 2theta value for this run & detector ID
+    double getTwoTheta(const detid_t detID) const;
+    /// Easy access to the 2theta value for this run & optional detector
+    double getTwoTheta(const Geometry::IDetector_const_sptr detector = Geometry::IDetector_const_sptr()) const;
+    /// Easy access to the l1 value for this run & detector ID
+    double getL1(const detid_t detID) const;
+    /// Easy access to the l1 value for this run & optional detector
+    double getL1(const Geometry::IDetector_const_sptr detector = Geometry::IDetector_const_sptr()) const;
+    /// Easy access to the l2 value for this run & detector ID
+    double getL2(const detid_t detID) const;
+    /// Easy access to the l2 value for this run & optional detector
+    double getL2(const Geometry::IDetector_const_sptr detector = Geometry::IDetector_const_sptr()) const;
+
     /// Set the efixed value for a given detector ID
     void setEFixed(const detid_t detID, const double value);
+    /// Set the 2theta value for a given detector ID
+    void setTwoTheta(const detid_t detID, const double value);
+    /// Set the l1 value for a given detector ID
+    void setL1(const detid_t detID, const double value);
+    /// Set the l2 value for a given detector ID
+    void setL2(const detid_t detID, const double value);
+
+
 
     /// Saves this experiment description to the open NeXus file
     void saveExperimentInfoNexus(::NeXus::File * file) const;
@@ -158,6 +179,9 @@ namespace API
     void populateWithParameter(Geometry::ParameterMap & paramMap,
                                const std::string & name, const Geometry::XMLlogfile & paramInfo,
                                const Run & runData);
+
+    /// Generic method to get a named parameter from a detector.
+    double getParameter(const Geometry::IDetector_const_sptr detector, const std::string& parameterName) const;
 
     /// Detector grouping information
     det2group_map m_detgroups;

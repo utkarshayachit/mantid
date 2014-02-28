@@ -37,6 +37,7 @@ The units currently available to this algorithm are listed [[Unit Factory|here]]
 #include <limits>
 #include "MantidKernel/BoundedValidator.h"
 #include "MantidKernel/ListValidator.h"
+#include "MantidGeometry/Instrument/InstrumentDefinitionParser.h"
 
 namespace Mantid
 {
@@ -398,13 +399,19 @@ void ConvertUnits::convertViaTOF(Kernel::Unit_const_sptr fromUnit, API::MatrixWo
   IObjComponent_const_sptr sample = instrument->getSample();
   if ( source == NULL || sample == NULL )
   {
-    throw Exception::InstrumentDefinitionError("Instrubment not sufficiently defined: failed to get source and/or sample");
+    throw Exception::InstrumentDefinitionError("Instrument not sufficiently defined: failed to get source and/or sample");
   }
-  double l1;
+  double l1Geometric;
+
+
+  //  auto units = instrument->getLogfileCache();//["angle"];
+  //auto units = const_cast<Mantid::Geometry::Instrument_sptr>(outputWS->getInstrument())->getLogfileUnit();
+  //g_log.warning() << " Angle units are " << units["angle"] <<  std::endl;
+
   try
   {
-    l1 = source->getDistance(*sample);
-    g_log.debug() << "Source-sample distance: " << l1 << std::endl;
+	l1Geometric = source->getDistance(*sample);
+    g_log.debug() << "Source-sample distance (from Geometry): " << l1Geometric << std::endl;
   }
   catch (Exception::NotFoundError &)
   {
@@ -476,13 +483,47 @@ void ConvertUnits::convertViaTOF(Kernel::Unit_const_sptr fromUnit, API::MatrixWo
     {
       // Now get the detector object for this histogram
       IDetector_const_sptr det = outputWS->getDetector(i);
+
+      double l1, l2, twoTheta;
+
+      // Do we want to override L1 for this detector ?
+      Parameter_sptr l1Par = pmap.getRecursive(det.get(),"L1");
+      if (l1Par)
+      {
+    	  l1 = l1Par->value<double>();
+      }
+      else
+      {
+    	  l1 = l1Geometric;
+      }
+
       // Get the sample-detector distance for this detector (in metres)
-      double l2, twoTheta;
       if ( ! det->isMonitor() )
       {
-        l2 = det->getDistance(*sample);
-        // The scattering angle for this detector (in radians).
-        twoTheta = thetaFunction(det);
+    	  // Do we want to override L2 for this detector ?
+    	  Parameter_sptr l2Par = pmap.getRecursive(det.get(),"L2");
+    	  if (l2Par)
+    	  {
+    		  l2 = l2Par->value<double>();
+    	  }
+    	  else
+    	  {
+    		  l2 = det->getDistance(*sample);
+    	  }
+
+    	  // Do we want to override TwoTheta for this detector ?
+    	  Parameter_sptr twoThetaPar = pmap.getRecursive(det.get(),"TwoTheta");
+
+    	  if (twoThetaPar)
+    	  {
+    		  twoTheta = twoThetaPar->value<double>();
+    	  }
+    	  else
+    	  {
+    	        // The scattering angle for this detector (in radians).
+    	        twoTheta = thetaFunction(det);
+    	  }
+
         // If an indirect instrument, try getting Efixed from the geometry
         if (emode==2) // indirect
         {
@@ -503,15 +544,25 @@ void ConvertUnits::convertViaTOF(Kernel::Unit_const_sptr fromUnit, API::MatrixWo
       }
       else  // If this is a monitor then make l1+l2 = source-detector distance and twoTheta=0
       {
-        l2 = det->getDistance(*source);
-        l2 = l2-l1;
-        twoTheta = 0.0;
-        efixed = DBL_MIN;
-        // Energy transfer is meaningless for a monitor, so set l2 to 0.
-        if (outputUnit->unitID().find("DeltaE") != std::string::npos)
-        {
-          l2 = 0.0;
-        }
+    	  // Do we want to override L2 for this detector ?
+    	  Parameter_sptr l2Par = pmap.getRecursive(det.get(),"L2");
+    	  if (l2Par)
+    	  {
+    		  l2 = l2Par->value<double>();
+    	  }
+    	  else
+    	  {
+    		  l2 = det->getDistance(*source);
+    	  }
+
+    	  l2 = l2-l1;
+    	  twoTheta = 0.0;
+    	  efixed = DBL_MIN;
+    	  // Energy transfer is meaningless for a monitor, so set l2 to 0.
+    	  if (outputUnit->unitID().find("DeltaE") != std::string::npos)
+    	  {
+    		  l2 = 0.0;
+    	  }
       }
 
       // Make local copies of the units. This allows running the loop in parallel
