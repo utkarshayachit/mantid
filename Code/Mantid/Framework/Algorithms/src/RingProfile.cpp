@@ -36,6 +36,7 @@ RealAngle = StartAngle - Angle
 *WIKI*/
 
 #include "MantidAlgorithms/RingProfile.h"
+#include "MantidAlgorithms/RadiusSum.h"
 #include "MantidKernel/ArrayProperty.h"
 #include "MantidKernel/ArrayBoundedValidator.h"
 #include "MantidKernel/BoundedValidator.h"
@@ -173,7 +174,7 @@ namespace Algorithms
 
     g_log.debug() << "Check the inputs of the algorithm" << std::endl; 
     // VALIDATE THE INPUTS    
-    if (inputWS->getAxis(1)->isSpectra()){
+    if (RadiusSum::inputWorkspaceHasInstrumentAssociated(inputWS)){
       checkInputsForSpectraWorkspace(inputWS); 
     }else{
       checkInputsForNumericWorkspace(inputWS); 
@@ -186,7 +187,7 @@ namespace Algorithms
 
     g_log.debug() << "Execute the ring profile calculation" << std::endl; 
     // perform the ring profile calculation 
-    if (inputWS->getAxis(1)->isSpectra()){      
+    if (RadiusSum::inputWorkspaceHasInstrumentAssociated(inputWS)){      
       processInstrumentRingProfile(inputWS, output_bins); 
     
     }else{
@@ -251,95 +252,44 @@ namespace Algorithms
  *
  * @param inputWS: the input workspace
 */
-void RingProfile::checkInputsForSpectraWorkspace(const API::MatrixWorkspace_sptr inputWS){
-  try{
-    // finding the limits of the instrument
-    double first_x, first_y, first_z;
-    size_t i = 0; 
-    while(true){
-      i++; 
-      if (i >= inputWS->getNumberHistograms())
-        throw std::invalid_argument("Did not find any non monitor detector position"); 
-
-      auto det = inputWS->getDetector(i);
-      if (det->isMonitor())
-        continue;
-      first_x = det->getPos().X();
-      first_y = det->getPos().Y();
-      first_z = det->getPos().Z(); 
-      break;
-    }
-
-    double last_x, last_y, last_z;
-    i = inputWS->getNumberHistograms() -1; 
-    while (true){
-      i--; 
-      if (i == 0 )
-        throw std::invalid_argument("There is no region defined for the instrument of this workspace");
-
-      auto det = inputWS->getDetector(i); 
-      if (det->isMonitor())
-        continue; 
-      last_x = det->getPos().X();
-      last_y = det->getPos().Y();
-      last_z = det->getPos().Z();
-      break;
-    }
-
-    double xMax, yMax, zMax; 
-    double xMin, yMin, zMin; 
-    xMax = std::max(first_x, last_x); 
-    yMax = std::max(first_y, last_y); 
-    zMax = std::max(first_z, last_z); 
-    xMin = std::min(first_x, last_x); 
-    yMin = std::min(first_y, last_y); 
-    zMin = std::min(first_z, last_z); 
+  void RingProfile::checkInputsForSpectraWorkspace(const API::MatrixWorkspace_sptr inputWS)
+  {
+    std::vector<double> instrumentBox = RadiusSum::getBoundariesOfInstrument(inputWS); 
+  
+    double &xMin(instrumentBox[0]);
+    double &xMax(instrumentBox[1]);
+    double &yMin(instrumentBox[2]); 
+    double &yMax(instrumentBox[3]); 
+    double &zMin(instrumentBox[4]); 
+    double &zMax(instrumentBox[5]); 
     
-
     std::stringstream limits_s; 
     limits_s << "(["
-             << xMin << ", " << xMax << "], ["
-             << yMin << ", " << yMax << "], ["
-             << zMin << ", " << zMax << "])"; 
-    g_log.debug() << "The limits for the instrument is : " << limits_s.str() << std::endl;  
-    int xOutside=0, yOutside=0, zOutside=0;
-    if (centre_x < xMin || centre_x > xMax )
-      xOutside = 1; 
-    if (centre_y < yMin || centre_y > yMax )
-      yOutside = 1; 
-    if (centre_z < zMin || centre_z > zMax )
-      zOutside = 1;
-    int summed = xOutside + yOutside + zOutside;     
-    // if at least 2 are outside, the centre is considered outside the box. 
-    if (summed >= 2){
-      std::stringstream s; 
-      s << "The defined centre (" << centre_x << ", " << centre_y << ", " << centre_z 
-        << ") is outside the limits of the detectors inside this instrument: " << limits_s.str(); 
-      throw std::invalid_argument(s.str());       
-    }
-    
-    xOutside = yOutside = zOutside = 0; 
+       << xMin << ", " << xMax << "], ["
+       << yMin << ", " << yMax << "], ["
+       << zMin << ", " << zMax << "])"; 
+
+    g_log.debug() << "The limits for the instrument are : " << limits_s.str() << std::endl;
+
+    RadiusSum::centerIsInsideLimits(getProperty("centre"), instrumentBox);
+
+    int xOutside=0, yOutside=0,zOutside = 0; 
+    int summed = 0;
     if (centre_x - min_radius > xMax || centre_x + min_radius < xMin)
       xOutside = 1; 
     if (centre_y - min_radius > yMax || centre_y + min_radius < yMin)
       yOutside = 1; 
     if (centre_z - min_radius > zMax || centre_z + min_radius < zMin)
       zOutside = 1;
-    
+  
     summed = xOutside + yOutside + zOutside;
-
     if (summed >= 2){
       std::stringstream s; 
       s << "The defined minRadius make the inner ring outside the limits of the detectors inside this instrument: " 
         << limits_s.str(); 
-      throw std::invalid_argument(s.str());           
+      throw std::invalid_argument(s.str()); 
     }
-    
-
-  }catch(Kernel::Exception::NotFoundError & ){
-    throw std::invalid_argument("Invalid input workspace. This workspace does not has detectors to get the positions from. "); 
   }
-}
 
 
 /**
@@ -356,50 +306,25 @@ void RingProfile::checkInputsForSpectraWorkspace(const API::MatrixWorkspace_sptr
 */
 void RingProfile::checkInputsForNumericWorkspace(const API::MatrixWorkspace_sptr inputWS){
   g_log.notice() << "CheckingInputs For Numeric Workspace" << std::endl; 
-
-  // The Axis0 is defined by the values of readX inside the spectra of the workspace. 
-  // The limits of this axis will be get by inspection of the readX vector taking the first 
-  // and the last value. 
   
-  // check that centre is inside the range available for the instrument
-  const MantidVec & refX  = inputWS->readX(inputWS->getNumberHistograms()/2);  
-  // get the limits of the axis 0 (X)
-  double min_v_x, max_v_x;
-  min_v_x = std::min(refX[0], refX[refX.size() -1]); 
-  max_v_x = std::max(refX[0], refX[refX.size() -1]); 
-  g_log.notice() << "Limits X = " << min_v_x << " " << max_v_x << std::endl;   
-  // check centre is inside the X domain
-  if ( centre_x < min_v_x || centre_x > max_v_x){
-    std::stringstream s;
-    s << "The input value for centre (X="<< centre_x << ") is outside the limits of the instrument ["
-      << min_v_x << ", "<< max_v_x << "]" ; 
-    throw std::invalid_argument(s.str());
-  }        
+  std::vector<double> imageBox = RadiusSum::getBoundariesOfNumericImage(inputWS); 
+   
+  double & xMin(imageBox[0]); 
+  double & xMax(imageBox[1]); 
+  double & yMin(imageBox[2]); 
+  double & yMax(imageBox[3]); 
   
+  std::stringstream limits_s; 
+  limits_s << "(["
+           << xMin << ", " << xMax << "], ["
+           << yMin << ", " << yMax << "]"
+           <<std::endl; 
+  g_log.debug() << "The limits for the image are : " << limits_s.str() << std::endl;
 
-  // The Axis1 is defined by the spectra inside the workspace. Its limits and values are given by the 
-  // ws->getAxis(1)
+  RadiusSum::centerIsInsideLimits(getProperty("centre"), imageBox);
 
-  // get the limits of the axis1 (Y)
-  API::NumericAxis *oldAxis2 = dynamic_cast<API::NumericAxis*>(inputWS->getAxis(1) );
-  // we cannot have the positions in Y direction without a NumericAxis  
-  if( !oldAxis2 ) 
-    throw std::invalid_argument("Vertical axis is not a numeric axis. If it is a spectra axis try running ConvertSpectrumAxis first.");
-  double min_v_y = std::min(oldAxis2->getMin(), oldAxis2->getMax()); 
-  double max_v_y = std::max(oldAxis2->getMin(), oldAxis2->getMax()); 
-  g_log.notice() << "Limits Y = " << min_v_y << " " << max_v_y << std::endl;   
-  // check centre is inside the Y domain
-  if (centre_y < min_v_y || centre_y > max_v_y){
-    std::stringstream s; 
-    s << "The input value for centre (Y=" << centre_y << ") is outside the limits of the instrument ["
-      << min_v_y << ", " << max_v_y << "]" ;
-    throw std::invalid_argument(s.str()); 
-  }
-  g_log.notice() << "Centre: " << centre_x << "  " << centre_y << std::endl; 
-  // check minradius is inside the limits of the region of the instrument
-  if (centre_x - min_radius > max_v_x || centre_x + min_radius < min_v_x || centre_y - min_radius > max_v_y || centre_y + min_radius < min_v_y)
+  if (centre_x - min_radius > xMax || centre_x + min_radius < xMin || centre_y - min_radius > yMax || centre_y + min_radius < yMin)
     throw std::invalid_argument("The minimun radius is outside the region of the instrument");
-
 }
 
 
