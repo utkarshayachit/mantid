@@ -1,6 +1,7 @@
 import os
 from mantid.simpleapi import *
 from mantid.kernel import Logger
+import SANSUtility as su
 sanslog = Logger.get("SANS")
 from shutil import copyfile
 
@@ -86,41 +87,13 @@ def add_runs(runs, inst='sans2d', defType='.nxs', rawTypes=('.raw', '.s*', 'add'
     if isFirstDataSetEvent:
         wsInMonitor = mtd['AddFilesSumTempory_monitors']
         if binning == 'Monitors':
-            monX = wsInMonitor.dataX(0)
-            binning = str(monX[0])
-            binGap = monX[1] - monX[0]
-            binning = binning + "," + str(binGap)
-            for j in range(2,len(monX)):
-                nextBinGap = monX[j] - monX[j-1]
-                if nextBinGap != binGap:
-                    binGap = nextBinGap
-                    binning = binning + "," + str(monX[j-1]) + "," + str(binGap)    
-            binning = binning + "," + str(monX[len(monX)-1])
+          binning = su.getBinsBoundariesFromWorkspace(wsInMonitor)
             
         logger.notice(binning)        
         Rebin(InputWorkspace='AddFilesSumTempory',OutputWorkspace='AddFilesSumTempory_Rebin',Params= binning, PreserveEvents=False)
         
-        # loading the nexus file using LoadNexus is necessary because it has some metadata
-        # that is not in LoadEventNexus. This must be fixed.
-        filename, ext = _makeFilename(runs[0], defType, inst)
-        LoadNexus(Filename=filename, OutputWorkspace='AddFilesSumTempory', SpectrumMax=wsInMonitor.getNumberHistograms())
-        # User may have selected a binning which is different from the default
-        Rebin(InputWorkspace='AddFilesSumTempory',OutputWorkspace='AddFilesSumTempory',Params= binning)
-        # For now the monitor binning must be the same as the detector binning
-        # since otherwise both cannot exist in the same output histogram file
-        Rebin(InputWorkspace='AddFilesSumTempory_monitors',OutputWorkspace='AddFilesSumTempory_monitors',Params= binning)
-        
-        wsInMonitor = mtd['AddFilesSumTempory_monitors']
-        wsOut = mtd['AddFilesSumTempory']    
-        wsInDetector = mtd['AddFilesSumTempory_Rebin']
-        
-        mon_n = wsInMonitor.getNumberHistograms()
-        for i in range(mon_n):
-            wsOut.setY(i,wsInMonitor.dataY(i))
-            wsOut.setE(i,wsInMonitor.dataE(i))               
-        ConjoinWorkspaces(wsOut, wsInDetector, CheckOverlapping=True)
-                       
-        if 'AddFilesSumTempory_Rebin' in mtd : DeleteWorkspace('AddFilesSumTempory_Rebin')
+        Rebin(wsInMonitor, binning,  OutputWorkspace='AddFilesSumTempory')
+        ConjoinWorkspaces('AddFilesSumTempory','AddFilesSumTempory_Rebin',True)
 
     lastFile = os.path.splitext(lastFile)[0]
     # now save the added file
@@ -201,8 +174,8 @@ def _loadWS(entry, ext, inst, wsName, rawTypes, period=_NO_INDIVIDUAL_PERIODS) :
 
   isDataSetEvent = False
   wsDataSet = mtd[wsName]
-  if hasattr(wsDataSet, 'getNumberEvents'):
-      isDataSetEvent = True
+  if su.isEventWorkspace(wsDataSet):
+    isDataSetEvent = True
          
   if isDataSetEvent:
     LoadEventNexus(Filename=filename,OutputWorkspace=wsName, LoadMonitors=True)     
