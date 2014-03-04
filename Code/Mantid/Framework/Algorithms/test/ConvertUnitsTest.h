@@ -62,7 +62,7 @@ public:
     Mantid::DataHandling::LoadInstrument loader;
     loader.initialize();
     // Path to test input file assumes Test directory checked out from SVN
-    const std::string inputFile = ExperimentInfo::getInstrumentFilename("HET")
+    const std::string inputFile = ExperimentInfo::getInstrumentFilename("HET");
     loader.setPropertyValue("Filename", inputFile);
     loader.setPropertyValue("Workspace", this->inputSpace);
     loader.setProperty("RewriteSpectraMap",false);
@@ -229,6 +229,75 @@ public:
 
     AnalysisDataService::Instance().remove("quickIn");
     AnalysisDataService::Instance().remove("quickOut");
+  }
+
+  void testOverrideParameters()
+  {
+	    MatrixWorkspace_sptr ws = WorkspaceCreationHelper::Create2DWorkspaceBinned(1,10,20000.0,1);
+	    ws->getAxis(0)->unit() = UnitFactory::Instance().create("TOF");
+
+	    // Create a simple instrument
+	    Instrument_sptr myInstrument(new Instrument);
+	    ws->setInstrument(myInstrument);
+
+	    //Define a source component
+	    ObjComponent *mySource = new ObjComponent("moderator", Object_sptr(), myInstrument.get());
+	    mySource->setPos(0, 0.0, -10.0);
+	    myInstrument->add(mySource);
+	    myInstrument->markAsSource(mySource);
+
+	    // Define a sample
+	    ObjComponent *mySample = new ObjComponent("sample", Object_sptr(), myInstrument.get());
+	    myInstrument->setPos(0.0, 0.0, 0.0);
+	    myInstrument->add(mySample);
+	    myInstrument->markAsSamplePos(mySample);
+
+	    // Define a detector
+	    Detector *myDetector = new Detector("detector", 1, myInstrument.get());
+	    myDetector->setPos(5.0,0.0,0.0);
+	    myInstrument->add(myDetector);
+	    myInstrument->markAsDetector(myDetector);
+	    ws->getSpectrum(0)->addDetectorID(myDetector->getID());
+
+	    ConvertUnits alg;
+	    alg.initialize();
+	    alg.setProperty("InputWorkspace", ws);
+	    alg.setPropertyValue("OutputWorkspace","output");
+	    alg.setPropertyValue("Target","DeltaE");
+	    alg.setPropertyValue("Emode","Indirect");
+	    alg.setPropertyValue("Efixed","2.0");
+	    alg.execute();
+	    MatrixWorkspace_const_sptr output;
+	    TS_ASSERT_THROWS_NOTHING( output = AnalysisDataService::Instance().retrieveWS<MatrixWorkspace>("output") );
+
+	    // Now let's set some parameters to override the geometric
+	    ws->setEFixed(myDetector->getID(), 4.0);
+	    ws->setL1(myDetector->getID(), 20.0);
+	    ws->setL2(myDetector->getID(), 10.0);
+	    ws->setTwoTheta(myDetector->getID(), (3.1415936/2.0));
+
+	    ConvertUnits alg2;
+	    alg2.initialize();
+	    alg2.setProperty("InputWorkspace", ws);
+	    alg2.setPropertyValue("OutputWorkspace","output2");
+	    alg2.setPropertyValue("Target","DeltaE");
+	    alg2.setPropertyValue("Emode","Indirect");
+	    alg2.execute();
+	    MatrixWorkspace_const_sptr output2;
+	    TS_ASSERT_THROWS_NOTHING( output2 = AnalysisDataService::Instance().retrieveWS<MatrixWorkspace>("output2") );
+
+	    Mantid::MantidVec data = output->dataX(0);
+	    Mantid::MantidVec data2 = output2->dataX(0);
+
+	    TS_ASSERT_DELTA(data[0], 1.6684, 0.001);
+	    TS_ASSERT_DELTA(data2[0], 24.3443, 0.001);
+
+	    //double twoTheta2 = output2->getDetector(0)->getTwoTheta(V3D(0.0,0.0,0.0),V3D(0,0,1));
+
+	    //TS_ASSERT_DELTA(twoTheta2, 0.0, 0.0001);
+
+	    AnalysisDataService::Instance().remove("output");
+	    AnalysisDataService::Instance().remove("output2");
   }
 
   void testDeltaE()
