@@ -484,6 +484,8 @@ void ConvertUnits::convertViaTOF(Kernel::Unit_const_sptr fromUnit, API::MatrixWo
       // Now get the detector object for this histogram
       IDetector_const_sptr det = outputWS->getDetector(i);
 
+      g_log.debug() << "== Detector ID " << det->getID() << " ==" << std::endl;
+
       double l1, l2, twoTheta;
 
       // Do we want to override L1 for this detector ?
@@ -491,10 +493,12 @@ void ConvertUnits::convertViaTOF(Kernel::Unit_const_sptr fromUnit, API::MatrixWo
       if (l1Par)
       {
     	  l1 = l1Par->value<double>();
+    	  g_log.debug() << "Source-sample distance (from Parameter L1): " << l1 << std::endl;
       }
       else
       {
     	  l1 = l1Geometric;
+    	  g_log.debug() << "Source-sample distance (from Geometry): " << l1 << std::endl;
       }
 
       // Get the sample-detector distance for this detector (in metres)
@@ -505,10 +509,12 @@ void ConvertUnits::convertViaTOF(Kernel::Unit_const_sptr fromUnit, API::MatrixWo
     	  if (l2Par)
     	  {
     		  l2 = l2Par->value<double>();
+        	  g_log.debug() << "Secondary flight path (from Parameter L2): " << l2 << std::endl;
     	  }
     	  else
     	  {
     		  l2 = det->getDistance(*sample);
+        	  g_log.debug() << "Secondary flight path (from Geometry): " << l2 << std::endl;
     	  }
 
     	  // Do we want to override TwoTheta for this detector ?
@@ -517,11 +523,14 @@ void ConvertUnits::convertViaTOF(Kernel::Unit_const_sptr fromUnit, API::MatrixWo
     	  if (twoThetaPar)
     	  {
     		  twoTheta = twoThetaPar->value<double>();
+    		  // TODO: Check units and convert to radians if needed.
+        	  g_log.debug() << "Scattering angle (from Parameter 'TwoTheta'): " << twoTheta << std::endl;
     	  }
     	  else
     	  {
     	        // The scattering angle for this detector (in radians).
     	        twoTheta = thetaFunction(det);
+          	  g_log.debug() << "Scattering angle (from Geometry): " << twoTheta << std::endl;
     	  }
 
         // If an indirect instrument, try getting Efixed from the geometry
@@ -535,7 +544,7 @@ void ConvertUnits::convertViaTOF(Kernel::Unit_const_sptr fromUnit, API::MatrixWo
             if (par) 
             {
               efixed = par->value<double>();
-              g_log.debug() << "Detector: " << det->getID() << " EFixed: " << efixed << "\n";
+        	  g_log.debug() << "Fixed Energy (from Parameter 'Efixed'): " << efixed << std::endl;
             }
           }
           catch (std::runtime_error&) { /* Throws if a DetectorGroup, use single provided value */ }
