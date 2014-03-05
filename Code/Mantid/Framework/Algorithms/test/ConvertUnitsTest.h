@@ -289,8 +289,8 @@ public:
 	    Mantid::MantidVec data = output->dataX(0);
 	    Mantid::MantidVec data2 = output2->dataX(0);
 
-	    TS_ASSERT_DELTA(data[0], 1.6684, 0.001);
-	    TS_ASSERT_DELTA(data2[0], 24.3443, 0.001);
+	    TS_ASSERT_DELTA(data[0], 1.6745, 0.001);
+	    TS_ASSERT_DELTA(data2[0], 24.4104, 0.001);
 
 	    //double twoTheta2 = output2->getDetector(0)->getTwoTheta(V3D(0.0,0.0,0.0),V3D(0,0,1));
 
