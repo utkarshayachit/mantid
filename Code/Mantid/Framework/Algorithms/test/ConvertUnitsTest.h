@@ -231,7 +231,9 @@ public:
     AnalysisDataService::Instance().remove("quickOut");
   }
 
-  void testOverrideParameters()
+  // Commenting out to see what the performance implications are for having the option of an
+  // override but not using it.
+  void xtestOverrideParameters()
   {
 	    MatrixWorkspace_sptr ws = WorkspaceCreationHelper::Create2DWorkspaceBinned(1,10,20000.0,1);
 	    ws->getAxis(0)->unit() = UnitFactory::Instance().create("TOF");
