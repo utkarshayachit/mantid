@@ -66,7 +66,7 @@ namespace MantidWidgets
     double m_lower; ///< lowest allowed value for range
     double m_higher; ///< highest allowed value for range
     
-    QwtPlotCanvas* m_canvas;
+    QWidget* m_canvas;
     QwtPlot* m_plot;
 
     QwtPlotMarker* m_mrkMin;
