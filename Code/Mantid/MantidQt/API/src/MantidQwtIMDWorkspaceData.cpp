@@ -16,17 +16,6 @@ using Mantid::API::IMDWorkspace;
 using Mantid::API::IMDWorkspace_const_sptr;
 using Mantid::coord_t;
 
-///@cond
-/** This is needed to successfully compile on windows. 
- 
-  Part of Qwt, so we ignored this documentation.
-*/
-QwtData & QwtData::operator=(class QwtData const &)
-{
-  throw std::runtime_error("QwtData::operator=() not implemented on the abstract base class.");
-}
-///@endcond
-
 /** Constructor
  *
  * @param workspace :: IMDWorkspace to plot
@@ -134,7 +123,7 @@ MantidQwtIMDWorkspaceData::~MantidQwtIMDWorkspaceData()
 /** Cloner/virtual copy constructor
  * @return a copy of this
  */
-QwtData * MantidQwtIMDWorkspaceData::copy() const
+QwtSeriesData<QPointF> * MantidQwtIMDWorkspaceData::copy() const
 {
   return new MantidQwtIMDWorkspaceData(*this);
 }
@@ -170,6 +159,25 @@ void MantidQwtIMDWorkspaceData::cacheLinePlot()
 size_t MantidQwtIMDWorkspaceData::size() const
 {
   return m_Y.size();
+}
+
+/**
+ * Returns the {x,y} values for the given point in the series
+ * @param i The index of the given point
+ * @return QPointF(x,y)
+ */
+QPointF MantidQwtIMDWorkspaceData::sample(size_t i) const
+{
+  return QPointF(x(i),y(i));
+}
+
+/**
+ * @return QRectF defining the bounding rectangle of the data series.
+ */
+QRectF MantidQwtIMDWorkspaceData::boundingRect () const
+{
+  QPointF topLeft(x(0),getYMax()), bottomRight(x(size()-1), getYMin());
+  return QRectF(topLeft, bottomRight);
 }
 
 /** Return the x value of data point i

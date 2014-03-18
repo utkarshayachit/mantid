@@ -50,9 +50,29 @@ size_t MantidQwtMatrixWorkspaceData::size() const
 }
 
 /**
-Return the x value of data point i
-@param i :: Index
-@return x X value of data point i
+ * Return a QPointF object containing the X,Y data for the requested index
+ * @param i Index of current point in series
+ * @return The x,y value for this point
+ */
+QPointF MantidQwtMatrixWorkspaceData::sample(size_t i) const
+{
+  return QPointF(x(i),y(i));
+}
+
+/**
+ * @return QRectF defining the bounding rectangle of the data series.
+ */
+QRectF MantidQwtMatrixWorkspaceData::boundingRect () const
+{
+  QPointF topLeft(x(0),getYMax()), bottomRight(x(size()-1), getYMin());
+  return QRectF(topLeft, bottomRight);
+}
+
+
+/**
+ Return the x value of data point i
+ @param i :: Index
+ @return x X value of data point i
 */
 double MantidQwtMatrixWorkspaceData::x(size_t i) const
 {
@@ -60,24 +80,24 @@ double MantidQwtMatrixWorkspaceData::x(size_t i) const
 }
 
 /**
-Return the y value of data point i
-@param i :: Index
-@return y Y value of data point i
+ Return the y value of data point i
+ @param i :: Index
+ @return y Y value of data point i
 */
 double MantidQwtMatrixWorkspaceData::y(size_t i) const
 {
   double tmp = i < m_Y.size() ? m_Y[i] : m_Y[m_Y.size()-1];
-  if (m_isDistribution)
-  {
-    tmp /= (m_X[i+1] - m_X[i]);
-  }
-  if (m_logScale && tmp <= 0.)
-  {
-    tmp = m_minPositive;
-  }
+   if (m_isDistribution)
+   {
+     tmp /= (m_X[i+1] - m_X[i]);
+   }
+   if (m_logScale && tmp <= 0.)
+   {
+     tmp = m_minPositive;
+   }
 
   return tmp;
-}
+ }
 
 double MantidQwtMatrixWorkspaceData::ex(size_t i) const
 {

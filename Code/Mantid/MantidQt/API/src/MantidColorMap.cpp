@@ -233,7 +233,7 @@ void MantidColorMap::setupDefaultMap()
  * @param value :: The data value
  * @returns The fraction along the given interval using the current scale type
  */
-double MantidColorMap::normalize(const QwtDoubleInterval &interval, double value) const
+double MantidColorMap::normalize(const QwtInterval &interval, double value) const
 {
   // nan numbers have the property that nan != nan, treat nan as being invalid
   if( interval.isNull() || m_num_colors == 0 || boost::math::isnan(value) )
@@ -271,7 +271,7 @@ double MantidColorMap::normalize(const QwtDoubleInterval &interval, double value
  * @param interval :: The data range
  * @param value :: Compute an RGB color for this data value
  */
-QRgb MantidColorMap::rgb(const QwtDoubleInterval & interval, double value) const
+QRgb MantidColorMap::rgb(const QwtInterval & interval, double value) const
 {
   short ci = static_cast<short>(colorIndex(interval, value));
   if( ci >= 0 && ci < m_num_colors )
@@ -291,7 +291,7 @@ QRgb MantidColorMap::rgb(const QwtDoubleInterval & interval, double value) const
  * @returns A color index as an unsigned character
  */
 
-unsigned char MantidColorMap::colorIndex (const QwtDoubleInterval &interval, double value) const
+unsigned char MantidColorMap::colorIndex (const QwtInterval &interval, double value) const
 {
   double fraction = normalize(interval, value);
   // NAN: return index 0
@@ -318,7 +318,7 @@ unsigned char MantidColorMap::colorIndex (const QwtDoubleInterval &interval, dou
  * Compute a lookup table
  * @param interval :: The interval for the table to cover
  */
-QVector<QRgb> MantidColorMap::colorTable(const QwtDoubleInterval & interval) const
+QVector<QRgb> MantidColorMap::colorTable(const QwtInterval & interval) const
 {
   // Swicth to linear scaling when computing the lookup table
   GraphOptions::ScaleType current_type = m_scale_type;   

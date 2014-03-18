@@ -9,7 +9,7 @@
 
 //=================================================================================================
 //=================================================================================================
-/**  This class implements QwtData with direct access to a spectrum in a MatrixWorkspace.
+/**  This class implements MantidQwtWorkspaceData with direct access to a spectrum in a MatrixWorkspace.
  */
 class EXPORT_OPT_MANTIDQT_API MantidQwtMatrixWorkspaceData : public MantidQwtWorkspaceData
 {
@@ -19,23 +19,19 @@ public:
   MantidQwtMatrixWorkspaceData& operator=(const MantidQwtMatrixWorkspaceData &);
 
     //! @return Pointer to a copy (virtual copy constructor)
-  virtual QwtData *copy() const {return new MantidQwtMatrixWorkspaceData(*this);}
+  virtual QwtSeriesData<QPointF> *copy() const {return new MantidQwtMatrixWorkspaceData(*this);}
 
   //! @return Size of the data set
   virtual size_t size() const;
+  /// Return values x and y values of the sample at specific position as QPointF object.
+  QPointF sample(size_t i) const;
+  /// Return the bounding rectangle for the data
+  QRectF boundingRect () const;
 
-  /**
-  Return the x value of data point i
-  @param i :: Index
-  @return x X value of data point i
-  */
-  virtual double x(size_t i) const;
-  /**
-  Return the y value of data point i
-  @param i :: Index
-  @return y Y value of data point i
-  */
-  virtual double y(size_t i) const;
+  /// Return the x value of data point i
+  double x(size_t i) const;
+  /// Return the y value of data point i
+  double y(size_t i) const;
 
   /// Return a new data object of the same type but with a new workspace
   virtual MantidQwtMatrixWorkspaceData* copy(boost::shared_ptr<const Mantid::API::MatrixWorkspace> workspace)const

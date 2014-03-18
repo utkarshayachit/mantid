@@ -1,11 +1,12 @@
 #ifndef MANTIDQTAPI_MANTIDQWTWORKSPACEDATA_H
 #define MANTIDQTAPI_MANTIDQWTWORKSPACEDATA_H
 
-#include "qwt_data.h"
 #include "DllOption.h"
+#include <qwt_series_data.h>
+#include <QPointF>
 
 /// Abstract Qwtdata type
-class EXPORT_OPT_MANTIDQT_API MantidQwtWorkspaceData:public QwtData
+class EXPORT_OPT_MANTIDQT_API MantidQwtWorkspaceData : public QwtSeriesData<QPointF>
 {
 public:
   virtual void setLogScale(bool on) = 0;

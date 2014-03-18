@@ -31,10 +31,13 @@ public:
   MantidQwtIMDWorkspaceData &operator=(const MantidQwtIMDWorkspaceData &);
   virtual ~MantidQwtIMDWorkspaceData();
 
-  virtual QwtData *copy() const;
+  virtual QwtSeriesData<QPointF> *copy() const;
   virtual MantidQwtIMDWorkspaceData* copy(Mantid::API::IMDWorkspace_sptr workspace) const;
 
   virtual size_t size() const;
+  virtual QPointF sample(size_t i) const;
+  /// Return the bounding rectangle for the data
+  QRectF boundingRect () const;
   virtual double x(size_t i) const;
   virtual double y(size_t i) const;
 

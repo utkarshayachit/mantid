@@ -53,13 +53,13 @@ public:
 
   void setupDefaultMap();
 
-  QRgb rgb(const QwtDoubleInterval & interval, double value) const;
+  QRgb rgb(const QwtInterval & interval, double value) const;
 
-  double normalize(const QwtDoubleInterval &interval, double value) const;
+  double normalize(const QwtInterval &interval, double value) const;
 
-  unsigned char colorIndex (const QwtDoubleInterval &interval, double value) const;
+  unsigned char colorIndex (const QwtInterval &interval, double value) const;
 
-  QVector<QRgb> colorTable(const QwtDoubleInterval & interval) const;
+  QVector<QRgb> colorTable(const QwtInterval & interval) const;
 
   /**
    * Retrieve the scale type
