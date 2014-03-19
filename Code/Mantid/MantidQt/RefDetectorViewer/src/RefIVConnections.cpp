@@ -2,6 +2,7 @@
 #include <iostream>
 #include <QLineEdit>
 #include <qwt_plot_canvas.h>
+#include <qwt_picker_machine.h>
 
 #include "MantidQtRefDetectorViewer/RefIVConnections.h"
 #include "MantidQtSpectrumViewer/ColorMaps.h"
@@ -115,42 +116,10 @@ RefIVConnections::RefIVConnections( Ui_RefImageViewer* ui,
 /* // point selections & connection works on mouse release
 */
   image_picker->setRubberBand(QwtPicker::CrossRubberBand);
-  image_picker->setSelectionFlags(QwtPicker::PointSelection | 
-                                  QwtPicker::DragSelection  );
+  image_picker->setStateMachine(new QwtPickerDragPointMachine);
 
-    image_picker2->setRubberBand(QwtPicker::CrossRubberBand);
-    image_picker2->setSelectionFlags(QwtPicker::PointSelection | 
-                                    QwtPicker::DragSelection  );
-
-    /*
-  QObject::connect( image_picker, SIGNAL(selected(const QwtPolygon &)),
-                    this, SLOT(imagePickerSelectedPoint()) );
-*/
-
-/*  // point selection works on mouse click, NO CROSSHAIRS...
-
-  image_picker->setRubberBand(QwtPicker::CrossRubberBand);
-  image_picker->setSelectionFlags(QwtPicker::PointSelection | 
-                                  QwtPicker::ClickSelection  );
-  QObject::connect( image_picker, SIGNAL(selected(const QwtPolygon &)),
-                    this, SLOT(imagePickerSelectedPoint()) );
-*/
-
-/*  // rect selection calls SLOT on mouse release
-  
-  image_picker->setMousePattern(QwtPicker::MouseSelect1, Qt::MidButton);
-  image_picker->setRubberBand(QwtPicker::RectRubberBand);
-  image_picker->setSelectionFlags(QwtPicker::RectSelection | 
-                                  QwtPicker::DragSelection  );
-  QObject::connect( image_picker, SIGNAL(selected(const QwtPolygon &)),
-                    this, SLOT(imagePickerSelectedPoint()) );
-*/
-
-/*
-  image_picker->setRubberBand(QwtPicker::CrossRubberBand);
-  image_picker->setSelectionFlags(QwtPicker::PointSelection | 
-                                  QwtPicker::ClickSelection  );
-*/
+  image_picker2->setRubberBand(QwtPicker::CrossRubberBand);
+  image_picker2->setStateMachine(new QwtPickerDragPointMachine);
 
     QObject::connect( image_picker2, SIGNAL(mouseMoved()),
                      this, SLOT(imagePicker2_moved()) );
@@ -267,8 +236,7 @@ RefIVConnections::RefIVConnections( Ui_RefImageViewer* ui,
   h_graph_picker->setTrackerMode(QwtPicker::ActiveOnly);
   h_graph_picker->setRubberBandPen(QColor(Qt::gray));
   h_graph_picker->setRubberBand(QwtPicker::CrossRubberBand);
-  h_graph_picker->setSelectionFlags(QwtPicker::PointSelection |
-                                  QwtPicker::DragSelection  );
+  h_graph_picker->setStateMachine(new QwtPickerDragPointMachine);
   QObject::connect( h_graph_picker, SIGNAL(mouseMoved()),
                     this, SLOT(h_graphPicker_moved()) );
 
@@ -278,8 +246,7 @@ RefIVConnections::RefIVConnections( Ui_RefImageViewer* ui,
   v_graph_picker->setTrackerMode(QwtPicker::ActiveOnly);
   v_graph_picker->setRubberBandPen(QColor(Qt::gray));
   v_graph_picker->setRubberBand(QwtPicker::CrossRubberBand);
-  v_graph_picker->setSelectionFlags(QwtPicker::PointSelection |
-                                    QwtPicker::DragSelection  );
+  v_graph_picker->setStateMachine(new QwtPickerDragPointMachine);
   QObject::connect( v_graph_picker, SIGNAL(mouseMoved()),
                     this, SLOT(v_graphPicker_moved()) );
 }
@@ -399,7 +366,7 @@ void RefIVConnections::imageSplitter_moved()
   //Right click
 void RefIVConnections::imagePicker_moved()
 {
-  QwtPolygon selected_points = image_picker->selection();
+  QPolygon selected_points = image_picker->selection();
   if ( selected_points.size() >= 1 )
   {
     int index = selected_points.size() - 1;
@@ -410,7 +377,7 @@ void RefIVConnections::imagePicker_moved()
   //Left click
 void RefIVConnections::imagePicker2_moved()
 {
-  QwtPolygon selected_points = image_picker2->selection();
+  QPolygon selected_points = image_picker2->selection();
     if ( selected_points.size() >= 1 )
     {
       peak_back_tof_range_update();
@@ -425,7 +392,7 @@ void RefIVConnections::imagePicker2_moved()
 
 void RefIVConnections::h_graphPicker_moved()
 {
-  QwtPolygon selected_points = h_graph_picker->selection();
+  QPolygon selected_points = h_graph_picker->selection();
   if ( selected_points.size() >= 1 )
   {
     int index = selected_points.size() - 1;
@@ -436,7 +403,7 @@ void RefIVConnections::h_graphPicker_moved()
 
 void RefIVConnections::v_graphPicker_moved()
 {
-  QwtPolygon selected_points = v_graph_picker->selection();
+  QPolygon selected_points = v_graph_picker->selection();
   if ( selected_points.size() >= 1 )
   {
     int index = selected_points.size() - 1;

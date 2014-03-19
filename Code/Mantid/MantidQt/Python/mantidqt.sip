@@ -868,18 +868,18 @@ void SliceViewer::setXYLimits(double xleft, double xright, double ybottom, doubl
    
 %End
 
-  QwtDoubleInterval getXLimits() const;
+  QwtInterval getXLimits() const;
 %Docstring
-QwtDoubleInterval SliceViewer::getXLimits()
+QwtInterval SliceViewer::getXLimits()
 -------------------------------------------
     
     Returns:
         Returns the [left, right] limits of the view in the X axis. 
 %End
 
-  QwtDoubleInterval getYLimits() const;
+  QwtInterval getYLimits() const;
 %Docstring
-QwtDoubleInterval SliceViewer::getYLimits()
+QwtInterval SliceViewer::getYLimits()
 -------------------------------------------
     
     Returns:

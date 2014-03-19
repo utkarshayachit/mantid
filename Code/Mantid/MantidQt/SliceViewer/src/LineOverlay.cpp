@@ -212,8 +212,8 @@ namespace SliceViewer
    * @return pixel coordinates */
   QPoint LineOverlay::transform(QPointF coords) const
   {
-    int xA = m_plot->transform( QwtPlot::xBottom, coords.x() );
-    int yA = m_plot->transform( QwtPlot::yLeft, coords.y() );
+    int xA = static_cast<int>(m_plot->transform( QwtPlot::xBottom, coords.x() ));
+    int yA = static_cast<int>(m_plot->transform( QwtPlot::yLeft, coords.y() ));
     return QPoint(xA, yA);
   }
 
@@ -223,8 +223,8 @@ namespace SliceViewer
    * @return plot coordinates (float)   */
   QPointF LineOverlay::invTransform(QPoint pixels) const
   {
-    double xA = m_plot->invTransform( QwtPlot::xBottom, pixels.x() );
-    double yA = m_plot->invTransform( QwtPlot::yLeft, pixels.y() );
+    int xA = static_cast<int>(m_plot->invTransform( QwtPlot::xBottom, pixels.x() ));
+    int yA = static_cast<int>(m_plot->invTransform( QwtPlot::yLeft, pixels.y() ));
     return QPointF(xA, yA);
   }
 

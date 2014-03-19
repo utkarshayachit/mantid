@@ -14,11 +14,11 @@
 
 
 
-%MappedType QwtDoubleInterval
+%MappedType QwtInterval
 {
 %TypeHeaderCode
 // Include the library interface to the type being mapped.
-#include <qwt_double_interval.h>
+#include <qwt_interval.h>
 %End
 
 %ConvertToTypeCode
@@ -48,7 +48,7 @@
     double val0 = PyFloat_AsDouble(pyVal0);
     double val1 = PyFloat_AsDouble(pyVal1);
 
-    QwtDoubleInterval * retVal = new QwtDoubleInterval(val0, val1);
+    QwtInterval * retVal = new QwtInterval(val0, val1);
 
     // Return the instance on the heap.
     *sipCppPtr = retVal;

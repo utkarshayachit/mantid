@@ -34,7 +34,7 @@ RefImagePlotItem::~RefImagePlotItem()
 void RefImagePlotItem::draw(       QPainter    * painter,
                           const QwtScaleMap & xMap, 
                           const QwtScaleMap & yMap,
-                          const QRect       & canvasRect) const
+                          const QRectF       & canvasRect) const
 {
   SpectrumPlotItem::draw(painter,xMap,yMap,canvasRect);
 
