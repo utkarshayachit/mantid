@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <qwt_plot_canvas.h>
+#include <qwt_picker_machine.h>
 
 #include <QDesktopServices>
 
@@ -115,37 +116,8 @@ SVConnections::SVConnections( Ui_SpectrumViewer* ui,
 /* // point selections & connection works on mouse release
 */
   image_picker->setRubberBand(QwtPicker::CrossRubberBand);
-  image_picker->setSelectionFlags(QwtPicker::PointSelection | 
-                                  QwtPicker::DragSelection  );
-/*
-  QObject::connect( image_picker, SIGNAL(selected(const QwtPolygon &)),
-                    this, SLOT(imagePickerSelectedPoint()) );
-*/
+  image_picker->setStateMachine(new QwtPickerDragPointMachine);
 
-/*  // point selection works on mouse click, NO CROSSHAIRS...
-
-  image_picker->setRubberBand(QwtPicker::CrossRubberBand);
-  image_picker->setSelectionFlags(QwtPicker::PointSelection | 
-                                  QwtPicker::ClickSelection  );
-  QObject::connect( image_picker, SIGNAL(selected(const QwtPolygon &)),
-                    this, SLOT(imagePickerSelectedPoint()) );
-*/
-
-/*  // rect selection calls SLOT on mouse release
-  
-  image_picker->setMousePattern(QwtPicker::MouseSelect1, Qt::MidButton);
-  image_picker->setRubberBand(QwtPicker::RectRubberBand);
-  image_picker->setSelectionFlags(QwtPicker::RectSelection | 
-                                  QwtPicker::DragSelection  );
-  QObject::connect( image_picker, SIGNAL(selected(const QwtPolygon &)),
-                    this, SLOT(imagePickerSelectedPoint()) );
-*/
-
-/*
-  image_picker->setRubberBand(QwtPicker::CrossRubberBand);
-  image_picker->setSelectionFlags(QwtPicker::PointSelection | 
-                                  QwtPicker::ClickSelection  );
-*/
   QObject::connect( image_picker, SIGNAL(mouseMoved()),
                     this, SLOT(imagePicker_moved()) );
 
@@ -247,8 +219,8 @@ SVConnections::SVConnections( Ui_SpectrumViewer* ui,
   h_graph_picker->setTrackerMode(QwtPicker::ActiveOnly);
   h_graph_picker->setRubberBandPen(QColor(Qt::gray));
   h_graph_picker->setRubberBand(QwtPicker::CrossRubberBand);
-  h_graph_picker->setSelectionFlags(QwtPicker::PointSelection |
-                                  QwtPicker::DragSelection  );
+  h_graph_picker->setStateMachine(new QwtPickerDragPointMachine);
+
   QObject::connect( h_graph_picker, SIGNAL(mouseMoved()),
                     this, SLOT(h_graphPicker_moved()) );
 
@@ -258,8 +230,7 @@ SVConnections::SVConnections( Ui_SpectrumViewer* ui,
   v_graph_picker->setTrackerMode(QwtPicker::ActiveOnly);
   v_graph_picker->setRubberBandPen(QColor(Qt::gray));
   v_graph_picker->setRubberBand(QwtPicker::CrossRubberBand);
-  v_graph_picker->setSelectionFlags(QwtPicker::PointSelection |
-                                    QwtPicker::DragSelection  );
+  v_graph_picker->setStateMachine(new QwtPickerDragPointMachine);
   QObject::connect( v_graph_picker, SIGNAL(mouseMoved()),
                     this, SLOT(v_graphPicker_moved()) );
 
@@ -376,7 +347,7 @@ void SVConnections::imageSplitter_moved()
 
 void SVConnections::imagePicker_moved()
 {
-  QwtPolygon selected_points = image_picker->selection();
+  QPolygon selected_points = image_picker->selection();
   if ( selected_points.size() >= 1 )
   {
     int index = selected_points.size() - 1;
@@ -387,7 +358,7 @@ void SVConnections::imagePicker_moved()
 
 void SVConnections::h_graphPicker_moved()
 {
-  QwtPolygon selected_points = h_graph_picker->selection();
+  QPolygon selected_points = h_graph_picker->selection();
   if ( selected_points.size() >= 1 )
   {
     int index = selected_points.size() - 1;
@@ -398,7 +369,7 @@ void SVConnections::h_graphPicker_moved()
 
 void SVConnections::v_graphPicker_moved()
 {
-  QwtPolygon selected_points = v_graph_picker->selection();
+  QPolygon selected_points = v_graph_picker->selection();
   if ( selected_points.size() >= 1 )
   {
     int index = selected_points.size() - 1;
@@ -519,7 +490,7 @@ void SVConnections::load_color_map()
 
   MantidColorMap* mantid_color_map = new MantidColorMap( file_name, GraphOptions::Linear );
 
-  QwtDoubleInterval interval( 0.0, 255.0 );
+  QwtInterval interval( 0.0, 255.0 );
   QVector<QRgb> mantid_color_table;
   mantid_color_table = mantid_color_map->colorTable( interval );
   std::vector<QRgb> positive_color_table;

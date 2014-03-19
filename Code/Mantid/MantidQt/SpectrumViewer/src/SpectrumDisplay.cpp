@@ -276,7 +276,7 @@ void SpectrumDisplay::UpdateImage()
                                               data_array->GetXMax() );
   if ( is_log_x )
   {
-    QwtLog10ScaleEngine* log_engine = new QwtLog10ScaleEngine();
+    QwtLogScaleEngine* log_engine = new QwtLogScaleEngine();
     spectrum_plot->setAxisScaleEngine( QwtPlot::xBottom, log_engine );
   }
   else

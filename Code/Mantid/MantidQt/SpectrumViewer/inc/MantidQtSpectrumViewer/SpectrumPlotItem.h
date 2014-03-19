@@ -68,7 +68,7 @@ public:
   virtual void draw(      QPainter    * painter,
                     const QwtScaleMap & xMap, 
                     const QwtScaleMap & yMap,
-                    const QRect       & canvasRect) const;
+                    const QRectF       & canvasRect) const;
 
 protected:
   int                   buffer_ID;        // set to 0 or 1 to select buffer 

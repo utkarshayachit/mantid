@@ -85,7 +85,7 @@ int main( int argc, char **argv )
                        // Don't delete on close in this case, since image_view
                        // will be deleted when the application ends
   spectrum_view.setAttribute(Qt::WA_DeleteOnClose,false);
-
+  spectrum_view.show();
   return a.exec();
 }
 

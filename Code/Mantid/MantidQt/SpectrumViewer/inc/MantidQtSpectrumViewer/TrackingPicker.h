@@ -47,7 +47,7 @@ class EXPORT_OPT_MANTIDQT_SPECTRUMVIEWER TrackingPicker : public QwtPlotPicker
 public:
 
   /// Construct a tracking picker to work with the specified canvas
-  TrackingPicker(QwtPlotCanvas* canvas);
+  TrackingPicker(QWidget* canvas);
 
   /// Disable (or enable) position readout at cursor position, even if
   /// tracking is ON.  Tracking MUST be on for the mouseMoved signal to be
@@ -62,7 +62,6 @@ protected:
 
   /// Override base class method, to emit a mousedMoved() signal for each move
   QwtText trackerText( const QPoint & point ) const;
-  QwtText trackerText( const QwtDoublePoint & pos) const;
 
 private:
   bool hide_readout;

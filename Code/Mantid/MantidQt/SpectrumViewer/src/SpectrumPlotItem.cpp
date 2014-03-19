@@ -114,7 +114,7 @@ void SpectrumPlotItem::SetIntensityTable( std::vector<double>* intensity_table )
 void SpectrumPlotItem::draw(QPainter    * painter,
 			    const QwtScaleMap & xMap, 
 			    const QwtScaleMap & yMap,
-			    const QRect       &       ) const
+			    const QRectF       &       ) const
 {
   if ( !positive_color_table )     // if no color table, the data is not yet
   {                                // set, so just return

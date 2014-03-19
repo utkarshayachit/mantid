@@ -121,7 +121,7 @@ void GraphDisplay::SetData(const QVector<double> & xData,
 
     if ( is_log_x )                // only set log scale for x if NOT vertical
     {
-      QwtLog10ScaleEngine* log_engine = new QwtLog10ScaleEngine();
+      QwtLogScaleEngine* log_engine = new QwtLogScaleEngine();
       graph_plot->setAxisScaleEngine( QwtPlot::xBottom, log_engine );
     }
     else
@@ -131,7 +131,7 @@ void GraphDisplay::SetData(const QVector<double> & xData,
     }
   }
 
-  curve->setData( xData, yData );
+  curve->setSamples( xData, yData );
   curve->attach( graph_plot );
 
   SetRangeScale( range_scale );
