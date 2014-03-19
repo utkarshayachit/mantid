@@ -77,15 +77,15 @@ namespace MantidQt
       {
         if(m_viewablePeaks[i])
         {
-        const QwtDoubleInterval intervalY = m_plot->axisScaleDiv(QwtPlot::yLeft)->interval();
-        const QwtDoubleInterval intervalX = m_plot->axisScaleDiv(QwtPlot::xBottom)->interval();
+        const QwtInterval intervalY = m_plot->axisScaleDiv(QwtPlot::yLeft).interval();
+        const QwtInterval intervalX = m_plot->axisScaleDiv(QwtPlot::xBottom).interval();
 
         // Calculate the physical drawing aspects using the Physical Peak.
         auto drawObject = m_physicalPeaks[i]->draw(height(), width(), intervalY.width(), intervalX.width());
 
         // Linear Transform from MD coordinates into Windows/Qt coordinates for ellipse rendering. TODO: This can be done outside of paintEvent.
-        const int xOrigin = m_plot->transform(QwtPlot::xBottom, drawObject.peakOrigin.X());
-        const int yOrigin = m_plot->transform(QwtPlot::yLeft, drawObject.peakOrigin.Y());
+        const double xOrigin = m_plot->transform(QwtPlot::xBottom, drawObject.peakOrigin.X());
+        const double yOrigin = m_plot->transform(QwtPlot::yLeft, drawObject.peakOrigin.Y());
         const QPointF originWindows(xOrigin, yOrigin);
 
         QPainter painter(this);

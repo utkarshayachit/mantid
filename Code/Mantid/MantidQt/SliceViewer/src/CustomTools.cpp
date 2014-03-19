@@ -8,17 +8,16 @@ namespace MantidQt
 namespace SliceViewer
 {
 
-  CustomPicker::CustomPicker(int xAxis, int yAxis, QwtPlotCanvas* canvas)
-  : QwtPlotPicker(xAxis, yAxis, 0, CrossRubberBand, AlwaysOn, canvas)
+  CustomPicker::CustomPicker(int xAxis, int yAxis, QWidget* canvas)
+  : QwtPlotPicker(xAxis, yAxis,CrossRubberBand, AlwaysOn, canvas)
   {
-    setSelectionFlags(QwtPicker::PointSelection);
     setRubberBand(QwtPicker::CrossRubberBand);
     canvas->setMouseTracking(true);
   }
 
 
 /** Called each time the mouse moves over the canvas */
-  QwtText CustomPicker::trackerText(const QwtDoublePoint & pos) const
+  QwtText CustomPicker::trackerText(const QPoint & pos) const
   {
     emit mouseMoved(pos.x(), pos.y());
     return QwtText();
@@ -28,8 +27,6 @@ namespace SliceViewer
   {
     if ( !isActive() )
     {
-      setSelectionFlags(QwtPicker::PointSelection);
-
       begin();
       append(e->pos());
     }

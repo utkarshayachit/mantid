@@ -128,8 +128,8 @@ SliceViewer::SliceViewer(QWidget *parent)
   QObject::connect(m_colorBar, SIGNAL(changedColorRange(double,double,bool)), this, SLOT(colorRangeChanged()));
 
   // ---- Set the color map on the data ------
-  m_data = new QwtRasterDataMD();
-  m_spect->setColorMap( m_colorBar->getColorMap() );
+  m_data = new QwtRasterDataMD(); // will get owned by QwtPlotSpectrogram
+  m_spect->setColorMap( &(m_colorBar->getColorMap()) );
   m_plot->autoRefresh();
 
   // Make the splitter use the minimum size for the controls and not stretch out
@@ -180,8 +180,6 @@ SliceViewer::SliceViewer(QWidget *parent)
 SliceViewer::~SliceViewer()
 {
   saveSettings();
-  delete m_data;
-  // Don't delete Qt objects, I think these are auto-deleted
 }
 
 
@@ -436,24 +434,14 @@ void SliceViewer::initMenus()
 /** Intialize the zooming/panning tools */
 void SliceViewer::initZoomer()
 {
-//  QwtPlotZoomer * zoomer = new CustomZoomer(m_plot->canvas());
-//  zoomer->setMousePattern(QwtEventPattern::MouseSelect1,  Qt::LeftButton);
-//  zoomer->setTrackerMode(QwtPicker::AlwaysOff);
-//  const QColor c(Qt::darkBlue);
-//  zoomer->setRubberBandPen(c);
-//  zoomer->setTrackerPen(c);
-//  QObject::connect(zoomer, SIGNAL(zoomed(const QRectF &)),
-//      this, SLOT(zoomRectSlot(const QRectF &)));
-
   QwtPlotPicker * zoomer = new QwtPlotPicker(m_plot->canvas());
-  zoomer->setSelectionFlags(QwtPicker::RectSelection | QwtPicker::DragSelection);
-  zoomer->setMousePattern(QwtEventPattern::MouseSelect1,  Qt::LeftButton);
+  zoomer->setStateMachine(new QwtPickerDragRectMachine);
   zoomer->setTrackerMode(QwtPicker::AlwaysOff);
   const QColor c(Qt::darkBlue);
   zoomer->setRubberBand(QwtPicker::RectRubberBand);
   zoomer->setRubberBandPen(c);
-  QObject::connect(zoomer, SIGNAL(selected(const QwtDoubleRect &)),
-      this, SLOT(zoomRectSlot(const QwtDoubleRect &)));
+  QObject::connect(zoomer, SIGNAL(selected(const QRectF &)),
+      this, SLOT(zoomRectSlot(const QRectF &)));
 
   // Zoom in/out using middle-click+drag or the mouse wheel
   CustomMagnifier * magnif = new CustomMagnifier(m_plot->canvas());
@@ -696,7 +684,7 @@ void SliceViewer::loadColorMap(QString filename)
 
   // Load from file
   m_colorBar->getColorMap().loadMap( fileselection );
-  m_spect->setColorMap( m_colorBar->getColorMap() );
+  m_spect->setColorMap( &(m_colorBar->getColorMap()) );
   m_colorBar->updateColorMap();
   this->updateDisplay();
 }
@@ -734,7 +722,7 @@ void SliceViewer::setColorScaleAutoSlice()
 /// Slot called when the ColorBarWidget changes the range of colors
 void SliceViewer::colorRangeChanged()
 {
-  m_spect->setColorMap( m_colorBar->getColorMap() );
+  m_spect->setColorMap( &(m_colorBar->getColorMap()) );
   this->updateDisplay();
 }
 
@@ -983,7 +971,7 @@ void SliceViewer::zoomOutSlot()
  *
  * @param rect :: rectangle to zoom to
  */
-void SliceViewer::zoomRectSlot(const QwtDoubleRect & rect)
+void SliceViewer::zoomRectSlot(const QRectF &rect)
 {
   if ((rect.width() == 0) || (rect.height() == 0))
     return;
@@ -1036,8 +1024,8 @@ void SliceViewer::setXYLimitsDialog()
   XYLimitsDialog * dlg = new XYLimitsDialog(this);
   dlg->setXDim(m_X);
   dlg->setYDim(m_Y);
-  QwtDoubleInterval xint = this->getXLimits();
-  QwtDoubleInterval yint = this->getYLimits();
+  QwtInterval xint = this->getXLimits();
+  QwtInterval yint = this->getYLimits();
   dlg->setLimits(xint.minValue(), xint.maxValue(), yint.minValue(), yint.maxValue());
   // Show the dialog
   if (dlg->exec() == QDialog::Accepted)
@@ -1147,8 +1135,8 @@ void SliceViewer::saveImage(const QString & filename)
  */
 void SliceViewer::zoomBy(double factor)
 {
-  QwtDoubleInterval xint = this->getXLimits();
-  QwtDoubleInterval yint = this->getYLimits();
+  QwtInterval xint = this->getXLimits();
+  QwtInterval yint = this->getYLimits();
 
   double newHalfWidth = (xint.width() / factor) * 0.5;
   double middle = (xint.minValue() + xint.maxValue()) * 0.5;
@@ -1178,8 +1166,8 @@ void SliceViewer::zoomBy(double factor)
  */
 void SliceViewer::setXYCenter(double x, double y)
 {
-  QwtDoubleInterval xint = this->getXLimits();
-  QwtDoubleInterval yint = this->getYLimits();
+  QwtInterval xint = this->getXLimits();
+  QwtInterval yint = this->getYLimits();
   double halfWidthX = xint.width() * 0.5;
   double halfWidthY = yint.width() * 0.5;
   // Perform the move
@@ -1204,12 +1192,12 @@ void SliceViewer::resetAxis(int axis, Mantid::Geometry::IMDDimension_const_sptr 
  * @param it :: IMDIterator of what to find
  * @return the min/max range, or INFINITY if not found
  */
-QwtDoubleInterval SliceViewer::getRange(IMDIterator * it)
+QwtInterval SliceViewer::getRange(IMDIterator * it)
 {
   if (!it)
-    return QwtDoubleInterval(0., 1.0);
+    return QwtInterval(0., 1.0);
   if (!it->valid())
-    return QwtDoubleInterval(0., 1.0);
+    return QwtInterval(0., 1.0);
   // Use the current normalization
   it->setNormalization(m_data->getNormalization());
 
@@ -1232,7 +1220,7 @@ QwtDoubleInterval SliceViewer::getRange(IMDIterator * it)
     minSignal = m_inf;
     maxSignal = m_inf;
   }
-  return QwtDoubleInterval(minSignal, maxSignal);
+  return QwtInterval(minSignal, maxSignal);
 }
 
 //------------------------------------------------------------------------------------
@@ -1241,15 +1229,15 @@ QwtDoubleInterval SliceViewer::getRange(IMDIterator * it)
  * @param iterators :: vector of IMDIterator of what to find
  * @return the min/max range, or 0-1.0 if not found
  */
-QwtDoubleInterval SliceViewer::getRange(std::vector<IMDIterator *> iterators)
+QwtInterval SliceViewer::getRange(std::vector<IMDIterator *> iterators)
 {
-  std::vector<QwtDoubleInterval> intervals(iterators.size());
+  std::vector<QwtInterval> intervals(iterators.size());
   // cppcheck-suppress syntaxError
   PRAGMA_OMP( parallel for schedule(dynamic, 1))
   for (int i=0; i < int(iterators.size()); i++)
   {
     IMDIterator * it = iterators[i];
-    QwtDoubleInterval range = this->getRange(it);
+    QwtInterval range = this->getRange(it);
     intervals[i] = range;
     delete it;
   }
@@ -1273,15 +1261,15 @@ QwtDoubleInterval SliceViewer::getRange(std::vector<IMDIterator *> iterators)
     maxSignal = 1.0;
   }
   if (minSignal < maxSignal)
-    return QwtDoubleInterval(minSignal, maxSignal);
+    return QwtInterval(minSignal, maxSignal);
   else
   {
     if (minSignal != 0)
       // Possibly only one value in range
-      return QwtDoubleInterval(minSignal*0.5, minSignal*1.5);
+      return QwtInterval(minSignal*0.5, minSignal*1.5);
     else
       // Other default value
-      return QwtDoubleInterval(0., 1.0);
+      return QwtInterval(0., 1.0);
   }
 }
 
@@ -1323,11 +1311,11 @@ void SliceViewer::findRangeSlice()
   // while we iterate through.
   ReadLock lock(*workspace_used);
 
-  m_colorRangeSlice = QwtDoubleInterval(0., 1.0);
+  m_colorRangeSlice = QwtInterval(0., 1.0);
 
   // This is what is currently visible on screen
-  QwtDoubleInterval xint = m_plot->axisScaleDiv( m_spect->xAxis() )->interval();
-  QwtDoubleInterval yint = m_plot->axisScaleDiv( m_spect->yAxis() )->interval();
+  QwtInterval xint = m_plot->axisScaleDiv( m_spect->xAxis() ).interval();
+  QwtInterval yint = m_plot->axisScaleDiv( m_spect->yAxis() ).interval();
 
   // Find the min-max extents in each dimension
   VMD min(workspace_used->getNumDims());
@@ -1361,7 +1349,7 @@ void SliceViewer::findRangeSlice()
   m_colorRangeSlice = getRange(iterators);
   delete function;
   // In case of failure, use the full range instead
-  if (m_colorRangeSlice == QwtDoubleInterval(0.0, 1.0))
+  if (m_colorRangeSlice == QwtInterval(0.0, 1.0))
     m_colorRangeSlice = m_colorRangeFull;
 }
 
@@ -1484,7 +1472,7 @@ void SliceViewer::updateDisplay(bool resetAxes)
   }
 
   // Notify the graph that the underlying data changed
-  m_spect->setData(*m_data);
+  m_spect->setData(m_data);
   m_spect->itemChanged();
   m_plot->replot();
 
@@ -1835,15 +1823,15 @@ void SliceViewer::setXYLimits(double xleft, double xright, double ybottom, doubl
 
 //------------------------------------------------------------------------------------
 /** @return Returns the [left, right] limits of the view in the X axis. */
-QwtDoubleInterval SliceViewer::getXLimits() const
+QwtInterval SliceViewer::getXLimits() const
 {
-  return m_plot->axisScaleDiv( m_spect->xAxis() )->interval();
+  return m_plot->axisScaleDiv( m_spect->xAxis() ).interval();
 }
 
 /** @return Returns the [bottom, top] limits of the view in the Y axis. */
-QwtDoubleInterval SliceViewer::getYLimits() const
+QwtInterval SliceViewer::getYLimits() const
 {
-  return m_plot->axisScaleDiv( m_spect->yAxis() )->interval();
+  return m_plot->axisScaleDiv( m_spect->yAxis() ).interval();
 }
 
 
@@ -2055,7 +2043,7 @@ void SliceViewer::rebinParamsChanged()
     else
     {
       // Shown dimension. Use the currently visible range.
-      QwtDoubleInterval limits;
+      QwtInterval limits;
       if (widget->getShownDim() == 0)
         limits = this->getXLimits();
       else

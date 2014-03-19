@@ -66,8 +66,8 @@ bool ColorBarWidget::getLog() const
 { return m_log; }
 
 /// @return then min/max range currently viewed
-QwtDoubleInterval ColorBarWidget::getViewRange() const
-{ return QwtDoubleInterval(m_min, m_max); }
+QwtInterval ColorBarWidget::getViewRange() const
+{ return QwtInterval(m_min, m_max); }
 
 /// @return the color map in use (ref)
 MantidColorMap & ColorBarWidget::getColorMap()
@@ -196,7 +196,7 @@ void ColorBarWidget::setMaximum(double max)
  updateMinMaxGUI();
 }
 
-void ColorBarWidget::setViewRange(QwtDoubleInterval range)
+void ColorBarWidget::setViewRange(QwtInterval range)
 { this->setViewRange(range.minValue(), range.maxValue()); }
 
 //-------------------------------------------------------------------------------------------------
@@ -273,9 +273,9 @@ void ColorBarWidget::colorBarMouseMoved(QPoint globalPos, double fraction)
 void ColorBarWidget::updateColorMap()
 {
   // The color bar alway shows the same range. Doesn't matter since the ticks don't show up
-  QwtDoubleInterval range(1.0, 100.0);
+  QwtInterval range(1.0, 100.0);
   m_colorBar->setColorBarEnabled(true);
-  m_colorBar->setColorMap( range, m_colorMap);
+  m_colorBar->setColorMap( range, &m_colorMap);
   m_colorBar->setColorBarWidth(15);
   m_colorBar->setEnabled(true);
 
@@ -291,14 +291,14 @@ void ColorBarWidget::updateColorMap()
   if( type == GraphOptions::Linear )
   {
     QwtLinearScaleEngine linScaler;
-    m_colorBar->setScaleDiv(linScaler.transformation(), linScaler.divideScale(minValue, maxValue, maxMajorSteps, 5));
-    m_colorBar->setColorMap(QwtDoubleInterval(minValue, maxValue),m_colorMap);
+    m_colorBar->setScaleDiv(linScaler.divideScale(minValue, maxValue, maxMajorSteps, 5));
+    m_colorBar->setColorMap(QwtInterval(minValue, maxValue),&m_colorMap);
   }
   else
  {
-    QwtLog10ScaleEngine logScaler;
-    m_colorBar->setScaleDiv(logScaler.transformation(), logScaler.divideScale(minValue, maxValue, maxMajorSteps, 5));
-    m_colorBar->setColorMap(QwtDoubleInterval(minValue, maxValue), m_colorMap);
+    QwtLogScaleEngine logScaler;
+    m_colorBar->setScaleDiv(logScaler.divideScale(minValue, maxValue, maxMajorSteps, 5));
+    m_colorBar->setColorMap(QwtInterval(minValue, maxValue), &m_colorMap);
   }
 
 }

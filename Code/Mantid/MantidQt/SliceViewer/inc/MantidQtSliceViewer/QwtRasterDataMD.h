@@ -3,7 +3,7 @@
 
 #include "MantidAPI/IMDWorkspace.h"
 #include "MantidGeometry/MDGeometry/MDTypes.h"
-#include <qwt_double_interval.h>
+#include <qwt_interval.h>
 #include <qwt_raster_data.h>
 #include <vector>
 #include "MantidGeometry/MDGeometry/MDHistoDimension.h"
@@ -35,14 +35,14 @@ public:
 
   void setOverlayWorkspace(Mantid::API::IMDWorkspace_sptr ws);
 
-  QwtDoubleInterval range() const;
-  void setRange(const QwtDoubleInterval & range);
+  QwtInterval range() const;
+  void setRange(const QwtInterval & range);
 
   void setSliceParams(size_t dimX, size_t dimY, Mantid::Geometry::IMDDimension_const_sptr X, Mantid::Geometry::IMDDimension_const_sptr Y, std::vector<Mantid::coord_t> & slicePoint);
 
   double value(double x, double y) const;
 
-  QSize rasterHint(const QwtDoubleRect &) const;
+  QRectF pixelHint( const QRectF & ) const;
 
   void setFastMode(bool fast);
 
@@ -77,7 +77,7 @@ protected:
   Mantid::coord_t * m_slicePoint;
 
   /// Range of colors to plot
-  QwtDoubleInterval m_range;
+  QwtInterval m_range;
 
   /// Edges of the overlay workspace, in the X
   double m_overlayXMin;

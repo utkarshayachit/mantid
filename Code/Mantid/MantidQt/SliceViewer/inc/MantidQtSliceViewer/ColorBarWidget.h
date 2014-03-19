@@ -62,7 +62,7 @@ public:
   void updateColorMap();
 
   void setViewRange(double min, double max);
-  void setViewRange(QwtDoubleInterval range);
+  void setViewRange(QwtInterval range);
   void setMinimum(double min);
   void setMaximum(double max);
   void setLog(bool log);
@@ -71,7 +71,7 @@ public:
   double getMinimum() const;
   double getMaximum() const;
   bool getLog() const;
-  QwtDoubleInterval getViewRange() const;
+  QwtInterval getViewRange() const;
   MantidColorMap & getColorMap();
 
 public slots:

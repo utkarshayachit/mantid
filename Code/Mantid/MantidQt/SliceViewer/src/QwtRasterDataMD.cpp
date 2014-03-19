@@ -20,7 +20,7 @@ QwtRasterDataMD::QwtRasterDataMD()
   m_slicePoint(NULL), m_fast(true), m_zerosAsNan(true),
   m_normalization(Mantid::API::VolumeNormalization)
 {
-  m_range = QwtDoubleInterval(0.0, 1.0);
+  m_range = QwtInterval(0.0, 1.0);
   m_nd = 0;
   m_dimX = 0;
   m_dimY = 0;
@@ -64,7 +64,7 @@ QwtRasterData* QwtRasterDataMD::copy() const
 
 //-------------------------------------------------------------------------
 /** Set the data range (min/max) to display */
-void QwtRasterDataMD::setRange(const QwtDoubleInterval & range)
+void QwtRasterDataMD::setRange(const QwtInterval & range)
 { m_range = range; }
 
 
@@ -120,7 +120,7 @@ double QwtRasterDataMD::value(double x, double y) const
 
 //------------------------------------------------------------------------------------------------------
 /** Return the data range to show */
-QwtDoubleInterval QwtRasterDataMD::range() const
+QwtInterval QwtRasterDataMD::range() const
 {
   // Linear color plot
   return m_range;
@@ -165,14 +165,14 @@ Mantid::API::MDNormalization QwtRasterDataMD::getNormalization() const
 //------------------------------------------------------------------------------------------------------
 /** Return how many pixels this area should be rendered as
  *
- * @param area :: area under view
+ * @param area :: area under view (unused)
  * @return # of pixels in each direction
  */
-QSize QwtRasterDataMD::rasterHint(const QwtDoubleRect &area) const
+QRectF QwtRasterDataMD::pixelHint(const QRectF &area) const
 {
-  if (!m_ws || !m_X || !m_Y) return QSize();
-  // Slow mode? Don't give a raster hint. This will be 1 pixel per point
-  if (!m_fast) return QSize();
+  if (!m_ws || !m_X || !m_Y) return QRectF();
+  // Slow mode? Don't give a raster hint. The resolution will be 1 pixel per point
+  if (!m_fast) return QRectF();
 
   // Fast mode: use the bin size to guess at the pixel density
   coord_t binX = m_X->getBinWidth();
@@ -188,11 +188,11 @@ QSize QwtRasterDataMD::rasterHint(const QwtDoubleRect &area) const
     if (temp < binY) binY = temp;
   }
 
-  int w = 3 * int(area.width() / binX);
-  int h = 3 * int(area.height() / binY);
-  if (w<10) w = 10;
-  if (h<10) h = 10;
-  return QSize(w,h);
+  double w = 3.0 * area.width() / binX;
+  double h = 3.0 * area.height() / binY;
+  if (w < 10.0) w = 10.0;
+  if (h < 10.0) h = 10.0;
+  return QRectF(area.x(), area.y(), w,h);
 }
 
 //------------------------------------------------------------------------------------------------------

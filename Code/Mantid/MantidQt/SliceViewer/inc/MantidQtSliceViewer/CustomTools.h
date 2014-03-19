@@ -25,10 +25,15 @@ namespace SliceViewer
 class PickerMachine : public QwtPickerMachine
 {
 public:
-  virtual QwtPickerMachine::CommandList transition(
+  typedef QList<QwtPickerMachine::Command> CommandList;
+
+  PickerMachine(QwtPickerMachine::SelectionType type)
+    : QwtPickerMachine(type) {}
+
+  virtual CommandList transition(
       const QwtEventPattern &, const QEvent *e)
   {
-    QwtPickerMachine::CommandList cmdList;
+    CommandList cmdList;
     if ( e->type() == QEvent::MouseMove )
     cmdList += Move;
 
@@ -42,7 +47,7 @@ class CustomMagnifier : public QwtPlotMagnifier
 {
   Q_OBJECT
 public:
-  CustomMagnifier(QwtPlotCanvas* canvas): QwtPlotMagnifier(canvas)
+  CustomMagnifier(QWidget* canvas) : QwtPlotMagnifier(canvas)
   {
   }
 signals:
@@ -60,22 +65,15 @@ class CustomPicker : public QwtPlotPicker
   Q_OBJECT
 
 public:
-  CustomPicker(int xAxis, int yAxis, QwtPlotCanvas* canvas);
+  CustomPicker(int xAxis, int yAxis, QWidget *canvas);
   void widgetMouseMoveEvent(QMouseEvent *e);
   void widgetLeaveEvent(QEvent *);
-
-  virtual QwtPickerMachine *stateMachine(int) const
-  {
-    return new PickerMachine;
-  }
 
 signals:
   void mouseMoved(double /*x*/, double /*y*/) const;
 
 protected:
-  // Unhide base class method (avoids Intel compiler warning)
-  using QwtPlotPicker::trackerText;
-  QwtText trackerText (const QwtDoublePoint & pos) const;
+  QwtText trackerText (const QPoint & pos) const;
 };
 
 
@@ -91,9 +89,7 @@ public:
   }
 
 protected:
-  // Unhide base class method (avoids Intel compiler warning)
-  using QwtPlotZoomer::trackerText;
-  virtual QwtText trackerText( const QwtDoublePoint& p ) const
+  virtual QwtText trackerText( const QPoint& p ) const
   {
     QwtText t( QwtPlotPicker::trackerText( p ));
     QColor c(Qt::white);

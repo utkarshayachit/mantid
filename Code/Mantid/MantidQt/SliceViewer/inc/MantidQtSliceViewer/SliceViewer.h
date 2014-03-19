@@ -83,8 +83,8 @@ public:
   bool getColorScaleLog() const;
   bool getFastRender() const;
   void setXYLimits(double xleft, double xright, double ybottom, double ytop);
-  QwtDoubleInterval getXLimits() const;
-  QwtDoubleInterval getYLimits() const;
+  QwtInterval getXLimits() const;
+  QwtInterval getYLimits() const;
   void setXYCenter(double x, double y);
   void openFromXML(const QString & xml);
   void toggleLineMode(bool);
@@ -134,7 +134,7 @@ public slots:
   void setXYLimitsDialog();
   void zoomInSlot();
   void zoomOutSlot();
-  void zoomRectSlot(const QwtDoubleRect & rect);
+  void zoomRectSlot(const QRectF & rect);
   void panned(int, int);
   void magnifierRescaled(double);
 
@@ -178,8 +178,8 @@ private:
   void updateDisplay(bool resetAxes = false);
   void updateDimensionSliceWidgets();
   void resetAxis(int axis, Mantid::Geometry::IMDDimension_const_sptr dim);
-  QwtDoubleInterval getRange(Mantid::API::IMDIterator * it);
-  QwtDoubleInterval getRange(std::vector<Mantid::API::IMDIterator *> iterators);
+  QwtInterval getRange(Mantid::API::IMDIterator * it);
+  QwtInterval getRange(std::vector<Mantid::API::IMDIterator *> iterators);
 
   void findRangeFull();
   void findRangeSlice();
@@ -258,13 +258,13 @@ private:
   Mantid::Kernel::VMD m_slicePoint;
 
   /// The range of values to fit in the color map.
-  QwtDoubleInterval m_colorRange;
+  QwtInterval m_colorRange;
 
   /// The calculated range of values in the FULL data set
-  QwtDoubleInterval m_colorRangeFull;
+  QwtInterval m_colorRangeFull;
 
   /// The calculated range of values ONLY in the currently viewed part of the slice
-  QwtDoubleInterval m_colorRangeSlice;
+  QwtInterval m_colorRangeSlice;
 
   /// Use the log of the value for the color scale
   bool m_logColor;

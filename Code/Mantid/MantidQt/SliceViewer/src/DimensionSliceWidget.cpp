@@ -177,7 +177,8 @@ void DimensionSliceWidget::setMinMax(double min, double max)
   ui.lblName->setText(QString::fromStdString(m_dim->getName()) );
   ui.lblUnits->setText(QString::fromStdString(m_dim->getUnits()) );
 
-  ui.horizontalSlider->setRange(min, max, m_dim->getBinWidth());
+  ui.horizontalSlider->setScale(min, max);
+  ui.horizontalSlider->setScaleStepSize(m_dim->getBinWidth());
 
   ui.doubleSpinBox->setMinimum(min);
   ui.doubleSpinBox->setMaximum(max);
