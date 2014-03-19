@@ -486,7 +486,7 @@ QwtPlotCurve* SANSPlotSpecial::plotMiniplot(QwtPlotCurve* curve, boost::shared_p
   const MantidVec & dataX = workspace->readX(workspaceIndex);
   const MantidVec & dataY = workspace->readY(workspaceIndex);
 
-  curve->setData(&dataX[0], &dataY[0], static_cast<int>(workspace->blocksize()));
+  curve->setSamples(&dataX[0], &dataY[0], static_cast<int>(workspace->blocksize()));
   curve->attach(m_uiForm.plotWindow);
 
   m_uiForm.plotWindow->replot();

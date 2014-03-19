@@ -1,4 +1,6 @@
 #include "MantidQtCustomInterfaces/IDATab.h"
+#include "MantidQtAPI/MantidQwtMatrixWorkspaceData.h"
+
 #include "MantidAPI/MatrixWorkspace.h"
 #include "MantidAPI/AnalysisDataService.h"
 #include "boost/shared_ptr.hpp"
@@ -179,7 +181,7 @@ namespace IDA
     const MantidVec & dataY = workspace->readY(wsIndex);
 
     curve = new QwtPlotCurve();
-    curve->setData(&dataX[0], &dataY[0], static_cast<int>(workspace->blocksize()));
+    curve->setSamples(&dataX[0], &dataY[0], static_cast<int>(workspace->blocksize()));
     curve->attach(plot);
 
     plot->replot();
@@ -201,12 +203,12 @@ namespace IDA
     if( !curve )
       throw std::invalid_argument("Invalid curve as argument to getCurveRange");
 
-    size_t npts = curve->data().size();
-
+    const QwtSeriesData<QPointF> & curveData = *(curve->data());
+    size_t npts = curveData.size();
     if( npts < 2 )
       throw std::invalid_argument("Too few points on data curve to determine range.");
-
-    return std::make_pair(curve->data().x(0), curve->data().x(npts-1));
+    const QRectF & boundBox = curveData.boundingRect();
+    return std::make_pair(boundBox.bottomLeft().x(),boundBox.bottomRight().x());
   }
   
   /**

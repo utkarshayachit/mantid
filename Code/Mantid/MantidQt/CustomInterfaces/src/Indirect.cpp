@@ -1636,7 +1636,7 @@ void Indirect::calPlotRaw()
   }
 
   m_calCalCurve = new QwtPlotCurve();
-  m_calCalCurve->setData(&dataX[0], &dataY[0], static_cast<int>(input->blocksize()));
+  m_calCalCurve->setSamples(&dataX[0], &dataY[0], static_cast<int>(input->blocksize()));
   m_calCalCurve->attach(m_calCalPlot);
 
   std::pair<double, double> range(dataX.front(), dataX.back());
@@ -1692,7 +1692,7 @@ void Indirect::calPlotEnergy()
   }
 
   m_calResCurve = new QwtPlotCurve();
-  m_calResCurve->setData(&dataX[0], &dataY[0], static_cast<int>(input->blocksize()));
+  m_calResCurve->setSamples(&dataX[0], &dataY[0], static_cast<int>(input->blocksize()));
   m_calResCurve->attach(m_calResPlot);
   
   std::pair<double, double> range(dataX.front(), dataX.back());
@@ -1997,7 +1997,7 @@ void Indirect::slicePlotRaw()
     }
 
     m_sltDataCurve = new QwtPlotCurve();
-    m_sltDataCurve->setData(&dataX[0], &dataY[0], static_cast<int>(input->blocksize()));
+    m_sltDataCurve->setSamples(&dataX[0], &dataY[0], static_cast<int>(input->blocksize()));
     m_sltDataCurve->attach(m_sltPlot);
 
     std::pair<double, double> range(dataX.front(), dataX.back());

@@ -88,12 +88,12 @@ namespace CustomInterfaces
    */
   std::pair<double,double> C2ETab::getCurveRange()
   {
-    size_t npts = m_curve->data().size();
-
+    const QwtSeriesData<QPointF> & curveData = *(m_curve->data());
+    size_t npts = curveData.size();
     if( npts < 2 )
       throw std::invalid_argument("Too few points on data curve to determine range.");
-
-    return std::make_pair(m_curve->data().x(0), m_curve->data().x(npts-1));
+    const QRectF & boundBox = curveData.boundingRect();
+    return std::make_pair(boundBox.bottomLeft().x(),boundBox.bottomRight().x());
   }
 
   /**
@@ -113,7 +113,7 @@ namespace CustomInterfaces
       return;
     }
 
-    MantidQwtMatrixWorkspaceData wsData(workspace, static_cast<int>(wsIndex), false); 
+    auto * wsData = new MantidQwtMatrixWorkspaceData(workspace, static_cast<int>(wsIndex), false);
 
     if ( m_curve != NULL )
     {
@@ -130,7 +130,7 @@ namespace CustomInterfaces
     else
     {
       m_curve = new QwtPlotCurve();
-      m_curve->setData(wsData);
+      m_curve->setData(wsData); // takes ownership of wsData
       m_curve->attach(m_plot);
 
       m_plot->replot();

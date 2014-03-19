@@ -702,7 +702,7 @@ namespace IDA
     }
 
     m_ffFitCurve = new QwtPlotCurve();
-    m_ffFitCurve->setData(dataX, dataY);
+    m_ffFitCurve->setSamples(dataX, dataY);
     m_ffFitCurve->attach(m_ffPlot);
     QPen fitPen(Qt::red, Qt::SolidLine);
     m_ffFitCurve->setPen(fitPen);

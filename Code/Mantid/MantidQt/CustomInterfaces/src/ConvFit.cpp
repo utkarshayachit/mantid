@@ -788,7 +788,7 @@ namespace IDA
     }
 
     m_cfCalcCurve = new QwtPlotCurve();
-    m_cfCalcCurve->setData(dataX, dataY);
+    m_cfCalcCurve->setSamples(dataX, dataY);
     QPen fitPen(Qt::red, Qt::SolidLine);
     m_cfCalcCurve->setPen(fitPen);
     m_cfCalcCurve->attach(m_cfPlot);
