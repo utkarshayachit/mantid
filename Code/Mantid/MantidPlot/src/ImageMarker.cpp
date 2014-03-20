@@ -47,7 +47,7 @@ ImageMarker::ImageMarker(const QString& fn):
 	}
 }
 
-void ImageMarker::draw (QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRect &) const
+void ImageMarker::draw (QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &) const
 {
     const int x0 = xMap.transform(xValue());
 	const int y0 = yMap.transform(yValue());
@@ -119,9 +119,9 @@ void ImageMarker::updateBoundingRect()
     d_y_bottom = plot()->invTransform(yAxis(), d_pos.y() + d_size.height());
 }
 
-QwtDoubleRect ImageMarker::boundingRect() const
+QRectF ImageMarker::boundingRect() const
 {
-    return QwtDoubleRect(xValue(), yValue(), qAbs(d_x_right - xValue()), qAbs(d_y_bottom - yValue()));
+    return QRectF(xValue(), yValue(), qAbs(d_x_right - xValue()), qAbs(d_y_bottom - yValue()));
 }
 
 QRect ImageMarker::rect() const

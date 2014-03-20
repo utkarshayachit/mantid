@@ -63,7 +63,7 @@ mrkY(-1)
   */
 void Grid::draw(QPainter *painter,
 		const QwtScaleMap &mx, const QwtScaleMap &my,
-		const QRect &r) const
+		const QRectF &r) const
 {
 	//  draw minor X gridlines
 	painter->setPen(minPen());
@@ -102,9 +102,9 @@ void Grid::draw(QPainter *painter,
 	}
 }
 
-void Grid::drawLines(QPainter *painter, const QRect &rect,
+void Grid::drawLines(QPainter *painter, const QRectF &rect,
 		Qt::Orientation orientation, const QwtScaleMap &map,
-		const QwtValueList &values) const
+		const QList<double> &values) const
 {
 	const int x1 = rect.left();
 	const int x2 = rect.right();

@@ -90,9 +90,9 @@ private:
 	void drawFrame(QPainter *p, const QRect& rect);
 	void drawVector(PlotCurve *c, QPainter *p, int x, int y, int l);
 	void drawSymbol(PlotCurve *c, int point, QPainter *p, int x, int y, int l);
-	void drawText(QPainter *, const QRect&, QwtArray<int>, int);
+	void drawText(QPainter *, const QRect&, QVector<int>, int);
 
-	QwtArray<int> itemsHeight(int y, int symbolLineLength, int &width, int &height);
+	QVector<int> itemsHeight(int y, int symbolLineLength, int &width, int &height);
 	int symbolsMaxWidth();
 	QString parse(const QString& str);
 

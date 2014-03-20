@@ -39,6 +39,7 @@
 #include <qwt_symbol.h>
 #include <qwt_plot_picker.h>
 #include <qwt_plot_curve.h>
+#include <qwt_picker_machine.h>
 #include <QMessageBox>
 #include <QLocale>
 #include <QApplication>
@@ -58,10 +59,10 @@ DataPickerTool::DataPickerTool(Graph *graph, ApplicationWindow *app, Mode mode, 
 
 	setTrackerMode(QwtPicker::AlwaysOn);
 	if (d_mode == Move) {
-		setSelectionFlags(QwtPicker::PointSelection | QwtPicker::DragSelection);
+		setStateMachine(new QwtPickerDragPointMachine);
 		d_graph->plotWidget()->canvas()->setCursor(Qt::pointingHandCursor);
 	} else {
-		setSelectionFlags(QwtPicker::PointSelection | QwtPicker::ClickSelection);
+		setStateMachine(new QwtPickerClickPointMachine);
 		d_graph->plotWidget()->canvas()->setCursor(QCursor(getQPixmap("vizor_xpm"), -1, -1));
 	}
 
@@ -96,7 +97,7 @@ void DataPickerTool::append(const QPoint &pos)
 	setSelection(dynamic_cast<QwtPlotCurve *>(d_graph->plotWidget()->curve(curve)), point_index);
 	if (!d_selected_curve) return;
 
-	QwtPlotPicker::append(transform(QwtDoublePoint(d_selected_curve->x(d_selected_point),
+	QwtPlotPicker::append(transform(QPointF(d_selected_curve->x(d_selected_point),
 					d_selected_curve->y(d_selected_point))));
 }
 
@@ -143,7 +144,7 @@ void DataPickerTool::setSelection(QwtPlotCurve *curve, int point_index)
       .arg(t->text(row, yCol)));
   }
 
-  QwtDoublePoint selected_point_value(d_selected_curve->x(d_selected_point), d_selected_curve->y(d_selected_point));
+  QPointF selected_point_value(d_selected_curve->x(d_selected_point), d_selected_curve->y(d_selected_point));
   d_selection_marker.setValue(selected_point_value);
   if (d_selection_marker.plot() == NULL)
     d_selection_marker.attach(d_graph->plotWidget());

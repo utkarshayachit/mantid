@@ -77,12 +77,12 @@ void MantidCurve::applyStyleChoice(Graph::CurveType style, MultiLayer* ml, int& 
 /**
 Rebuild the bounding rectangle. Uses the mantidData (QwtMantidWorkspaceData) object to do so.
 */
-QwtDoubleRect MantidCurve::boundingRect() const
+QRectF MantidCurve::boundingRect() const
 {
   if (m_boundingRect.isNull())
   {
     const QwtData* data = mantidData();
-    if (data->size() == 0) return QwtDoubleRect(0,0,1,1);
+    if (data->size() == 0) return QRectF(0,0,1,1);
     double y_min = std::numeric_limits<double>::infinity();
     double y_max = -y_min;
     for(size_t i=0;i<data->size();++i)
@@ -94,7 +94,7 @@ QwtDoubleRect MantidCurve::boundingRect() const
     }
     double x_min = data->x(0);
     double x_max = data->x(data->size()-1);
-    m_boundingRect = QwtDoubleRect(x_min,y_min,x_max-x_min,y_max-y_min);
+    m_boundingRect = QRectF(x_min,y_min,x_max-x_min,y_max-y_min);
   }
   return m_boundingRect;
 }

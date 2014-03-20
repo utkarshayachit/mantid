@@ -192,7 +192,7 @@ QwtText ScaleDraw::label(double value) const
 			if (!scDiv.contains (value))
 				return QwtText();
 
-			QwtValueList ticks = scDiv.ticks (QwtScaleDiv::MajorTick);
+			QList<double> ticks = scDiv.ticks (QwtScaleDiv::MajorTick);
 
 			double break_offset = 0;
 			ScaleEngine *se = static_cast<ScaleEngine *>(d_plot->axisScaleEngine(axis()));
@@ -381,7 +381,7 @@ int ScaleDraw::axis() const
 	return a;
 }
 
-void ScaleDraw::drawTick(QPainter *p, double value, int len) const
+void ScaleDraw::drawTick(QPainter *p, double value, double len) const
 {
 	ScaleEngine *sc_engine = static_cast<ScaleEngine *>(d_plot->axisScaleEngine(axis()));
 	/*QwtScaleEngine *qwtsc_engine=d_plot->axisScaleEngine(axis());
@@ -405,15 +405,15 @@ void ScaleDraw::drawTick(QPainter *p, double value, int len) const
 		}
 	//}
 		 QwtScaleDiv scDiv = scaleDiv();
-		 QwtValueList majTicks = scDiv.ticks(QwtScaleDiv::MajorTick);
+		 QList<double> majTicks = scDiv.ticks(QwtScaleDiv::MajorTick);
 		 if (majTicks.contains(value) && (d_majTicks == In || d_majTicks == None))
 			 return;
 
-		 QwtValueList medTicks = scDiv.ticks(QwtScaleDiv::MediumTick);
+		 QList<double> medTicks = scDiv.ticks(QwtScaleDiv::MediumTick);
 		 if (medTicks.contains(value) && (d_minTicks == In || d_minTicks == None))
 			 return;
 
-		 QwtValueList minTicks = scDiv.ticks(QwtScaleDiv::MinorTick);
+		 QList<double> minTicks = scDiv.ticks(QwtScaleDiv::MinorTick);
 		 if (minTicks.contains(value) && (d_minTicks == In || d_minTicks == None))
 			 return;
 

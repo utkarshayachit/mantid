@@ -291,7 +291,7 @@ void PlotDialog::setEquidistantLevels()
   if (!sp || sp->rtti() != QwtPlotItem::Rtti_PlotSpectrogram)
     return;
 
-  QwtValueList levels;
+  QList<double> levels;
   double firstVal = firstContourLineBox->value();
   for (int i = 0; i < levelsBox->value(); i++)
     levels << firstVal + i * contourLinesDistanceBox->value();
@@ -1843,7 +1843,7 @@ void PlotDialog::setActiveLayer(LayerItem *item)
 }
 void PlotDialog::updateContourLevelsDisplay(Spectrogram *sp)
 {
-  QwtValueList levels = sp->contourLevels();
+  QList<double> levels = sp->contourLevels();
   levelsBox->setValue(levels.size());
   if (levels.size() >= 1)
     firstContourLineBox->setValue(levels[0]);

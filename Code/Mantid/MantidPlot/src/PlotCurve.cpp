@@ -184,12 +184,13 @@ void PlotCurve::aboutToBeDeleted()
   emit forgetMe();
 }
 
-void PlotCurve::drawCurve(QPainter *p, int style, const QwtScaleMap &xMap, const QwtScaleMap &yMap, int from, int to) const
+void PlotCurve::drawCurve(QPainter *p, int style, const QwtScaleMap &xMap, const QwtScaleMap &yMap,
+                          const QRectF &canvasRect, int from, int to) const
 {
   p->translate(d_x_offset,-d_y_offset); // For waterfall plots (will be zero otherwise)
   if(d_side_lines)
     drawSideLines(p, xMap, yMap, from, to);
-  QwtPlotCurve::drawCurve(p, style, xMap, yMap, from, to);
+  QwtPlotCurve::drawCurve(p, style, xMap, yMap, canvasRect, from, to);
 }
 
 void PlotCurve::setSkipSymbolsCount(int count)
@@ -206,20 +207,21 @@ void PlotCurve::setSkipSymbolsCount(int count)
  \param symbol Curve symbol
  \param xMap x map
  \param yMap y map
+ \param canvasRect Contents rectangle of the canvas
  \param from index of the first point to be painted
  \param to index of the last point to be painted
 
  \sa setSymbol(), draw(), drawCurve()
  */
 void PlotCurve::drawSymbols(QPainter *painter, const QwtSymbol &symbol, const QwtScaleMap &xMap,
-    const QwtScaleMap &yMap, int from, int to) const
+    const QwtScaleMap &yMap, const QRectF &canvasRect, int from, int to) const
 {
   painter->translate(d_x_offset,-d_y_offset);  // For waterfall plots (will be zero otherwise)
                                                // Don't really know why you'd want symbols on a waterfall plot, but just in case...
 
   if (d_skip_symbols < 2)
   {
-    QwtPlotCurve::drawSymbols(painter, symbol, xMap, yMap, from, to);
+    QwtPlotCurve::drawSymbols(painter, symbol, xMap, yMap, canvasRect, from, to);
     return;
   }
 
@@ -242,7 +244,8 @@ void PlotCurve::drawSymbols(QPainter *painter, const QwtSymbol &symbol, const Qw
   }
 }
 
-void PlotCurve::drawSideLines(QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap, int from, int to) const
+void PlotCurve::drawSideLines(QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap,
+                              int from, int to) const
 {
   if (!p || dataSize() <= 0)
     return;
@@ -1042,7 +1045,7 @@ PlotMarker::PlotMarker(int index, double angle) :
 {
 }
 
-void PlotMarker::draw(QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRect &) const
+void PlotMarker::draw(QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &) const
 {
   p->save();
   int x = xMap.transform(xValue());

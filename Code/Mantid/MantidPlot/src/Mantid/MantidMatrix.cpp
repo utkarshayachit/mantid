@@ -492,7 +492,7 @@ QString MantidMatrix::workspaceName() const
   return QString::fromStdString(m_strName);
 }
 
-QwtDoubleRect MantidMatrix::boundingRect()
+QRectF MantidMatrix::boundingRect()
 {
   if (m_boundingRect.isNull())
   {
@@ -576,14 +576,14 @@ QwtDoubleRect MantidMatrix::boundingRect()
       {
         m_spectrogramCols = numCols() > 100 ? numCols() : 100;
       }
-      m_boundingRect = QwtDoubleRect(QMIN(x_start, x_end) - 0.5*dx, QMIN(y_start, y_end) - 0.5*dy,
+      m_boundingRect = QRectF(QMIN(x_start, x_end) - 0.5*dx, QMIN(y_start, y_end) - 0.5*dy,
         fabs(x_end - x_start) + dx, fabs(y_end - y_start) + dy).normalized();
 
     }
     else
     {
       m_spectrogramCols = 0;
-      m_boundingRect = QwtDoubleRect(0, QMIN(y_start, y_end) - 0.5*dy,
+      m_boundingRect = QRectF(0, QMIN(y_start, y_end) - 0.5*dy,
         1, fabs(y_end - y_start) + dy).normalized();
     }
   }// Define the spectrogram bounding box

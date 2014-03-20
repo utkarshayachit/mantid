@@ -44,7 +44,7 @@ public:
 
 	void copy(const BoxCurve *b);
 
-	virtual QwtDoubleRect boundingRect() const;
+	virtual QRectF boundingRect() const;
 
 	QwtSymbol::Style minStyle(){return min_style;};
 	void setMinStyle(QwtSymbol::Style s){min_style = s;};
@@ -78,14 +78,13 @@ public:
     void loadData();
 
 private:
-	using DataCurve::draw; // Unhide base class method (avoids Intel compiler warning)
-	void draw(QPainter *painter,const QwtScaleMap &xMap,
-		const QwtScaleMap &yMap, int from, int to) const;
+	void drawSeries(QPainter *painter,const QwtScaleMap &xMap,
+		const QwtScaleMap &yMap,
+		const QRectF &canvasRect, int from, int to) const;
 	void drawBox(QPainter *painter, const QwtScaleMap &xMap,
 				const QwtScaleMap &yMap, double *dat, int size) const;
-	using DataCurve::drawSymbols; // Unhide base class method (avoids Intel compiler warning)
-	void drawSymbols(QPainter *painter, const QwtScaleMap &xMap,
-				const QwtScaleMap &yMap, double *dat, int size) const;
+	void drawBoxSymbols(QPainter *painter, const QwtScaleMap &xMap,
+			const QwtScaleMap &yMap, double *dat, int size) const;
 
 	QwtSymbol::Style min_style, max_style, mean_style, p99_style, p1_style;
 	double b_coeff, w_coeff;
@@ -94,24 +93,30 @@ private:
 
 
 //! Single array data (extension to QwtData)
-class QwtSingleArrayData: public QwtData
+class SingleArrayData: public QwtSeriesData<QPointF>
 {
 public:
-    QwtSingleArrayData(const double x, QwtArray<double> y, size_t)
-	{
-		d_y = y;
-		d_x = x;
-	};
+    SingleArrayData(const double x, QVector<double> y)
+    {
+      d_y = y;
+      d_x = x;
+    };
 
-    virtual QwtData *copy() const{return new QwtSingleArrayData(d_x, d_y, size());};
+    virtual QwtSeriesData<QPointF> *copy() const
+    {
+      return new SingleArrayData(d_x, d_y);
+    }
 
-    virtual size_t size() const{return d_y.size();};
-    virtual double x(size_t) const{return d_x;};
-    virtual double y(size_t i) const{return d_y[static_cast<int>(i)];};
+    virtual size_t size() const { return d_y.size(); }
+    virtual QPointF sample(size_t i) const { return QPointF(d_x, d_y[static_cast<int>(i)]); }
+    virtual QRectF boundingRect() const
+    {
+      return QRectF(QPointF(d_x,d_y.front()), QPointF(d_x,d_y.back()));
+    }
 
 private:
-    QwtArray<double> d_y;
-	double d_x;
+    QVector<double> d_y;
+    double d_x;
 };
 
 #endif

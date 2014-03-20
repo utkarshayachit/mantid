@@ -31,7 +31,6 @@
 
 #include "PlotToolInterface.h"
 #include <QObject>
-#include <qwt_double_rect.h>
 #include <qwt_plot_marker.h>
 #include <qwt_plot_picker.h>
 #include <qwt_text.h>
@@ -62,7 +61,7 @@ class ScreenPickerTool : public QwtPlotPicker, public PlotToolInterface
         virtual bool eventFilter(QObject *obj, QEvent *event);
 		virtual void append(const QPoint &point);
         virtual QwtText trackerText(const QPoint &) const;
-        virtual QwtText trackerText(const QwtDoublePoint &) const;
+        virtual QwtText trackerTextF(const QPointF &) const;
 		QwtPlotMarker d_selection_marker;
 };
 
@@ -77,7 +76,7 @@ class DrawPointTool : public ScreenPickerTool
 
 	protected:
         virtual bool eventFilter(QObject *obj, QEvent *event);
-		void appendPoint(const QwtDoublePoint &point);
+		void appendPoint(const QPointF &point);
 		DataCurve *d_curve;
 		Table *d_table;
 		ApplicationWindow *d_app;

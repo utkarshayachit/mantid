@@ -181,7 +181,7 @@ void Correlation::addResultCurve()
 			d_output_graph = createOutputGraph()->activeGraph();
 
     	DataCurve *c = new DataCurve(d_table, d_table->colName(cols), d_table->colName(cols2));
-		c->setData(x_temp.data(), y_temp.data(), d_n);//c->setData(x_temp, y_temp, d_n);
+                c->setSamples(x_temp.data(), y_temp.data(), d_n);
     	c->setPen(QPen(ColorBox::color(d_curveColorIndex), 1));
 		d_output_graph->insertPlotItem(c, Graph::Line);
 		d_output_graph->updatePlot();

@@ -39,7 +39,7 @@ public:
 
 	void copy(const QwtHistogram *h);
 
-	QwtDoubleRect boundingRect() const;
+	QRectF boundingRect() const;
 
 	void setBinning(bool autoBin, double size, double begin, double end);
 	bool autoBinning(){return d_autoBin;};

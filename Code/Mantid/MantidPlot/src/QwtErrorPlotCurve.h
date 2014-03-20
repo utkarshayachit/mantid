@@ -44,11 +44,11 @@ public:
 
   void copy(const QwtErrorPlotCurve *e);
 
-  QwtDoubleRect boundingRect() const;
+  QRectF boundingRect() const;
 
   double errorValue(int i);
-  QwtArray<double> errors(){return err;};
-  void setErrors(const QwtArray<double>&data){err=data;};
+  QVector<double> errors(){return err;};
+  void setErrors(const QVector<double>&data){err=data;};
 
   double width() const {return pen().widthF();};
   void setWidth(double w);
@@ -83,7 +83,7 @@ private:
                      const QwtScaleMap &yMap, int from, int to) const;
 
   //! Stores the error bar values
-  QwtArray<double> err;
+  QVector<double> err;
 
   //! Orientation of the bars: Horizontal or Vertical
   int type;

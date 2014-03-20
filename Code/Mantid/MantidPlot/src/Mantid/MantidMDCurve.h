@@ -61,7 +61,7 @@ public:
   void setData(const QwtData &data);
 
   /// Overrides qwt_plot_curve::boundingRect
-  QwtDoubleRect boundingRect() const;
+  QRectF boundingRect() const;
 
   /// Return pointer to the data if it of the right type or 0 otherwise
   MantidQwtIMDWorkspaceData* mantidData();

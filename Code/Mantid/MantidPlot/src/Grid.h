@@ -44,11 +44,11 @@ public:
     bool yZeroLineEnabled(){return (mrkY >= 0)?true:false;};
     void enableZeroLineY(bool enable = true);
 
-	void setMajPenX(const QPen &p){	setMajPen(p);};
-	const QPen& majPenX() const {return majPen();};
+	void setMajPenX(const QPen &p){	setMajorPen(p);};
+	const QPen& majPenX() const {return majorPen();};
 
-	void setMinPenX(const QPen &p){	setMinPen(p);};
-	const QPen& minPenX() const {return minPen();};
+	void setMinPenX(const QPen &p){	setMinorPen(p);};
+	const QPen& minPenX() const {return minorPen();};
 
 	void setMajPenY(const QPen &p){	if (d_maj_pen_y != p) d_maj_pen_y = p;};
 	const QPen& majPenY() const {return d_maj_pen_y;};
@@ -61,9 +61,10 @@ public:
 	QString saveToString();
 
 private:
-	void draw (QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRect &rect) const;
-	void drawLines(QPainter *painter, const QRect &rect, Qt::Orientation orientation, const QwtScaleMap &map,
-    	const QwtValueList &values) const;
+	void draw (QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap,
+		   const QRectF &rect) const;
+	void drawLines(QPainter *painter, const QRectF &rect, Qt::Orientation orientation,
+		       const QwtScaleMap &map, const QList<double> &values) const;
 
 	QPen d_maj_pen_y;
 	QPen d_min_pen_y;

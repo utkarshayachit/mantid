@@ -44,15 +44,14 @@
 #include <qwt_plot_panner.h>
 #include <qwt_plot_magnifier.h>
 #include <qwt_global.h>
-#if QWT_VERSION >= 0x050200
 #include <qwt_plot_rescaler.h>
-#endif
 #include "Plot.h"
 #include "Table.h"
 #include "AxesDialog.h"
 #include "PlotToolInterface.h"
 #include "MultiLayer.h"
 #include "ScaleDraw.h"
+#include "plot2D/ScaleEngine.h"
 #include "MantidKernel/Logger.h"
 #include "MantidQtAPI/GraphOptions.h"
 #include <boost/shared_ptr.hpp>
@@ -363,7 +362,7 @@ public slots:
                 double left_break = -DBL_MAX, double right_break = DBL_MAX, int pos = 50,
                 double stepBeforeBreak = 0.0, double stepAfterBreak = 0.0, int minTicksBeforeBreak = 4,
                 int minTicksAfterBreak = 4, bool log10AfterBreak = false, int breakWidth = 4, bool breakDecoration = true);
-  void setScale(QwtPlot::Axis axis, QwtScaleTransformation::Type scaleType);
+  void setScale(QwtPlot::Axis axis, ScaleEngine::Type scaleType);
   void setScale(QwtPlot::Axis axis, QString logOrLin);
   double axisStep(int axis){return d_user_step[axis];};
   //! Set the axis scale
@@ -393,7 +392,7 @@ public slots:
 
   //! \name Zoom
   //@{
-  void zoomed (const QwtDoubleRect &);
+  void zoomed (const QRectF &);
   void zoom(bool on);
   void zoomOut();
   bool zoomOn();
@@ -737,8 +736,8 @@ public slots:
   //! Add a spectrogram to the graph
   Spectrogram* plotSpectrogram(Matrix *m, CurveType type);
   Spectrogram* plotSpectrogram(Function2D *f,int nrows, int ncols,double left, double top, double width, double height,double minz,double maxz, CurveType type);//Mantid
-  Spectrogram* plotSpectrogram(Function2D *f,int nrows, int ncols,QwtDoubleRect bRect,double minz,double maxz,CurveType type);//Mantid
-  // Spectrogram* plotSpectrogram(UserHelperFunction *f,int nrows, int ncols,QwtDoubleRect bRect,double minz,double maxz,CurveType type);//Mantid
+  Spectrogram* plotSpectrogram(Function2D *f,int nrows, int ncols,QRectF bRect,double minz,double maxz,CurveType type);//Mantid
+  // Spectrogram* plotSpectrogram(UserHelperFunction *f,int nrows, int ncols,QRectF bRect,double minz,double maxz,CurveType type);//Mantid
   Spectrogram* plotSpectrogram(Spectrogram *d_spectrogram, CurveType type);//Mantid
   //! Restores a spectrogram. Used when opening a project file.
   void restoreSpectrogram(ApplicationWindow *app, const QStringList& lst);
@@ -808,7 +807,7 @@ private slots:
 
 private:
   //! Finds bounding interval of the plot data.
-  QwtDoubleInterval axisBoundingInterval(int axis);
+  QwtInterval axisBoundingInterval(int axis);
   void niceLogScales(QwtPlot::Axis axis);
   void deselectCurves();
   void addLegendItem();

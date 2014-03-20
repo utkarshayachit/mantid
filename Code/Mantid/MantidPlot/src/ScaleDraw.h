@@ -95,7 +95,7 @@ public:
 protected:
 	virtual void draw (QPainter *, const QPalette &) const;
     virtual void drawLabel(QPainter *painter, double value) const;
-	virtual void drawTick(QPainter *p, double value, int len) const;
+        virtual void drawTick(QPainter *p, double value, double len) const;
 	virtual void drawBackbone(QPainter *painter) const;
 	void drawBreak(QPainter *) const;
 

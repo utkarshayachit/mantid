@@ -118,7 +118,7 @@ void MantidMDCurve::setData(const QwtData &data)
   PlotCurve::setData(data);
 }
 
-QwtDoubleRect MantidMDCurve::boundingRect() const
+QRectF MantidMDCurve::boundingRect() const
 {
   return MantidCurve::boundingRect();
 }

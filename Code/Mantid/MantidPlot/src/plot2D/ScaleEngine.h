@@ -30,15 +30,22 @@
 #define SCALE_ENGINE_H
 
 #include <qwt_scale_engine.h>
-#include <qwt_scale_map.h>
-#include <float.h>
+#include <qwt_transform.h>
+#include <cfloat>
 
 class ScaleEngine: public QwtScaleEngine
 {
 public:
-	ScaleEngine(QwtScaleTransformation::Type type = QwtScaleTransformation::Linear,
-				double left_break = -DBL_MAX, double right_break = DBL_MAX);
-	QwtScaleTransformation* transformation() const;
+	/// Type of the scale
+	enum Type
+	{
+	  Linear,
+	  Log10,
+	  Other
+	};
+
+	ScaleEngine(Type type = Linear,
+		double left_break = -DBL_MAX, double right_break = DBL_MAX);
 	virtual QwtScaleDiv divideScale(double x1, double x2, int maxMajSteps,
 		int maxMinSteps, double stepSize = 0.0) const;
 	virtual void autoScale (int maxNumSteps, double &x1, double &x2, double &stepSize) const;
@@ -68,8 +75,8 @@ public:
     bool log10ScaleAfterBreak() const;
     void setLog10ScaleAfterBreak(bool on){d_log10_scale_after = on;};
 
-	QwtScaleTransformation::Type type() const;
-	void setType(QwtScaleTransformation::Type type){d_type = type;};
+	ScaleEngine::Type type() const;
+	void setType(ScaleEngine::Type type){d_type = type;};
 
 	bool hasBreak() const;
 	void clone(const ScaleEngine *engine);
@@ -78,7 +85,7 @@ public:
 	void drawBreakDecoration(bool draw){d_break_decoration = draw;};
 
 private:
-	QwtScaleTransformation::Type d_type;
+	Type d_type;
 	double d_break_left, d_break_right;
 	//! Position of axis break (% of axis length)
 	int d_break_pos;
@@ -94,17 +101,23 @@ private:
 	bool d_break_decoration;
 };
 
-class ScaleTransformation: public QwtScaleTransformation
+class ScaleTransformation: public QwtTransform
 {
 public:
-	ScaleTransformation(const ScaleEngine *engine):QwtScaleTransformation(Other), d_engine(engine){};
-	virtual double xForm(double x, double, double, double p1, double p2) const;
-	virtual double invXForm(double x, double s1, double s2, double p1, double p2) const;
-	QwtScaleTransformation* copy() const;
+	ScaleTransformation(const ScaleEngine *engine);
+	~ScaleTransformation();
+	double transform( double value ) const;
+	double invTransform( double value ) const;
+	QwtTransform *copy() const;
 
 private:
     //! The scale engine that generates the transformation
-	const ScaleEngine* d_engine;
+    const ScaleEngine* d_engine;
+
+    /// A pointer to a linear transformation object
+    QwtTransform *d_linear_transform;
+    /// A pointer to a log transformation object
+    QwtTransform *d_log_transform;
 };
 
 #endif

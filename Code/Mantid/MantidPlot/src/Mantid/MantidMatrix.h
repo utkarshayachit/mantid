@@ -20,7 +20,6 @@
 #include "../Graph.h"
 #include "MantidQtAPI/WorkspaceObserver.h"
 
-#include <qwt_double_rect.h>
 #include <qwt_color_map.h>
 
 #include <math.h>
@@ -191,9 +190,9 @@ signals:
     double dy(){return fabs(y_end - y_start)/(double)(numRows() - 1);}
 
     //! Returns the bounding rect of the matrix coordinates
-    QwtDoubleRect boundingRect();
+    QRectF boundingRect();
     /// Invalidates the bounding rect forcing it to be recalculated
-    void invalidateBoundingRect(){m_boundingRect = QwtDoubleRect();}
+    void invalidateBoundingRect(){m_boundingRect = QRectF();}
 
     //! Min and max values in the matrix.
     void range(double *min, double *max);
@@ -257,7 +256,7 @@ protected:
   double m_min;           // Saved minimum Y-value
   double m_max;           // Saved maximum Y-value
   bool m_are_min_max_set; // If true ::range does not iterate over WS to find min and max but uses m_min and m_max instead
-  QwtDoubleRect m_boundingRect; // The bounding box in x and y coordinates used in spectrogram drawing
+  QRectF m_boundingRect; // The bounding box in x and y coordinates used in spectrogram drawing
   int m_spectrogramRows; // Number of rows in the spectrogram created from this matris
   int m_spectrogramCols; // Number of columns in the spectrogram created from this matris
 

@@ -91,7 +91,7 @@ void LegendWidget::paintEvent(QPaintEvent *e)
 
 	const int symbolLineLength = line_length + symbolsMaxWidth();
 	int width, height;
-	QwtArray<int> heights = itemsHeight(0, symbolLineLength, width, height);
+	QVector<int> heights = itemsHeight(0, symbolLineLength, width, height);
 	if (d_frame == Shadow)
 		resize(width + 5, height + 5);
 	else
@@ -111,7 +111,7 @@ void LegendWidget::print(QPainter *painter, const QwtScaleMap map[QwtPlot::axisC
 
     const int symbolLineLength = line_length + symbolsMaxWidth();
 	int width, height;
-	QwtArray<int> heights = itemsHeight(y, symbolLineLength, width, height);
+	QVector<int> heights = itemsHeight(y, symbolLineLength, width, height);
 
 	QRect rect = QRect(x, y, width, height);
 	drawFrame(painter, rect);
@@ -277,7 +277,7 @@ void LegendWidget::drawSymbol(PlotCurve *c, int point, QPainter *p, int x, int y
 }
 
 void LegendWidget::drawText(QPainter *p, const QRect& rect,
-		QwtArray<int> height, int symbolLineLength)
+		QVector<int> height, int symbolLineLength)
 {
   p->save();
   if ((dynamic_cast<Graph *>(d_plot->parent()))->antialiasing())
@@ -392,14 +392,14 @@ void LegendWidget::drawText(QPainter *p, const QRect& rect,
   p->restore();
 }
 
-QwtArray<int> LegendWidget::itemsHeight(int y, int symbolLineLength, int &width, int &height)
+QVector<int> LegendWidget::itemsHeight(int y, int symbolLineLength, int &width, int &height)
 {
   // RJT (22/09/09): For most of method, copied in code from current 
   // QtiPlot (rev. 1373) to fix infinite loop if closing bracket missing
   QString text = d_text->text();
   QStringList titles = text.split("\n", QString::KeepEmptyParts);
   int n = (int)titles.count();
-  QwtArray<int> heights(n);
+  QVector<int> heights(n);
 
   width = 0;
   height = 0;

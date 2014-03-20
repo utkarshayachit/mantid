@@ -58,7 +58,7 @@ d_headLength = vc->d_headLength;
 d_headAngle = vc->d_headAngle;
 d_position = vc->d_position;
 pen = vc->pen;
-vectorEnd = (QwtArrayData *)vc->vectorEnd->copy();
+vectorEnd = (QVectorData *)vc->vectorEnd->copy();
 }
 
 void VectorCurve::draw(QPainter *painter,
@@ -188,9 +188,9 @@ d_end_y_m = yColName;
 loadData();
 }
 
-void VectorCurve::setVectorEnd(const QwtArray<double>&x, const QwtArray<double>&y)
+void VectorCurve::setVectorEnd(const QVector<double>&x, const QVector<double>&y)
 {
-    vectorEnd=new QwtArrayData(x, y);
+    vectorEnd=new QVectorData(x, y);
 }
 
 double VectorCurve::width()
@@ -232,10 +232,10 @@ if (filledArrow != fill)
 	filledArrow = fill;
 }
 
-QwtDoubleRect VectorCurve::boundingRect() const
+QRectF VectorCurve::boundingRect() const
 {
-QwtDoubleRect rect = QwtPlotCurve::boundingRect();
-QwtDoubleRect vrect = vectorEnd->boundingRect();
+QRectF rect = QwtPlotCurve::boundingRect();
+QRectF vrect = vectorEnd->boundingRect();
 
 if (d_style == XYXY){
 	rect.setTop(QMIN((double)rect.top(), (double)vrect.top()));

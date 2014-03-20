@@ -67,7 +67,7 @@ void OneCurvePlot::setXScale(double from, double to)
   // scale look ugly. Trying to fix it if possible
   bool rescaled = false;
   // get actual tick positions
-  const QwtValueList& ticks = div.ticks(QwtScaleDiv::MajorTick);
+  const QList<double>& ticks = div.ticks(QwtScaleDiv::MajorTick);
   if (!ticks.empty() && ticks.size() < nMajorTicks)
   {
     // how much first tick is shifted from the lower bound
@@ -249,7 +249,7 @@ void OneCurvePlot::clearCurve()
   if (hasStored())
   {
     QMap<QString,QwtPlotCurve*>::const_iterator curve = m_stored.begin();
-    QwtDoubleRect br = (**curve).boundingRect();
+    QRectF br = (**curve).boundingRect();
     double xmin = br.left();
     double xmax = br.right();
     double ymin = br.top();
@@ -257,7 +257,7 @@ void OneCurvePlot::clearCurve()
     ++curve;
     for(;curve!=m_stored.end();++curve)
     {
-      QwtDoubleRect br = (**curve).boundingRect();
+      QRectF br = (**curve).boundingRect();
       if (br.left() < xmin) xmin = br.left();
       if (br.right() > xmax) xmax = br.right();
       if (br.top() < ymin) ymin = br.top();

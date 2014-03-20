@@ -95,11 +95,15 @@ signals:
   void forgetMe();
 
 protected:
-  virtual void drawCurve(QPainter *p, int style, const QwtScaleMap &xMap, const QwtScaleMap &yMap, int from, int to) const;
-  void drawSideLines(QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap, int from, int to) const;
+  virtual void drawCurve(QPainter *p, int style,
+                         const QwtScaleMap &xMap, const QwtScaleMap &yMap,
+                         const QRectF &canvasRect, int from, int to) const;
+  void drawSideLines(QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap,
+                     int from, int to) const;
 
   virtual void drawSymbols(QPainter *p, const QwtSymbol &,
-      const QwtScaleMap &xMap, const QwtScaleMap &yMap, int from, int to) const;
+                           const QwtScaleMap &xMap, const QwtScaleMap &yMap,
+                           const QRectF &canvasRect, int from, int to) const;
 
   void computeWaterfallOffsets();
 
@@ -250,11 +254,11 @@ public:
   void setAngle(double a){d_angle = a;};
   void setLabelOffset(double xOffset, double yOffset){d_label_x_offset = xOffset; d_label_y_offset = yOffset;};
 
-  //QwtDoubleRect boundingRect() const;
+  //QRectF boundingRect() const;
 
 protected:
   //! Does the actual drawing; see QwtPlotItem::draw.
-  void draw(QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRect &r) const;
+  void draw(QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &r) const;
 
   int d_index;
   double d_angle;

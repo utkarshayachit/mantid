@@ -44,7 +44,6 @@
 #include "ScriptingEnv.h"
 #include "Scripted.h"
 
-#include <qwt_double_rect.h>
 #include <qwt_color_map.h>
 
 #include <math.h>
@@ -140,7 +139,7 @@ public:
   ColorMapType colorMapType(){return d_color_map_type;};
   void setColorMapType(ColorMapType mapType);
 
-  QwtLinearColorMap colorMap(){return d_color_map;};
+  const QwtLinearColorMap & colorMap(){return d_color_map;};
   void setColorMap(const QwtLinearColorMap& map);
   //! Used when restoring from project files
   void setColorMap(const QStringList& lst);
@@ -275,7 +274,7 @@ public slots:
   double dy(){return fabs(y_end - y_start)/(double)(numRows() - 1);};
 
   //! Returns the bounding rect of the matrix coordinates
-  QwtDoubleRect boundingRect();
+  QRectF boundingRect();
   //! Set the X and Y coordinate intervals
   void setCoordinates(double xs, double xe, double ys, double ye);
 

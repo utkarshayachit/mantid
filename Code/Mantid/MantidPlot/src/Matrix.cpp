@@ -231,12 +231,12 @@ QString Matrix::saveToString(const QString &info, bool saveAsTemplate)
     s += "\t<Mode>" + QString::number(d_color_map.mode()) + "</Mode>\n";
     s += "\t<MinColor>" + d_color_map.color1().name() + "</MinColor>\n";
     s += "\t<MaxColor>" + d_color_map.color2().name() + "</MaxColor>\n";
-    QwtArray <double> colors = d_color_map.colorStops();
+    QVector <double> colors = d_color_map.colorStops();
     int stops = (int)colors.size();
     s += "\t<ColorStops>" + QString::number(stops - 2) + "</ColorStops>\n";
     for (int i = 1; i < stops - 1; i++){
       s += "\t<Stop>" + QString::number(colors[i]) + "\t";
-      s += QColor(d_color_map.rgb(QwtDoubleInterval(0,1), colors[i])).name();
+      s += QColor(d_color_map.rgb(QwtInterval(0,1), colors[i])).name();
       s += "</Stop>\n";
     }
     s += "</ColorMap>\n";
@@ -1400,14 +1400,14 @@ void Matrix::setHeaderViewType(HeaderViewType type)
   emit modifiedWindow(this);
 }
 
-QwtDoubleRect Matrix::boundingRect()
+QRectF Matrix::boundingRect()
 {
   int rows = numRows();
   int cols = numCols();
   double dx = fabs(x_end - x_start)/(double)(cols - 1);
   double dy = fabs(y_end - y_start)/(double)(rows - 1);
 
-  return QwtDoubleRect(QMIN(x_start, x_end) - 0.5*dx, QMIN(y_start, y_end) - 0.5*dy,
+  return QRectF(QMIN(x_start, x_end) - 0.5*dx, QMIN(y_start, y_end) - 0.5*dy,
       fabs(x_end - x_start) + dx, fabs(y_end - y_start) + dy).normalized();
 }
 

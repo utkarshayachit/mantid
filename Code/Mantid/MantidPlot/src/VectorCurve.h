@@ -48,7 +48,7 @@ public:
 
 	void copy(const VectorCurve *vc);
 
-	QwtDoubleRect boundingRect() const;
+	QRectF boundingRect() const;
 
 	using DataCurve::draw; // Unhide base class method (avoids Intel compiler warning)
 	void draw(QPainter *painter,const QwtScaleMap &xMap,
@@ -63,7 +63,7 @@ public:
 	QString vectorEndXAColName(){return d_end_x_a;};
 	QString vectorEndYMColName(){return d_end_y_m;};
 	void setVectorEnd(const QString& xColName, const QString& yColName);
-	void setVectorEnd(const QwtArray<double>&x, const QwtArray<double>&y);
+	void setVectorEnd(const QVector<double>&x, const QVector<double>&y);
 
 	double width();
 	void setWidth(double w);
@@ -93,7 +93,7 @@ public:
 	void updateColumnNames(const QString& oldName, const QString& newName, bool updateTableName);
 
 protected:
-	QwtArrayData *vectorEnd;
+	QVectorData *vectorEnd;
 	QPen pen;
 	bool filledArrow;
 	int d_style, d_headLength, d_headAngle, d_position;

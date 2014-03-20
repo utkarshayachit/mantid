@@ -58,7 +58,7 @@ public:
   Spectrogram();
   Spectrogram(Matrix *m);
   Spectrogram(Function2D *f,int nrows, int ncols,double left, double top, double width, double height,double minz,double maxz);//Mantid
-  Spectrogram(Function2D *f,int nrows, int ncols,QwtDoubleRect bRect,double minz,double maxz);//Mantid
+  Spectrogram(Function2D *f,int nrows, int ncols,QRectF bRect,double minz,double maxz);//Mantid
   ~Spectrogram();
 
 
@@ -66,7 +66,7 @@ public:
 
   virtual QImage renderImage(
       const QwtScaleMap &xMap, const QwtScaleMap &yMap,
-      const QwtDoubleRect &rect) const;
+      const QRectF &rect) const;
 
 
   Spectrogram* copy();
@@ -97,7 +97,7 @@ public:
 
   ColorMapPolicy colorMapPolicy()const{return color_map_policy;};
 
-  virtual QwtDoubleRect boundingRect() const;
+  virtual QRectF boundingRect() const;
   double getMinPositiveValue()const;
   void setContourPenList(QList<QPen> lst);
   void setContourLinePen(int index, const QPen &pen);
@@ -132,7 +132,7 @@ public:
   void recount();
   void setCustomColorMap(const QwtColorMap &map);
 
-  void setContourLevels (const QwtValueList & levels);
+  void setContourLevels (const QList<double> & levels);
   bool hasSelectedLabels();
   bool selectedLabels(const QPoint& pos);
   double labelsXOffset(){return d_labels_x_offset;};
@@ -197,7 +197,7 @@ protected:
 class SpectrogramData: public QwtRasterData
 {
 public:
-  SpectrogramData(const QwtDoubleRect &rect):QwtRasterData(rect){}
+  SpectrogramData(const QRectF &rect):QwtRasterData(rect){}
   virtual double getMinPositiveValue()const = 0;
 };
 
@@ -241,12 +241,12 @@ public:
     return new MatrixData(d_matrix);
   }
 
-  virtual QwtDoubleInterval range() const
+  virtual QwtInterval range() const
   {
-    return QwtDoubleInterval(min_z, max_z);
+    return QwtInterval(min_z, max_z);
   }
 
-  virtual QSize rasterHint (const QwtDoubleRect &) const
+  virtual QSize rasterHint (const QRectF &) const
   {
     return QSize(n_cols, n_rows);
   }
@@ -283,12 +283,12 @@ class FunctionData: public SpectrogramData
 {
 public:
   FunctionData(Function2D *f,int nrows, int ncols,double left, double top, double width, double height,double minz,double maxz):
-    SpectrogramData(QwtDoubleRect(left, top, width, height)),
+    SpectrogramData(QRectF(left, top, width, height)),
     d_funct(f),n_rows(nrows),n_cols(ncols),min_z(minz),max_z(maxz)
   {
   }
 
-  FunctionData(Function2D *f,int nrows, int ncols,QwtDoubleRect bRect,double minz,double maxz):
+  FunctionData(Function2D *f,int nrows, int ncols,QRectF bRect,double minz,double maxz):
     SpectrogramData(bRect),
     d_funct(f),n_rows(nrows),n_cols(ncols),min_z(minz),max_z(maxz)
   {
@@ -303,12 +303,12 @@ public:
     return new FunctionData(d_funct, n_rows, n_cols,boundingRect(),min_z,max_z);
   }
 
-  virtual QwtDoubleInterval range() const
+  virtual QwtInterval range() const
   {
-    return QwtDoubleInterval(min_z, max_z);
+    return QwtInterval(min_z, max_z);
   }
 
-  virtual QSize rasterHint (const QwtDoubleRect &) const
+  virtual QSize rasterHint (const QRectF &) const
   {
     return QSize(n_cols, n_rows);
   }

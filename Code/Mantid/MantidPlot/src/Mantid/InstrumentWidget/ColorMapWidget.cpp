@@ -82,7 +82,7 @@ void ColorMapWidget::setupColorBarScaling(const MantidColorMap& colorMap)
   {
     QwtLinearScaleEngine linScaler;
     m_scaleWidget->setScaleDiv(linScaler.transformation(), linScaler.divideScale(minValue, maxValue,  20, 5));
-    m_scaleWidget->setColorMap(QwtDoubleInterval(minValue, maxValue),colorMap);
+    m_scaleWidget->setColorMap(QwtInterval(minValue, maxValue),colorMap);
   }
   else
  {
@@ -103,7 +103,7 @@ void ColorMapWidget::setupColorBarScaling(const MantidColorMap& colorMap)
       m_maxValueBox->blockSignals(false);
     }
     m_scaleWidget->setScaleDiv(logScaler.transformation(), logScaler.divideScale(logmin, maxValue, 20, 5));
-    m_scaleWidget->setColorMap(QwtDoubleInterval(logmin, maxValue), colorMap);
+    m_scaleWidget->setColorMap(QwtInterval(logmin, maxValue), colorMap);
   }
   m_scaleOptions->blockSignals(true);
   m_scaleOptions->setCurrentIndex(m_scaleOptions->findData(type));

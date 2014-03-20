@@ -94,9 +94,9 @@ void QwtHistogram::draw(QPainter *painter,
 	painter->restore();
 }
 
-QwtDoubleRect QwtHistogram::boundingRect() const
+QRectF QwtHistogram::boundingRect() const
 {
-	QwtDoubleRect rect = QwtPlotCurve::boundingRect();
+	QRectF rect = QwtPlotCurve::boundingRect();
 	rect.setLeft(rect.left()-x(1));
 	rect.setRight(rect.right()+x(dataSize()-1));
 	rect.setTop(0);

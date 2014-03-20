@@ -156,7 +156,7 @@ void Plot::printFrame(QPainter *painter, const QRect &rect) const
 }
 
 void Plot::printCanvas(QPainter *painter, const QRect&, const QRect &canvasRect,
-   			 const QwtScaleMap map[axisCnt], const QwtPlotPrintFilter &pfilter) const
+			 const QwtScaleMap map[axisCnt]) const
 {
 	painter->save();
 
@@ -171,7 +171,7 @@ void Plot::printCanvas(QPainter *painter, const QRect&, const QRect &canvasRect,
 	painter->setClipping(true);
 	QwtPainter::setClipRect(painter, rect);
 
-    drawItems(painter, canvasRect, map, pfilter);
+    drawItems(painter, canvasRect, map);
     painter->restore();
 
     painter->save();
@@ -191,8 +191,8 @@ void Plot::printCanvas(QPainter *painter, const QRect&, const QRect &canvasRect,
 	}
 }
 
-void Plot::drawItems (QPainter *painter, const QRect &rect,
-			const QwtScaleMap map[axisCnt], const QwtPlotPrintFilter &pfilter) const
+void Plot::drawItems (QPainter *painter, const QRectF &rect,
+                        const QwtScaleMap map[axisCnt]) const
 {
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
@@ -231,7 +231,7 @@ void Plot::drawItems (QPainter *painter, const QRect &rect,
 		//}
 	}
 
-	QwtPlot::drawItems(painter, rect, map, pfilter);
+	QwtPlot::drawItems(painter, rect, map);
 
 	for (int i=0; i<QwtPlot::axisCnt; i++){
 		if (!axisEnabled(i))
@@ -264,13 +264,13 @@ void Plot::drawInwardTicks(QPainter *painter, const QRect &rect,
 	painter->setPen(QPen(color, axesLinewidth(), Qt::SolidLine));
 
 	const QwtScaleDiv *scDiv=(const QwtScaleDiv *)axisScaleDiv(axis);
-	const QwtValueList minTickList = scDiv->ticks(QwtScaleDiv::MinorTick);
+	const QList<double> minTickList = scDiv->ticks(QwtScaleDiv::MinorTick);
 	int minTicks = (int)minTickList.count();
 
-	const QwtValueList medTickList = scDiv->ticks(QwtScaleDiv::MediumTick);
+	const QList<double> medTickList = scDiv->ticks(QwtScaleDiv::MediumTick);
 	int medTicks = (int)medTickList.count();
 
-	const QwtValueList majTickList = scDiv->ticks(QwtScaleDiv::MajorTick);
+	const QList<double> majTickList = scDiv->ticks(QwtScaleDiv::MajorTick);
 	int majTicks = (int)majTickList.count();
 
 	int j, x, y, low,high;
@@ -757,10 +757,8 @@ void Plot::showEvent (QShowEvent * event)
 
   @param painter :: Painter
   @param plotRect :: Bounding rectangle
-  @param pfilter :: Print filter
 */
-void Plot::print(QPainter *painter, const QRect &plotRect,
-        const QwtPlotPrintFilter &pfilter)
+void Plot::print(QPainter *painter, const QRect &plotRect)
 {
     int axisId;
 
@@ -785,39 +783,6 @@ void Plot::print(QPainter *painter, const QRect &plotRect,
     // layout engines we change the widget attributes, print and
     // reset the widget attributes again. This way we produce a lot of
     // useless layout events ...
-
-    pfilter.apply((QwtPlot *)this);
-
-    int baseLineDists[QwtPlot::axisCnt];
-    if ( !(pfilter.options() & 16) ){
-        // In case of no background we set the backbone of
-        // the scale on the frame of the canvas.
-
-        for (axisId = 0; axisId < QwtPlot::axisCnt; axisId++ ){
-            QwtScaleWidget *scaleWidget = (QwtScaleWidget *)axisWidget(axisId);
-            if ( scaleWidget ){
-                baseLineDists[axisId] = scaleWidget->margin();
-                scaleWidget->setMargin(0);
-            }
-        }
-    }
-    // Calculate the layout for the print.
-
-    int layoutOptions = QwtPlotLayout::IgnoreScrollbars
-        | QwtPlotLayout::IgnoreFrames;
-    if ( !(pfilter.options() & QwtPlotPrintFilter::PrintMargin) )
-        layoutOptions |= QwtPlotLayout::IgnoreMargin;
-    if ( !(pfilter.options() & QwtPlotPrintFilter::PrintLegend) )
-        layoutOptions |= QwtPlotLayout::IgnoreLegend;
-
-    ((QwtPlot *)this)->plotLayout()->activate(this,
-        QwtPainter::metricsMap().deviceToLayout(plotRect),
-        layoutOptions);
-
-    if ((pfilter.options() & QwtPlotPrintFilter::PrintTitle)
-        && (!titleLabel()->text().isEmpty())){
-        printTitle(painter, plotLayout()->titleRect());
-    }
 
 	QRect canvasRect = plotLayout()->canvasRect();;
 	canvasRect = metricsMap.layoutToDevice(canvasRect);
@@ -865,7 +830,7 @@ void Plot::print(QPainter *painter, const QRect &plotRect,
     QwtPainter::setMetricsMap(painter->device(), painter->device());
     // 'Dummy' QRect argument inserted into printCanvas method to avoid Intel
     // compiler warning (about printCanvas signature not matching that in base class)
-    printCanvas(painter, QRect(), canvasRect, map, pfilter);
+    printCanvas(painter, QRect(), canvasRect, map);
     QwtPainter::resetMetricsMap();
 
 

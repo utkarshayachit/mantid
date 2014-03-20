@@ -519,7 +519,7 @@ QImage MatrixModel::renderImage()
 
 	double minValue = 0.0, maxValue = 0.0;
 	d_matrix->range(&minValue, &maxValue);
-    const QwtDoubleInterval intensityRange = QwtDoubleInterval (minValue, maxValue);
+    const QwtInterval intensityRange = QwtInterval (minValue, maxValue);
     for ( int i = 0; i < d_rows; i++ ){
     	QRgb *line = (QRgb *)image.scanLine(i);
 		for ( int j = 0; j < d_cols; j++){

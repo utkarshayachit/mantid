@@ -193,7 +193,7 @@ Graph::Graph(int x, int y, int width, int height, QWidget* parent, Qt::WFlags f)
   connect (scalePicker,SIGNAL(axisTitleRightClicked()),this,SLOT(showAxisTitleMenu()));
   connect (scalePicker,SIGNAL(axisRightClicked(int)),this,SLOT(showAxisContextMenu(int)));
 
-  connect (d_zoomer[0],SIGNAL(zoomed (const QwtDoubleRect &)),this,SLOT(zoomed (const QwtDoubleRect &)));
+  connect (d_zoomer[0],SIGNAL(zoomed (const QRectF &)),this,SLOT(zoomed (const QRectF &)));
 
 }
 
@@ -382,7 +382,7 @@ bool Graph::isColorBarEnabled(int axis) const
 bool Graph::isLog(const QwtPlot::Axis& axis) const
 {
   ScaleEngine *sc_engine = dynamic_cast<ScaleEngine *>(d_plot->axisScaleEngine(axis));
-  return ( sc_engine && sc_engine->type() == QwtScaleTransformation::Log10 );
+  return ( sc_engine && sc_engine->type() == ScaleEngine::Log10 );
 }
 
 ScaleDraw::ScaleType Graph::axisType(int axis)
@@ -1087,7 +1087,7 @@ void Graph::initScaleLimits()
 {//We call this function the first time we add curves to a plot in order to avoid curves with cut symbols.
   d_plot->replot();
 
-  QwtDoubleInterval intv[QwtPlot::axisCnt];
+  QwtInterval intv[QwtPlot::axisCnt];
   const QwtPlotItemList& itmList = d_plot->itemList();
   QwtPlotItemIterator it;
   double maxSymbolSize = 0;
@@ -1101,9 +1101,9 @@ void Graph::initScaleLimits()
     if (s.style() != QwtSymbol::NoSymbol && s.size().width() >= maxSymbolSize)
       maxSymbolSize = s.size().width();
 
-    const QwtDoubleRect rect = item->boundingRect();
-    intv[item->xAxis()] |= QwtDoubleInterval(rect.left(), rect.right());
-    intv[item->yAxis()] |= QwtDoubleInterval(rect.top(), rect.bottom());
+    const QRectF rect = item->boundingRect();
+    intv[item->xAxis()] |= QwtInterval(rect.left(), rect.right());
+    intv[item->yAxis()] |= QwtInterval(rect.top(), rect.bottom());
   }
 
   if (maxSymbolSize == 0.0)
@@ -1114,7 +1114,7 @@ void Graph::initScaleLimits()
   QwtScaleDiv *div = d_plot->axisScaleDiv(QwtPlot::xBottom);
   double start = div->lBound();
   double end = div->hBound();
-  QwtValueList majTicksLst = div->ticks(QwtScaleDiv::MajorTick);
+  QList<double> majTicksLst = div->ticks(QwtScaleDiv::MajorTick);
   int ticks = majTicksLst.size();
   double step = fabs(end - start)/(double)(ticks - 1.0);
   d_user_step[QwtPlot::xBottom] = step;
@@ -1163,11 +1163,11 @@ void Graph::invertScale(int axis)
     scaleDiv->invert();
 }
 
-QwtDoubleInterval Graph::axisBoundingInterval(int axis)
+QwtInterval Graph::axisBoundingInterval(int axis)
 {
   // Find bounding interval of the plot data
 
-  QwtDoubleInterval intv;
+  QwtInterval intv;
   const QwtPlotItemList& itmList = d_plot->itemList();
   QwtPlotItemIterator it;
   for ( it = itmList.begin(); it != itmList.end(); ++it ){
@@ -1181,12 +1181,12 @@ QwtDoubleInterval Graph::axisBoundingInterval(int axis)
     if(axis != item->xAxis() && axis != item->yAxis())
       continue;
 
-    const QwtDoubleRect rect = item->boundingRect();
+    const QRectF rect = item->boundingRect();
 
     if (axis == QwtPlot::xBottom || axis == QwtPlot::xTop)
-      intv |= QwtDoubleInterval(rect.left(), rect.right());
+      intv |= QwtInterval(rect.left(), rect.right());
     else
-      intv |= QwtDoubleInterval(rect.top(), rect.bottom());
+      intv |= QwtInterval(rect.top(), rect.bottom());
   }
   return intv;
 }
@@ -1214,7 +1214,7 @@ void Graph::niceLogScales(QwtPlot::Axis axis)
   setScale(axis, start, end, axisStep(axis),
       scDiv->ticks(QwtScaleDiv::MajorTick).count(),
       d_plot->axisMaxMinor(axis),
-      QwtScaleTransformation::Log10,
+      ScaleEngine::Log10,
       scaleEng->testAttribute(QwtScaleEngine::Inverted),
       scaleEng->axisBreakLeft(),
       scaleEng->axisBreakRight(),
@@ -1262,72 +1262,26 @@ void Graph::setScale(int axis, double start, double end, double step,
     }
   }
 
-
-  // 	if (type == Graph::Log10)
-  // 	{
-  // 	  sc_engine->setType(QwtScaleTransformation::Log10);
-  // 	  if (start <= 0 || end <= 0)
-  // 	  {
-  // 	    QwtDoubleInterval intv = axisBoundingInterval(axis);
-  // 	    if (start < end) start = intv.minValue();
-  // 	    else end = intv.minValue();
-  // 	  }
-  // 	}
-  // 	else
-  // 	{
-  // 	  sc_engine->setType(QwtScaleTransformation::Linear);
-  // 	}
-
-  // 	int max_min_intervals = minorTicks;
-  // 	if (minorTicks == 1)
-  // 		max_min_intervals = 3;
-  // 	if (minorTicks > 1)
-  // 		max_min_intervals = minorTicks + 1;
-
-  // 	QwtScaleDiv div = sc_engine->divideScale (QMIN(start, end), QMAX(start, end), majorTicks, max_min_intervals, step);
-  // 	d_plot->setAxisMaxMajor (axis, majorTicks);
-  // 	d_plot->setAxisMaxMinor (axis, minorTicks);
-
-  // 	if (inverted)
-  // 		div.invert();
-  // 	d_plot->setAxisScaleDiv (axis, div);
-
-  // 	d_zoomer[0]->setZoomBase();
-  // 	d_zoomer[1]->setZoomBase();
-
-  // 	d_user_step[axis] = step;
-
-  //    if (d_synchronize_scales){
-  //      if (axis == QwtPlot::xBottom)
-  //        updateSecondaryAxis(QwtPlot::xTop);
-  //      else if (axis == QwtPlot::yLeft)
-  //        updateSecondaryAxis(QwtPlot::yRight);
-  //    }
-
-  // 	d_plot->replot();
-  // 	//keep markers on canvas area
-  // 	updateMarkersBoundingRect();
-  // 	d_plot->replot();
-  // 	d_plot->axisWidget(axis)->repaint();
 }
+
 /** Overload of setScale() to that only allows setting the axis type
  *  to linear or log. Does nothing if the scale is already the that type
  *  @param axis :: the scale to change either QwtPlot::xBottom or QwtPlot::yLeft
- *  @param scaleType :: either QwtScaleTransformation::Log10 or ::Linear
+ *  @param scaleType :: either ScaleEngine::Log10 or ::Linear
  */
-void Graph::setScale(QwtPlot::Axis axis, QwtScaleTransformation::Type scaleType)
+void Graph::setScale(QwtPlot::Axis axis, ScaleEngine::Type scaleType)
 {
-  //check if the scale is already of the desired type, 
+  //check if the scale is already of the desired type,
   ScaleEngine *sc_engine = dynamic_cast<ScaleEngine *>(d_plot->axisScaleEngine(axis));
-  QwtScaleTransformation::Type type = sc_engine->type();
-  if ( scaleType == QwtScaleTransformation::Log10 )
+  ScaleEngine::Type type = sc_engine->type();
+  if ( scaleType == ScaleEngine::Log10 )
   {
-    if ( type ==  QwtScaleTransformation::Log10 )
+    if ( type ==  ScaleEngine::Log10 )
     {
       return;
     }
   }
-  else if ( type == QwtScaleTransformation::Linear )
+  else if ( type == ScaleEngine::Linear )
   {
     return;
   }
@@ -1360,51 +1314,51 @@ void Graph::setScale(QwtPlot::Axis axis, QString logOrLin)
 {
   if ( logOrLin == "log" )
   {
-    setScale(axis, QwtScaleTransformation::Log10);
+    setScale(axis, ScaleEngine::Log10);
   }
   else if ( logOrLin == "linear" )
   {
-    setScale(axis, QwtScaleTransformation::Linear);
+    setScale(axis, ScaleEngine::Linear);
   }
 }
 
 void Graph::logLogAxes()
 {
-  setScale(QwtPlot::xBottom, QwtScaleTransformation::Log10);
-  setScale(QwtPlot::yLeft, QwtScaleTransformation::Log10);
+  setScale(QwtPlot::xBottom, ScaleEngine::Log10);
+  setScale(QwtPlot::yLeft, ScaleEngine::Log10);
   notifyChanges();
 }
 
 void Graph::logXLinY()
 {
-  setScale(QwtPlot::xBottom, QwtScaleTransformation::Log10);
-  setScale(QwtPlot::yLeft, QwtScaleTransformation::Linear);
+  setScale(QwtPlot::xBottom, ScaleEngine::Log10);
+  setScale(QwtPlot::yLeft, ScaleEngine::Linear);
   notifyChanges();
 }
 
 void Graph::logYlinX()
 {
-  setScale(QwtPlot::xBottom, QwtScaleTransformation::Linear);
-  setScale(QwtPlot::yLeft, QwtScaleTransformation::Log10);
+  setScale(QwtPlot::xBottom, ScaleEngine::Linear);
+  setScale(QwtPlot::yLeft, ScaleEngine::Log10);
   notifyChanges();
 }
 
 void Graph::linearAxes()
 {
-  setScale(QwtPlot::xBottom, QwtScaleTransformation::Linear);
-  setScale(QwtPlot::yLeft, QwtScaleTransformation::Linear);
+  setScale(QwtPlot::xBottom, ScaleEngine::Linear);
+  setScale(QwtPlot::yLeft, ScaleEngine::Linear);
   notifyChanges();
 }
 
 void Graph::logColor()
 {
-  setScale(QwtPlot::yRight, QwtScaleTransformation::Log10);
+  setScale(QwtPlot::yRight, ScaleEngine::Log10);
   notifyChanges();
 }
 
 void Graph::linColor()
 {
-  setScale(QwtPlot::yRight, QwtScaleTransformation::Linear);
+  setScale(QwtPlot::yRight, ScaleEngine::Linear);
   notifyChanges();
 }
 
@@ -1416,7 +1370,7 @@ void Graph::setAxisScale(int axis, double start, double end, int type, double st
 	ScaleEngine *sc_engine =dynamic_cast<ScaleEngine*>(qwtsc_engine);*/
   if( !sc_engine ) return;
 
-  QwtScaleTransformation::Type old_type = sc_engine->type();
+  ScaleEngine::Type old_type = sc_engine->type();
 
   // If not specified, keep the same as now
   if( type < 0 ) type = axisType(axis);
@@ -1424,12 +1378,12 @@ void Graph::setAxisScale(int axis, double start, double end, int type, double st
   if (type != old_type)
   {
     // recalculate boundingRect of MantidCurves
-    emit axisScaleChanged(axis,type == QwtScaleTransformation::Log10);
+    emit axisScaleChanged(axis,type == ScaleEngine::Log10);
   }
 
   if (type == GraphOptions::Log10)
   {
-    sc_engine->setType(QwtScaleTransformation::Log10);
+    sc_engine->setType(ScaleEngine::Log10);
     if (start <= 0)
     {
       double s_min = DBL_MAX;
@@ -1477,7 +1431,7 @@ void Graph::setAxisScale(int axis, double start, double end, int type, double st
   }
   else
   {
-    sc_engine->setType(QwtScaleTransformation::Linear);
+    sc_engine->setType(ScaleEngine::Linear);
   }
 
   if (axis == QwtPlot::yRight)
@@ -1493,12 +1447,12 @@ void Graph::setAxisScale(int axis, double start, double end, int type, double st
           QwtScaleWidget *rightAxis = d_plot->axisWidget(QwtPlot::yRight);
           if(rightAxis)
           {
-            if (type == QwtScaleTransformation::Log10 && (start <= 0 || start == DBL_MAX))
+            if (type == ScaleEngine::Log10 && (start <= 0 || start == DBL_MAX))
             {
               start = sp->getMinPositiveValue();
             }
             sp->mutableColorMap().changeScaleType((GraphOptions::ScaleType)type);
-            rightAxis->setColorMap(QwtDoubleInterval(start, end), sp->getColorMap());
+            rightAxis->setColorMap(QwtInterval(start, end), sp->getColorMap());
             sp->setColorMap(sp->getColorMap());
             // we could check if(sp->isIntensityChanged()) but this doesn't work when one value is changing from zero to say 10^-10, which is a big problem for log plots
             sp->changeIntensity( start,end);
@@ -2203,7 +2157,7 @@ QString Graph::saveScale()
     s += "scale\t" + QString::number(i)+"\t";
 
     const QwtScaleDiv *scDiv = d_plot->axisScaleDiv(i);
-    QwtValueList lst = scDiv->ticks (QwtScaleDiv::MajorTick);
+    QList<double> lst = scDiv->ticks (QwtScaleDiv::MajorTick);
 
     s += QString::number(QMIN(scDiv->lBound(), scDiv->hBound()), 'g', 15)+"\t";
     s += QString::number(QMAX(scDiv->lBound(), scDiv->hBound()), 'g', 15)+"\t";
@@ -2698,11 +2652,11 @@ QString Graph::saveMarkers()
     ArrowMarker* mrkL=dynamic_cast<ArrowMarker*>(d_plot->marker(d_lines[i]));
     s+="<line>\t";
 
-    QwtDoublePoint sp = mrkL->startPointCoord();
+    QPointF sp = mrkL->startPointCoord();
     s+=(QString::number(sp.x(), 'g', 15))+"\t";
     s+=(QString::number(sp.y(), 'g', 15))+"\t";
 
-    QwtDoublePoint ep = mrkL->endPointCoord();
+    QPointF ep = mrkL->endPointCoord();
     s+=(QString::number(ep.x(), 'g', 15))+"\t";
     s+=(QString::number(ep.y(), 'g', 15))+"\t";
 
@@ -3827,7 +3781,7 @@ bool Graph::zoomOn()
   return (d_zoomer[0]->isEnabled() || d_zoomer[1]->isEnabled());
 }
 
-void Graph::zoomed (const QwtDoubleRect &)
+void Graph::zoomed (const QRectF &)
 {
   emit modifiedGraph();
 }
@@ -4692,7 +4646,7 @@ void Graph::copy(Graph* g)
         c = new BoxCurve(cv->table(), cv->title().text(), cv->startRow(), cv->endRow());
         c_keys[i] = d_plot->insertCurve(c);
         dynamic_cast<BoxCurve*>(c)->copy(dynamic_cast<const BoxCurve *>(cv));
-        QwtSingleArrayData dat(x[0], y, n);
+        SingleArrayData dat(x[0], y);
         c->setData(dat);
       } else {
         c = new DataCurve(cv->table(), cv->xColumnName(), cv->title().text(), cv->startRow(), cv->endRow());
@@ -4852,7 +4806,7 @@ void Graph::plotBoxDiagram(Table *w, const QStringList& names, int startRow, int
     c_type.resize(n_curves);
     c_type[n_curves-1] = Box;
 
-    c->setData(QwtSingleArrayData(double(j+1), QwtArray<double>(), 0));
+    c->setData(SingleArrayData(double(j+1), QVector<double>()));
     c->loadData();
 
     c->setPen(QPen(ColorBox::color(j), 1));
@@ -4966,8 +4920,7 @@ BoxCurve* Graph::openBoxDiagram(Table *w, const QStringList& l, int fileVersion)
   c_type.resize(n_curves);
   c_type[n_curves-1] = Box;
 
-  c->setData(QwtSingleArrayData(l[1].toDouble(), QwtArray<double>(), 0));
-  c->setData(QwtSingleArrayData(l[1].toDouble(), QwtArray<double>(), 0));
+  c->setData(SingleArrayData(l[1].toDouble(), QVector<double>()));
   c->loadData();
 
   c->setMaxStyle(SymbolBox::style(l[16].toInt()));
@@ -5134,7 +5087,7 @@ Spectrogram* Graph::spectrogram()
 
 }
 
-Spectrogram* Graph::plotSpectrogram(Function2D *f,int nrows, int ncols,QwtDoubleRect bRect,double minz,double maxz,CurveType type)
+Spectrogram* Graph::plotSpectrogram(Function2D *f,int nrows, int ncols,QRectF bRect,double minz,double maxz,CurveType type)
 {
   if (type != GrayScale && type != ColorMap && type != Contour && type != ColorMapContour)
     return 0;

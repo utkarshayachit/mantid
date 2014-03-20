@@ -481,7 +481,7 @@ void InstrumentActor::sumDetectors(QList<int> &dets, std::vector<double> &x, std
  */
 void InstrumentActor::resetColors()
 {
-  QwtDoubleInterval qwtInterval(m_DataMinScaleValue,m_DataMaxScaleValue);
+  QwtInterval qwtInterval(m_DataMinScaleValue,m_DataMaxScaleValue);
   m_colors.resize(m_specIntegrs.size());
 
   auto sharedWorkspace = getWorkspace();

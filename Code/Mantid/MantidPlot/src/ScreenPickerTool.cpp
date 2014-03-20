@@ -60,7 +60,7 @@ ScreenPickerTool::~ScreenPickerTool()
 
 void ScreenPickerTool::append(const QPoint &point)
 {
-	QwtDoublePoint pos = invTransform(point);
+	QPointF pos = invTransform(point);
 	QString info;
 	info.sprintf("x=%g; y=%g", pos.x(), pos.y());
 	emit statusText(info);
@@ -84,7 +84,7 @@ bool ScreenPickerTool::eventFilter(QObject *obj, QEvent *event)
 					case Qt::Key_Enter:
 					case Qt::Key_Return:
 					{
-                        QwtDoublePoint pos = invTransform(canvas()->mapFromGlobal(QCursor::pos()));
+                        QPointF pos = invTransform(canvas()->mapFromGlobal(QCursor::pos()));
                         d_selection_marker.setValue(pos);
                         if (d_selection_marker.plot() == NULL)
                             d_selection_marker.attach(d_graph->plotWidget());
@@ -120,7 +120,7 @@ QwtText ScreenPickerTool::trackerText( const QPoint & pos ) const
  *
  *  @param pos  The current mouse location.
  */
-QwtText ScreenPickerTool::trackerText( const QwtDoublePoint & pos ) const
+QwtText ScreenPickerTool::trackerTextF( const QPointF & pos ) const
 {	
 	QString info;
     info.sprintf("%g; %g", pos.x(), pos.y());
@@ -135,7 +135,7 @@ DrawPointTool::DrawPointTool(ApplicationWindow *app, Graph *graph, const QObject
 	d_table = NULL;
 }
 
-void DrawPointTool::appendPoint(const QwtDoublePoint &pos)
+void DrawPointTool::appendPoint(const QPointF &pos)
 {
 	if (!d_app)
 		return;
@@ -185,7 +185,7 @@ bool DrawPointTool::eventFilter(QObject *obj, QEvent *event)
 					case Qt::Key_Enter:
 					case Qt::Key_Return:
 					{
-                        QwtDoublePoint pos = invTransform(canvas()->mapFromGlobal(QCursor::pos()));
+                        QPointF pos = invTransform(canvas()->mapFromGlobal(QCursor::pos()));
                         d_selection_marker.setValue(pos);
                         if (d_selection_marker.plot() == NULL)
                             d_selection_marker.attach(d_graph->plotWidget());

@@ -96,7 +96,7 @@ void ColorMapEditor::updateColorMap()
   QColor c_max = QColor(table->item(rows - 1, 1)->text());
   QwtLinearColorMap map(c_min, c_max);
   for (int i = 1; i < rows-1; i++){
-    QwtDoubleInterval range = QwtDoubleInterval(min_val, max_val);
+    QwtInterval range = QwtInterval(min_val, max_val);
     double val = (((DoubleSpinBox*)table->cellWidget(i, 0))->value() - min_val)/range.width();
     map.addColorStop (val, QColor(table->item(i, 1)->text()));
   }
@@ -109,12 +109,12 @@ void ColorMapEditor::setColorMap(const QwtLinearColorMap& map)
 {
   scaleColorsBox->setChecked(map.mode() == QwtLinearColorMap::ScaledColors);
 
-  QwtArray <double> colors = map.colorStops();
+  QVector <double> colors = map.colorStops();
   int rows = (int)colors.size();
   table->setRowCount(rows);
   table->blockSignals(true);
 
-  QwtDoubleInterval range = QwtDoubleInterval(min_val, max_val);
+  QwtInterval range = QwtInterval(min_val, max_val);
   for (int i = 0; i < rows; i++){
     DoubleSpinBox *sb = new DoubleSpinBox();
     sb->setLocale(d_locale);
@@ -132,7 +132,7 @@ void ColorMapEditor::setColorMap(const QwtLinearColorMap& map)
     connect(sb, SIGNAL(activated(DoubleSpinBox *)), this, SLOT(spinBoxActivated(DoubleSpinBox *)));
     table->setCellWidget(i, 0, sb);
 
-    QColor c = QColor(map.rgb(QwtDoubleInterval(0, 1), colors[i]));
+    QColor c = QColor(map.rgb(QwtInterval(0, 1), colors[i]));
     QTableWidgetItem *it = new QTableWidgetItem(c.name());
 // Avoid compiler warning
 //#ifdef Q_CC_MSVC
@@ -169,10 +169,10 @@ void ColorMapEditor::insertLevel()
     previous_value = sb->value();
 
   double val = 0.5*(current_value + previous_value);
-  QwtDoubleInterval range = QwtDoubleInterval(min_val, max_val);
+  QwtInterval range = QwtInterval(min_val, max_val);
   double mapped_val = (val - min_val)/range.width();
 
-  QColor c = QColor(color_map.rgb(QwtDoubleInterval(0, 1), mapped_val));
+  QColor c = QColor(color_map.rgb(QwtInterval(0, 1), mapped_val));
 
   table->blockSignals(true);
   table->insertRow(row);
@@ -285,13 +285,13 @@ QString ColorMapEditor::saveToXmlString(const QwtLinearColorMap& color_map)
   s += "\t<Mode>" + QString::number(color_map.mode()) + "</Mode>\n";
   s += "\t<MinColor>" + color_map.color1().name() + "</MinColor>\n";
   s += "\t<MaxColor>" + color_map.color2().name() + "</MaxColor>\n";
-  QwtArray <double> colors = color_map.colorStops();
+  QVector <double> colors = color_map.colorStops();
   int stops = (int)colors.size();
   s += "\t<ColorStops>" + QString::number(stops - 2) + "</ColorStops>\n";
   for (int i = 1; i < stops - 1; i++)
   {
     s += "\t<Stop>" + QString::number(colors[i]) + "\t";
-    s += QColor(color_map.rgb(QwtDoubleInterval(0,1), colors[i])).name();
+    s += QColor(color_map.rgb(QwtInterval(0,1), colors[i])).name();
     s += "</Stop>\n";
   }
   return s += "</ColorMap>\n";

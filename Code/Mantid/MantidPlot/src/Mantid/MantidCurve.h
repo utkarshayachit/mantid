@@ -61,13 +61,13 @@ public:
   virtual QList<ErrorBarSettings*> errorBarSettingsList() const;
 
   /// Invalidates the bounding rect forcing it to be recalculated
-  void invalidateBoundingRect(){m_boundingRect = QwtDoubleRect();}
+  void invalidateBoundingRect(){m_boundingRect = QRectF();}
 
   /*-------------------------------------------------------------------------------------
   Public Base/Common methods
   -------------------------------------------------------------------------------------*/
 
-   QwtDoubleRect boundingRect() const;
+   QRectF boundingRect() const;
 
   /*-------------------------------------------------------------------------------------
   End Public Base/Common methods
@@ -104,7 +104,7 @@ protected:
 
 private:
   /// The bounding rect used by qwt to set the axes
-  mutable QwtDoubleRect m_boundingRect;
+  mutable QRectF m_boundingRect;
   
   //To ensure that all MantidCurves can work with Mantid Workspaces.
   virtual void init(Graph* g, bool distr, Graph::CurveType style) = 0;

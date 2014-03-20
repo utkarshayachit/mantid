@@ -365,7 +365,7 @@ void ScaleDetails::initWidgets()
       m_grpAxesBreaks->setEnabled(false);
     }
 
-    QwtValueList lst = scDiv->ticks(QwtScaleDiv::MajorTick);
+    QList<double> lst = scDiv->ticks(QwtScaleDiv::MajorTick);
     m_spnMajorValue->setValue(lst.count());
 
     checkstep();

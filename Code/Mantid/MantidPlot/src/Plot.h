@@ -96,8 +96,7 @@ public:
 	QColor frameColor();
 	const QColor & paletteBackgroundColor() const;
 
-    using QwtPlot::print; // Avoid Intel compiler warning
-    void print(QPainter *, const QRect &rect, const QwtPlotPrintFilter & = QwtPlotPrintFilter());
+    void print(QPainter *, const QRect &rect);
 	void updateLayout();
 
     void updateCurveLabels();
@@ -110,9 +109,10 @@ protected:
     // 'Dummy' QRect argument inserted into printCanvas method to avoid Intel
     // compiler warning (about printCanvas signature not matching that in base class)
     void printCanvas(QPainter *painter, const QRect&, const QRect &canvasRect,
-   			 const QwtScaleMap map[axisCnt], const QwtPlotPrintFilter &pfilter) const;
-	virtual void drawItems (QPainter *painter, const QRect &rect,
-			const QwtScaleMap map[axisCnt], const QwtPlotPrintFilter &pfilter) const;
+                         const QwtScaleMap map[axisCnt]) const;
+        virtual void drawItems (QPainter *painter, const QRectF &rect,
+                        const QwtScaleMap map[axisCnt]) const;
+
 
 	void drawInwardTicks(QPainter *painter, const QRect &rect,
 							const QwtScaleMap&map, int axis, bool min, bool maj) const;
