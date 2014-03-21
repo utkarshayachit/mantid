@@ -680,7 +680,7 @@ void Fit::insertFitFunctionCurve(const QString& name, double *x, double *y, int 
 	QString title = d_output_graph->generateFunctionName(name);
 	FunctionCurve *c = new FunctionCurve(FunctionCurve::Normal, title);
 	c->setPen(QPen(ColorBox::color(d_curveColorIndex), penWidth));
-	c->setData(x, y, d_points);
+	c->setSamples(x, y, d_points);
 	c->setRange(d_x[0], d_x[d_n-1]);
 	c->setFormula(formula);
 	d_output_graph->insertPlotItem(c, Graph::Line);

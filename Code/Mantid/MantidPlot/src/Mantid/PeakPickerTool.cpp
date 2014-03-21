@@ -353,7 +353,7 @@ void PeakPickerTool::functionCleared()
   d_graph->plotWidget()->replot();
 }
 
-void PeakPickerTool::draw(QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRect &) const
+void PeakPickerTool::draw(QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &) const
 {
   try
   {

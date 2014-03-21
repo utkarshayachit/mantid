@@ -91,7 +91,7 @@ protected:
   /// Draw the curve.
   void doDraw(QPainter *p, 
     const QwtScaleMap &xMap, const QwtScaleMap &yMap,
-    const QRect &rect, MantidQwtWorkspaceData const * const data) const;
+    const QRectF &rect, MantidQwtWorkspaceData const * const data) const;
 
   /*-------------------------------------------------------------------------------------
   End Protected Base/Common methods

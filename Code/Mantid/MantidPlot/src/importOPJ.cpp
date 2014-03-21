@@ -1032,7 +1032,7 @@ bool ImportOPJ::importGraphs(const OPJFile& opj)
 			grid->setMinPenY(QPen(ColorBox::color(grids[3].color), ceil(grids[3].width),
 							Graph::getPenStyle(translateOrigin2QtiplotLineStyle(grids[3].style))));
 
-			grid->setAxis(2, 0);
+			grid->setAxes(2, 0);
 			grid->enableZeroLineX(0);
 			grid->enableZeroLineY(0);
 

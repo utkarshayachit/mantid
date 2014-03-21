@@ -233,27 +233,27 @@ void BoxCurve::drawBox(QPainter *painter, const QwtScaleMap &xMap,
 void BoxCurve::drawBoxSymbols(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, double *dat, int size) const
 {
 	QPointF p0 = sample(0);
-	const int px = static_cast<int>(xMap.transform(p0.x()));
+	const double px = xMap.transform(p0.x());
 
-	const int py_min = static_cast<int>(yMap.transform(p0.y()));
+	const double py_min =yMap.transform(p0.y());
 	QwtSymbol minSymbol(min_style);
-	minSymbol.draw(painter, px, py_min);
+	minSymbol.drawSymbol(painter, QPointF(px, py_min));
 
-	const int py_max = static_cast<int>(yMap.transform(sample(size - 1).y()));
+	const double py_max = yMap.transform(sample(size - 1).y());
 	QwtSymbol maxSymbol(max_style);
-	maxSymbol.draw(painter, px, py_max);
+	maxSymbol.drawSymbol(painter, QPointF(px, py_max));
 
-	const int p1 = static_cast<int>(yMap.transform(gsl_stats_quantile_from_sorted_data (dat, 1, size, 0.01)));
+	const double p1 = yMap.transform(gsl_stats_quantile_from_sorted_data (dat, 1, size, 0.01));
 	QwtSymbol p1Symbol(max_style);
-	p1Symbol.draw(painter, px, p1);
+	p1Symbol.drawSymbol(painter, QPointF(px, p1));
 
-	const int p99 = static_cast<int>(yMap.transform(gsl_stats_quantile_from_sorted_data (dat, 1, size, 0.99)));
+	const double p99 = yMap.transform(gsl_stats_quantile_from_sorted_data (dat, 1, size, 0.99));
 	QwtSymbol p99Symbol(p99_style);
-	p99Symbol.draw(painter, px, p99);
+	p99Symbol.drawSymbol(painter, QPointF(px, p99));
 
-	const int mean = static_cast<int>(yMap.transform(gsl_stats_mean(dat, 1, size)));
+	const double mean = yMap.transform(gsl_stats_mean(dat, 1, size));
 	QwtSymbol meanSymbol(mean_style);
-	meanSymbol.draw(painter, px, mean);
+	meanSymbol.drawSymbol(painter, QPointF(px, mean));
 }
 
 void BoxCurve::setBoxStyle(int style)
@@ -337,7 +337,7 @@ void BoxCurve::loadData()
 	if (size>0){
 		Y.resize(size);
 		gsl_sort (Y.data(), 1, size);
-	setData(SingleArrayData(this->x(0), Y));
+		setData(new SingleArrayData(this->sample(0).x(), Y));
 	} else
 		remove();
 }

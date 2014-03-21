@@ -682,7 +682,7 @@ public slots:
   void plotBoxDiagram(Table *w, const QStringList& names, int startRow = 0, int endRow = -1);
   //@}
 
-  void setCurveSymbol(int index, const QwtSymbol& s);
+  void setCurveSymbol(int index, const QwtSymbol* s);
   void setCurvePen(int index, const QPen& p);
   void setCurveBrush(int index, const QBrush& b);
   void setCurveSkipSymbolsCount(int index, int count);

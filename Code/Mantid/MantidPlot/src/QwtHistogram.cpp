@@ -66,9 +66,10 @@ void QwtHistogram::copy(const QwtHistogram *h)
 	d_end = h->d_end;
 }
 
-void QwtHistogram::draw(QPainter *painter,
-		const QwtScaleMap &xMap, const QwtScaleMap &yMap, int from, int to) const
+void QwtHistogram::drawSeries(QPainter *painter,
+		const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect, int from, int to) const
 {
+	Q_UNUSED(canvasRect);
 	if ( !painter || dataSize() <= 0 )
 		return;
 

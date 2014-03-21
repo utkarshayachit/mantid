@@ -66,8 +66,7 @@ public:
 
   virtual QImage renderImage(
       const QwtScaleMap &xMap, const QwtScaleMap &yMap,
-      const QRectF &rect) const;
-
+      const QRectF &rect, const QSize &imageSize) const;
 
   Spectrogram* copy();
   Matrix * matrix(){return d_matrix;};
@@ -197,8 +196,7 @@ protected:
 class SpectrogramData: public QwtRasterData
 {
 public:
-  SpectrogramData(const QRectF &rect):QwtRasterData(rect){}
-  virtual double getMinPositiveValue()const = 0;
+  virtual double getMinPositiveValue() const = 0;
 };
 
 
@@ -206,7 +204,7 @@ class MatrixData: public SpectrogramData
 {
 public:
   MatrixData(Matrix *m):
-    SpectrogramData(m->boundingRect()),
+    SpectrogramData(),
     d_matrix(m)
   {
     n_rows = d_matrix->numRows();
@@ -220,7 +218,11 @@ public:
       for (int j = 0; j < n_cols; j++)
         d_m[i][j] = d_matrix->cell(i, j);
 
+    QRectF boundBox = m->boundingRect();
+    setInterval(Qt::XAxis, QwtInterval(boundBox.bottomLeft().x(), boundBox.bottomRight().x()));
+    setInterval(Qt::YAxis, QwtInterval(boundBox.bottomLeft().y(), boundBox.topLeft().y()));
     m->range(&min_z, &max_z);
+    setInterval(Qt::ZAxis, QwtInterval(min_z, max_z));
 
     x_start = d_matrix->xStart();
     dx = d_matrix->dx();
@@ -239,16 +241,6 @@ public:
   virtual QwtRasterData *copy() const
   {
     return new MatrixData(d_matrix);
-  }
-
-  virtual QwtInterval range() const
-  {
-    return QwtInterval(min_z, max_z);
-  }
-
-  virtual QSize rasterHint (const QRectF &) const
-  {
-    return QSize(n_cols, n_rows);
   }
 
   virtual double value(double x, double y) const;
@@ -283,15 +275,21 @@ class FunctionData: public SpectrogramData
 {
 public:
   FunctionData(Function2D *f,int nrows, int ncols,double left, double top, double width, double height,double minz,double maxz):
-    SpectrogramData(QRectF(left, top, width, height)),
+    SpectrogramData(),
     d_funct(f),n_rows(nrows),n_cols(ncols),min_z(minz),max_z(maxz)
   {
+    setInterval(Qt::XAxis, QwtInterval(left, left + width));
+    setInterval(Qt::YAxis, QwtInterval(top - height, top));
+    setInterval(Qt::ZAxis, QwtInterval(min_z, max_z));
   }
 
   FunctionData(Function2D *f,int nrows, int ncols,QRectF bRect,double minz,double maxz):
-    SpectrogramData(bRect),
+    SpectrogramData(),
     d_funct(f),n_rows(nrows),n_cols(ncols),min_z(minz),max_z(maxz)
   {
+    setInterval(Qt::XAxis, QwtInterval(bRect.bottomLeft().x(), bRect.bottomRight().x()));
+    setInterval(Qt::YAxis, QwtInterval(bRect.bottomLeft().y(), bRect.topLeft().y()));
+    setInterval(Qt::ZAxis, QwtInterval(min_z, max_z));
   }
 
   ~FunctionData()
@@ -300,23 +298,14 @@ public:
 
   virtual QwtRasterData *copy() const
   {
-    return new FunctionData(d_funct, n_rows, n_cols,boundingRect(),min_z,max_z);
-  }
-
-  virtual QwtInterval range() const
-  {
-    return QwtInterval(min_z, max_z);
-  }
-
-  virtual QSize rasterHint (const QRectF &) const
-  {
-    return QSize(n_cols, n_rows);
+    QwtInterval xInterval = interval(Qt::XAxis);
+    QwtInterval yInterval = interval(Qt::YAxis);
+    return new FunctionData(d_funct, n_rows, n_cols,xInterval.minValue(),yInterval.maxValue(),
+                            xInterval.width(), yInterval.width(), min_z, max_z);
   }
 
   virtual double value(double x, double y) const
   {
-    //static std::ofstream f("funct.txt");
-    //f<<x<<' '<<y<<' '<<d_funct->operator()(x,y)<<'\n';
     return d_funct->operator()(x,y);
   }
 

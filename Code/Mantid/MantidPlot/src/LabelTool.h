@@ -88,9 +88,9 @@ private:
 
 private slots:
 
-  void graphAreaClicked(const QwtPolygon &);
-  void xAxisClicked(const QwtPolygon &);
-  void yAxisClicked(const QwtPolygon &);
+  void graphAreaClicked(const QPolygon &);
+  void xAxisClicked(const QPolygon &);
+  void yAxisClicked(const QPolygon &);
 
   void insertTextBox();
   void insertXCoord();

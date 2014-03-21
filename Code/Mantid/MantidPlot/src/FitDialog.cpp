@@ -1427,7 +1427,7 @@ void FitDialog::updatePreview()
 	}
 
     d_preview_curve->setPen(QPen(ColorBox::color(boxColor->currentIndex()), 1));
-    d_preview_curve->setData(X.data(), Y.data(), d_points);//d_preview_curve->setData(X, Y, d_points);
+    d_preview_curve->setSamples(X.data(), Y.data(), d_points);//d_preview_curve->setData(X, Y, d_points);
     d_graph->replot();
 }
 

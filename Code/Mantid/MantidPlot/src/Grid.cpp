@@ -42,8 +42,8 @@ d_min_pen_y(QPen(Qt::gray, 0.4, Qt::DotLine)),
 mrkX(-1),
 mrkY(-1)
 {
-	setMajPen(QPen(Qt::blue, 0.5, Qt::SolidLine));
-	setMinPen(QPen(Qt::gray, 0.4, Qt::DotLine));
+	setMajorPen(QPen(Qt::blue, 0.5, Qt::SolidLine));
+	setMinorPen(QPen(Qt::gray, 0.4, Qt::DotLine));
 	enableX(false);
 	enableY(false);
     setRenderHint(QwtPlotItem::RenderAntialiased, false);
@@ -66,7 +66,7 @@ void Grid::draw(QPainter *painter,
 		const QRectF &r) const
 {
 	//  draw minor X gridlines
-	painter->setPen(minPen());
+	painter->setPen(minorPen());
 
 	if (xMinEnabled()){
 		drawLines(painter, r, Qt::Vertical, mx,
@@ -86,7 +86,7 @@ void Grid::draw(QPainter *painter,
 	}
 
 	//  draw major X gridlines
-	painter->setPen(majPen());
+	painter->setPen(majorPen());
 
 	if (xEnabled()){
 		drawLines(painter, r, Qt::Vertical, mx,
@@ -106,13 +106,13 @@ void Grid::drawLines(QPainter *painter, const QRectF &rect,
 		Qt::Orientation orientation, const QwtScaleMap &map,
 		const QList<double> &values) const
 {
-	const int x1 = rect.left();
-	const int x2 = rect.right();
-	const int y1 = rect.top();
-	const int y2 = rect.bottom();
+	const double x1 = rect.left();
+	const double x2 = rect.right();
+	const double y1 = rect.top();
+	const double y2 = rect.bottom();
 
 	for (uint i = 0; i < (uint)values.count(); i++){
-		const int value = map.transform(values[i]);
+		const double value = map.transform(values[i]);
 		if ( orientation == Qt::Horizontal ){
 			if ((value > y1) && (value < y2))
 				QwtPainter::drawLine(painter, x1, value, x2, value);
@@ -177,7 +177,7 @@ void Grid::load(const QStringList& grid)
 	enableY(majorOnY);
 	enableYMin(minorOnY);
 
-	setAxis(xAxis, yAxis);
+	setAxes(xAxis, yAxis);
 
 	enableZeroLineX(xZeroOn);
 	enableZeroLineY(yZeroOn);
@@ -193,13 +193,13 @@ void Grid::enableZeroLineX(bool enable)
 		QwtPlotMarker *m = new QwtPlotMarker();
 		mrkX = d_plot->insertMarker(m);
 		m->setRenderHint(QwtPlotItem::RenderAntialiased, false);
-		m->setAxis(xAxis(), yAxis());
+		m->setAxes(xAxis(), yAxis());
 		m->setLineStyle(QwtPlotMarker::VLine);
 		m->setValue(0.0, 0.0);
 
 		double width = 1;
-		if (d_plot->canvas()->lineWidth())
-			width = d_plot->canvas()->lineWidth();
+		if (d_plot->lineWidth())
+			width = d_plot->lineWidth();
 		else if (d_plot->axisEnabled (QwtPlot::yLeft) || d_plot->axisEnabled (QwtPlot::yRight))
 			width =  d_plot->axesLinewidth();
 
@@ -220,13 +220,13 @@ void Grid::enableZeroLineY(bool enable)
 		QwtPlotMarker *m = new QwtPlotMarker();
 		mrkY = d_plot->insertMarker(m);
 		m->setRenderHint(QwtPlotItem::RenderAntialiased, false);
-		m->setAxis(xAxis(), yAxis());
+		m->setAxes(xAxis(), yAxis());
 		m->setLineStyle(QwtPlotMarker::HLine);
 		m->setValue(0.0, 0.0);
 
 		double width = 1;
-		if (d_plot->canvas()->lineWidth())
-			width = d_plot->canvas()->lineWidth();
+		if (d_plot->lineWidth())
+			width = d_plot->lineWidth();
 		else if (d_plot->axisEnabled (QwtPlot::xBottom) || d_plot->axisEnabled (QwtPlot::xTop))
 			width =  d_plot->axesLinewidth();
 
@@ -252,7 +252,7 @@ void Grid::copy(Grid *grid)
 	enableY(grid->yEnabled());
 	enableYMin(grid->yMinEnabled());
 
-	setAxis(grid->xAxis(), grid->yAxis());
+	setAxes(grid->xAxis(), grid->yAxis());
 
 	enableZeroLineX(grid->xZeroLineEnabled());
 	enableZeroLineY(grid->yZeroLineEnabled());

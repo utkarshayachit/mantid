@@ -41,7 +41,6 @@
 #include <qwt_painter.h>
 #include <qwt_plot_layout.h>
 #include <qwt_plot_canvas.h>
-#include <qwt_layout_metrics.h>
 #include <qwt_symbol.h>
 
 #include <iostream>

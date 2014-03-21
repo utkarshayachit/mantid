@@ -70,7 +70,7 @@ Spectrogram::Spectrogram(Matrix *m):
 	    color_map_policy(Default),mColorMap()
 //color_map(QwtLinearColorMap()),
 {
-  setData(MatrixData(m));
+  setData(new MatrixData(m));
   double step = fabs(data().range().maxValue() - data().range().minValue())/5.0;
 
   QList<double> contourLevels;
@@ -888,21 +888,19 @@ bool Spectrogram::isIntensityChanged()
  */
 QImage Spectrogram::renderImage(
     const QwtScaleMap &xMap, const QwtScaleMap &yMap, 
-    const QRectF &area) const
+    const QRectF &area, const QSize &imageSize) const
 {
 
   MantidMatrixFunction* mantidFun = dynamic_cast<MantidMatrixFunction*>(d_funct);
   if (!mantidFun)
   {
-    return QwtPlotSpectrogram::renderImage(xMap,yMap,area);
+    return QwtPlotSpectrogram::renderImage(xMap,yMap,area, imageSize);
   }
 
   if ( area.isEmpty() )
     return QImage();
 
-  QRect rect = transform(xMap, yMap, area);
-
-  QImage image(rect.size(), this->colorMap().format() == QwtColorMap::RGB
+  QImage image(imageSize, this->colorMap().format() == QwtColorMap::RGB
       ? QImage::Format_ARGB32 : QImage::Format_Indexed8 );
 
   const QwtInterval intensityRange = data().range();
@@ -911,7 +909,7 @@ QImage Spectrogram::renderImage(
 
   if ( this->colorMap().format() == QwtColorMap::RGB )
   {
-    return QwtPlotSpectrogram::renderImage(xMap,yMap,area);
+    return QwtPlotSpectrogram::renderImage(xMap,yMap,area, imageSize);
   }
   else if ( this->colorMap().format() == QwtColorMap::Indexed )
   {

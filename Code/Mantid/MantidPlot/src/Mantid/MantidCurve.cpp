@@ -151,7 +151,7 @@ QString MantidCurve::createCopyName(const QString& curveName)
 
 void MantidCurve::doDraw(QPainter *p, 
           const QwtScaleMap &xMap, const QwtScaleMap &yMap,
-          const QRect&, MantidQwtWorkspaceData const * const d) const
+          const QRectF&, MantidQwtWorkspaceData const * const d) const
 {
   int sh = 0;
   if (symbol().style() != QwtSymbol::NoSymbol)

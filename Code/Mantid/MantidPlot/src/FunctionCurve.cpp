@@ -195,7 +195,7 @@ void FunctionCurve::loadData(int points)
       Mantid::API::FunctionValues Y(domain);
       f->function(domain,Y);
 
-      setData(&X[0], Y.getPointerToCalculated(0), static_cast<int>(X.size()));
+      setSamples(&X[0], Y.getPointerToCalculated(0), static_cast<int>(X.size()));
     }
     catch(...)
     {
@@ -205,7 +205,7 @@ void FunctionCurve::loadData(int points)
   else
   {// mu::Parser is used to calculate the data points
     if (!points)
-      points = dataSize();
+      points = static_cast<int>(dataSize());
 
     QVarLengthArray<double> X(points), Y(points);//double X[points], Y[points];
     double step = (d_to - d_from)/(double)(points - 1);
@@ -258,7 +258,7 @@ void FunctionCurve::loadData(int points)
     if (error)
       return;
 
-    setData(X.data(), Y.data(), points);
+    setSamples(X.data(), Y.data(), points);
   }
 }
 
@@ -322,7 +322,7 @@ void FunctionCurve::loadMantidData(Mantid::API::MatrixWorkspace_const_sptr ws, s
     Mantid::API::FunctionValues Y(domain);
     f->function(domain,Y);
 
-    setData(&X[0], Y.getPointerToCalculated(0), static_cast<int>(X.size()));
+    setSamples(&X[0], Y.getPointerToCalculated(0), static_cast<int>(X.size()));
   }
   catch(...)
   {

@@ -97,8 +97,7 @@ void DataPickerTool::append(const QPoint &pos)
 	setSelection(dynamic_cast<QwtPlotCurve *>(d_graph->plotWidget()->curve(curve)), point_index);
 	if (!d_selected_curve) return;
 
-	QwtPlotPicker::append(transform(QPointF(d_selected_curve->x(d_selected_point),
-					d_selected_curve->y(d_selected_point))));
+	QwtPlotPicker::append(transform(d_selected_curve->sample(static_cast<size_t>(d_selected_point))));
 }
 
 void DataPickerTool::setSelection(QwtPlotCurve *curve, int point_index)
@@ -117,8 +116,9 @@ void DataPickerTool::setSelection(QwtPlotCurve *curve, int point_index)
 
   setAxis(d_selected_curve->xAxis(), d_selected_curve->yAxis());
 
-  d_restricted_move_pos = QPoint(plot()->transform(xAxis(), d_selected_curve->x(d_selected_point)),
-    plot()->transform(yAxis(), d_selected_curve->y(d_selected_point)));
+  QPointF selectedPt = d_selected_curve->sample(static_cast<int>(d_selected_point));
+  d_restricted_move_pos =
+      QPoint(plot()->transform(xAxis(), selectedPt.x()), plot()->transform(yAxis(), selectedPt.y()));
 
   if (dynamic_cast<PlotCurve *>(d_selected_curve)->type() == Graph::Function) 
   {
@@ -126,8 +126,8 @@ void DataPickerTool::setSelection(QwtPlotCurve *curve, int point_index)
     emit statusText(QString("%1[%2]: x=%3; y=%4")
       .arg(d_selected_curve->title().text())
       .arg(d_selected_point + 1)
-      .arg(locale.toString(d_selected_curve->x(d_selected_point), 'G', d_app->d_decimal_digits))
-      .arg(locale.toString(d_selected_curve->y(d_selected_point), 'G', d_app->d_decimal_digits)));
+      .arg(locale.toString(selectedPt.x(), 'G', d_app->d_decimal_digits))
+      .arg(locale.toString(selectedPt.y(), 'G', d_app->d_decimal_digits)));
   }
   else if (dynamic_cast<DataCurve*>(d_selected_curve))
   {
@@ -144,8 +144,7 @@ void DataPickerTool::setSelection(QwtPlotCurve *curve, int point_index)
       .arg(t->text(row, yCol)));
   }
 
-  QPointF selected_point_value(d_selected_curve->x(d_selected_point), d_selected_curve->y(d_selected_point));
-  d_selection_marker.setValue(selected_point_value);
+  d_selection_marker.setValue(selectedPt);
   if (d_selection_marker.plot() == NULL)
     d_selection_marker.attach(d_graph->plotWidget());
   d_graph->plotWidget()->replot();

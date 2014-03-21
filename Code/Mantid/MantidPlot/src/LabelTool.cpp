@@ -9,9 +9,9 @@ LabelTool::LabelTool(Graph *graph)
     m_yAxisPicker(new QwtPicker(graph->plotWidget()->axisWidget(Plot::yLeft))),
     m_xPos(), m_yPos(), m_axisCoordsX(), m_axisCoordsY(), m_xPosSigFigs(), m_yPosSigFigs(), m_error(), m_dataCoords(), m_curveWsName()
 {
-    connect(m_xAxisPicker, SIGNAL(selected(const QwtPolygon &)), this, SLOT(xAxisClicked(const QwtPolygon &)));
-    connect(m_yAxisPicker, SIGNAL(selected(const QwtPolygon &)), this, SLOT(yAxisClicked(const QwtPolygon &)));
-    connect(m_canvasPicker, SIGNAL(selected(const QwtPolygon &)), this, SLOT(graphAreaClicked(const QwtPolygon &)));
+    connect(m_xAxisPicker, SIGNAL(selected(const QPolygon &)), this, SLOT(xAxisClicked(const QPolygon &)));
+    connect(m_yAxisPicker, SIGNAL(selected(const QPolygon &)), this, SLOT(yAxisClicked(const QPolygon &)));
+    connect(m_canvasPicker, SIGNAL(selected(const QPolygon &)), this, SLOT(graphAreaClicked(const QPolygon &)));
   
     m_xAxisPicker->setSelectionFlags(QwtPicker::PointSelection | QwtPicker::ClickSelection);
     m_yAxisPicker->setSelectionFlags(QwtPicker::PointSelection | QwtPicker::ClickSelection);
@@ -29,7 +29,7 @@ LabelTool::LabelTool(Graph *graph)
  * When x-axis is clicked, the pixel coordinates are converted to graph coordinates, and displayed in a pop-up menu.
  * @param &x :: A reference to a click on the x-axis.
  */
-void LabelTool::xAxisClicked(const QwtPolygon &x)
+void LabelTool::xAxisClicked(const QPolygon &x)
 {
   populateMantidCurves();
 
@@ -78,7 +78,7 @@ void LabelTool::xAxisClicked(const QwtPolygon &x)
  * When y-axis is clicked, the pixel coordinates are converted to graph coordinates, and displayed in a pop-up menu.
  * @param &y :: A reference to a click on the y-axis.
  */
-void LabelTool::yAxisClicked(const QwtPolygon &y)
+void LabelTool::yAxisClicked(const QPolygon &y)
 {
   populateMantidCurves();
 
@@ -152,7 +152,7 @@ void LabelTool::populateMantidCurves()
  * If it is, the coordinates of the data point are stored for display.
  * @param &c :: A reference to a click on the graph area; it is bound by the x and y-axis.
  */
-void LabelTool::graphAreaClicked(const QwtPolygon &c)
+void LabelTool::graphAreaClicked(const QPolygon &c)
 { 
   populateMantidCurves();
 

@@ -424,7 +424,7 @@ void PlotDialog::changePlotType(int plotType)
 
     boxConnect->setCurrentIndex(1); //show line for Line and LineSymbol plots
 
-    QwtSymbol s = QwtSymbol(QwtSymbol::Ellipse, QBrush(), QPen(), QSize(9, 9));
+    QwtSymbol *s = new QwtSymbol(QwtSymbol::Ellipse, QBrush(), QPen(), QSize(9, 9));
     if (plotType == Graph::Line)
       s.setStyle(QwtSymbol::NoSymbol);
     else if (plotType == Graph::Scatter)

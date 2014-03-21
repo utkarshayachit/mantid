@@ -49,10 +49,10 @@ ImageMarker::ImageMarker(const QString& fn):
 
 void ImageMarker::draw (QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &) const
 {
-    const int x0 = xMap.transform(xValue());
-	const int y0 = yMap.transform(yValue());
-	const int x1 = xMap.transform(d_x_right);
-	const int y1 = yMap.transform(d_y_bottom);
+    const int x0 = static_cast<int>(xMap.transform(xValue()));
+        const int y0 = static_cast<int>(yMap.transform(yValue()));
+        const int x1 = static_cast<int>(xMap.transform(d_x_right));
+        const int y1 = static_cast<int>(yMap.transform(d_y_bottom));
 
 	p->drawPixmap(QRect(x0, y0, abs(x1 - x0), abs(y1 - y0)), d_pic);
 }
@@ -129,10 +129,10 @@ QRect ImageMarker::rect() const
     const QwtScaleMap &xMap = plot()->canvasMap(xAxis());
     const QwtScaleMap &yMap = plot()->canvasMap(yAxis());
 
-    const int x0 = xMap.transform(xValue());
-    const int y0 = yMap.transform(yValue());
-    const int x1 = xMap.transform(d_x_right);
-    const int y1 = yMap.transform(d_y_bottom);
+    const int x0 = static_cast<int>(xMap.transform(xValue()));
+    const int y0 = static_cast<int>(yMap.transform(yValue()));
+    const int x1 = static_cast<int>(xMap.transform(d_x_right));
+    const int y1 = static_cast<int>(yMap.transform(d_y_bottom));
 
     return QRect(x0, y0, abs(x1 - x0), abs(y1 - y0));
 }

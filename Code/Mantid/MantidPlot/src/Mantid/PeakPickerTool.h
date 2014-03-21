@@ -143,7 +143,7 @@ private:
   void plotFitFunction(MantidQt::MantidWidgets::PropertyHandler* h);
   void replot(MantidQt::MantidWidgets::PropertyHandler* h) const;
 
-  virtual void draw(QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRect &) const;
+  virtual void draw(QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &) const;
   // Add a new peak with centre c and height h. 
   void addPeak(double c,double h);
   void addPeakAt(int x,int y);

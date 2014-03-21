@@ -132,6 +132,7 @@
 #include <cassert>
 
 #include <qwt_scale_engine.h>
+#include <qwt_plot_layout.h>
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QProgressDialog>
@@ -2993,7 +2994,7 @@ void ApplicationWindow::setPreferences(Graph* g)
   g->initFonts(plotAxesFont, plotNumbersFont);
   g->initTitle(titleOn, plotTitleFont);
   g->setCanvasFrame(canvasFrameWidth);
-  g->plotWidget()->setMargin(defaultPlotMargin);
+  g->plotWidget()->canvas()->setContentsMargins(defaultPlotMargin,defaultPlotMargin,defaultPlotMargin,defaultPlotMargin);
 
 
   g->enableAutoscaling(autoscale2DPlots);
@@ -11553,7 +11554,8 @@ Graph* ApplicationWindow::openGraph(ApplicationWindow* app, MultiLayer *plot,
     }
     else if (s.contains ("Margin")){
       QStringList fList=s.split("\t");
-      ag->plotWidget()->setMargin(fList[1].toInt());
+      int margin = fList[1].toInt();
+      ag->plotWidget()->canvas()->setContentsMargins(margin,margin,margin,margin);
     }
     else if (s.contains ("Border")){
       QStringList fList=s.split("\t");
@@ -11746,9 +11748,9 @@ Graph* ApplicationWindow::openGraph(ApplicationWindow* app, MultiLayer *plot,
         if (d_file_version >= 88){
           if (c && c->rtti() == QwtPlotItem::Rtti_PlotCurve){
             if (d_file_version < 90)
-              c->setAxis(curve[curve.count()-2].toInt(), curve[curve.count()-1].toInt());
+              c->setAxes(curve[curve.count()-2].toInt(), curve[curve.count()-1].toInt());
             else {
-              c->setAxis(curve[curve.count()-5].toInt(), curve[curve.count()-4].toInt());
+              c->setAxes(curve[curve.count()-5].toInt(), curve[curve.count()-4].toInt());
               c->setVisible(curve.last().toInt());
             }
           }
@@ -11817,7 +11819,7 @@ Graph* ApplicationWindow::openGraph(ApplicationWindow* app, MultiLayer *plot,
         QwtPlotCurve *c = ag->curve(curveID);
         if (c){
           if(current_index + 1 < curve.size())
-            c->setAxis(curve[current_index].toInt(), curve[current_index+1].toInt());
+            c->setAxes(curve[current_index].toInt(), curve[current_index+1].toInt());
           if (d_file_version >= 90 && current_index+2 < curve.size())
             c->setVisible(curve.last().toInt());
           else
@@ -12390,7 +12392,7 @@ void ApplicationWindow::analyzeCurve(Graph *g, Analysis operation, const QString
     QwtPlotCurve* c = g->curve(curveTitle);
     if (c){
       ScaleEngine *se = dynamic_cast<ScaleEngine *>(g->plotWidget()->axisScaleEngine(c->xAxis()));
-      if(se->type() == QwtScaleTransformation::Log10)
+      if(se->type() == ScaleEngine::Log10)
         fitter = new LogisticFit (this, g);
       else
         fitter = new SigmoidalFit (this, g);
@@ -14182,7 +14184,7 @@ MultiLayer* ApplicationWindow::plotImage(Matrix *m)
       QApplication::restoreOverrideCursor();
       return 0;
     }
-    s->setAxis(QwtPlot::xTop, QwtPlot::yLeft);
+    s->setAxes(QwtPlot::xTop, QwtPlot::yLeft);
     plot->setScale(QwtPlot::xTop, QMIN(m->xStart(), m->xEnd()), QMAX(m->xStart(), m->xEnd()));
     plot->setScale(QwtPlot::yLeft, QMIN(m->yStart(), m->yEnd()), QMAX(m->yStart(), m->yEnd()),
         0.0, 5, 5, GraphOptions::Linear, true);
@@ -14197,7 +14199,7 @@ MultiLayer* ApplicationWindow::plotImage(Matrix *m)
     }
     plot = g->activeGraph();
     setPreferences(plot);
-    if( plot->plotItem(0) )plot->plotItem(0)->setAxis(QwtPlot::xTop, QwtPlot::yLeft);
+    if( plot->plotItem(0) )plot->plotItem(0)->setAxes(QwtPlot::xTop, QwtPlot::yLeft);
   }
 
   plot->enableAxis(QwtPlot::xTop, true);

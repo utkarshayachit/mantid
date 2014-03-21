@@ -64,9 +64,6 @@ public:
   /// Used for waterfall plots: updates the data curves with an offset
   void loadData();
 
-  /// Overrides qwt_plot_curve::setData to make sure only data of MantidQwtMatrixWorkspaceData type can  be set
-  void setData(const QwtData &data);
-
   /// Overrides qwt_plot_curve::boundingRect
   QRectF boundingRect() const;
 
@@ -86,7 +83,7 @@ public:
 
   virtual void draw(QPainter *p, 
     const QwtScaleMap &xMap, const QwtScaleMap &yMap,
-    const QRect &) const;
+    const QRectF &) const;
 
   /// Overriden virtual method
   void itemChanged();

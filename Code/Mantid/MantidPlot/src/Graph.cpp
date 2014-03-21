@@ -92,6 +92,7 @@
 #if QWT_VERSION >= 0x050200
 #include <qwt_plot_rescaler.h>
 #endif
+#include <qwt_picker_machine.h>
 #include <qwt_scale_widget.h>
 #include <qwt_scale_engine.h>
 #include <qwt_text_label.h>
@@ -158,14 +159,19 @@ Graph::Graph(int x, int y, int width, int height, QWidget* parent, Qt::WFlags f)
   titlePicker = new TitlePicker(d_plot);
   scalePicker = new ScalePicker(d_plot);
 
-  d_zoomer[0]= new QwtPlotZoomer(QwtPlot::xBottom, QwtPlot::yLeft,
-      QwtPicker::DragSelection | QwtPicker::CornerToCorner, QwtPicker::AlwaysOff, d_plot->canvas());
-  d_zoomer[0]->setRubberBandPen(QPen(Qt::black));
-  d_zoomer[1] = new QwtPlotZoomer(QwtPlot::xTop, QwtPlot::yRight,
-      QwtPicker::DragSelection | QwtPicker::CornerToCorner,
-      QwtPicker::AlwaysOff, d_plot->canvas());
-  zoom(false);
+  QwtPlotZoomer *zoomer = new QwtPlotZoomer(QwtPlot::xBottom, QwtPlot::yLeft,
+                                            d_plot->canvas());
+  zoomer->setStateMachine(new QwtPickerDragRectMachine);
+  zoomer->setTrackerMode(QwtPicker::AlwaysOff);
+  zoomer->setRubberBandPen(QPen(Qt::black));
+  d_zoomer[0] = zoomer;
 
+  zoomer = new QwtPlotZoomer(QwtPlot::xTop, QwtPlot::yRight,d_plot->canvas());
+  zoomer->setStateMachine(new QwtPickerDragRectMachine);
+  zoomer->setTrackerMode(QwtPicker::AlwaysOff);
+  d_zoomer[1] = zoomer;
+
+  zoom(false);
   c_type = QVector<int>();
   c_keys = QVector<int>();
 
@@ -1046,7 +1052,7 @@ void Graph::updateSecondaryAxis(int axis)
 		sc_engine->clone(sc_engine);
 	}*/
 
-  d_plot->setAxisScaleDiv (axis, *d_plot->axisScaleDiv(a));
+  d_plot->setAxisScaleDiv (axis, d_plot->axisScaleDiv(a));
   d_user_step[axis] = d_user_step[a];
 }
 
@@ -1062,7 +1068,7 @@ void Graph::enableAutoscaling(bool yes)
     {
       // We need this hack due to the fact that in Qwt 5.0 we can't
       // disable autoscaling in an easier way, like for example: setAxisAutoScale(axisId, false)
-      d_plot->setAxisScaleDiv(i, *d_plot->axisScaleDiv(i));
+      d_plot->setAxisScaleDiv(i, d_plot->axisScaleDiv(i));
     }
   }
 }
@@ -1097,9 +1103,9 @@ void Graph::initScaleLimits()
       continue;
 
     const QwtPlotCurve *c = dynamic_cast<const QwtPlotCurve *>(item);
-    const QwtSymbol s = c->symbol();
-    if (s.style() != QwtSymbol::NoSymbol && s.size().width() >= maxSymbolSize)
-      maxSymbolSize = s.size().width();
+    const QwtSymbol *s = c->symbol();
+    if (s->style() != QwtSymbol::NoSymbol && s->size().width() >= maxSymbolSize)
+      maxSymbolSize = s->size().width();
 
     const QRectF rect = item->boundingRect();
     intv[item->xAxis()] |= QwtInterval(rect.left(), rect.right());
@@ -1111,45 +1117,45 @@ void Graph::initScaleLimits()
 
   maxSymbolSize *= 0.5;
 
-  QwtScaleDiv *div = d_plot->axisScaleDiv(QwtPlot::xBottom);
-  double start = div->lBound();
-  double end = div->hBound();
-  QList<double> majTicksLst = div->ticks(QwtScaleDiv::MajorTick);
+  const QwtScaleDiv &bottomDiv = d_plot->axisScaleDiv(QwtPlot::xBottom);
+  double start = bottomDiv.lBound();
+  double end = bottomDiv.hBound();
+  QList<double> majTicksLst = bottomDiv.ticks(QwtScaleDiv::MajorTick);
   int ticks = majTicksLst.size();
   double step = fabs(end - start)/(double)(ticks - 1.0);
   d_user_step[QwtPlot::xBottom] = step;
   d_user_step[QwtPlot::xTop] = step;
 
   const QwtScaleMap &xMap = d_plot->canvasMap(QwtPlot::xBottom);
-  double x_left = xMap.xTransform(intv[QwtPlot::xBottom].minValue());
+  double x_left = xMap.invTransform(intv[QwtPlot::xBottom].minValue());
 
   if (start >= xMap.invTransform(x_left - maxSymbolSize))
-    start = div->lBound() - step;
+    start = bottomDiv.lBound() - step;
 
-  double x_right = xMap.xTransform(intv[QwtPlot::xBottom].maxValue());
+  double x_right = xMap.invTransform(intv[QwtPlot::xBottom].maxValue());
   if (end <= xMap.invTransform(x_right + maxSymbolSize))
-    end = div->hBound() + step;
+    end = bottomDiv.hBound() + step;
 
   d_plot->setAxisScale(QwtPlot::xBottom, start, end, step);
   d_plot->setAxisScale(QwtPlot::xTop, start, end, step);
 
-  div = d_plot->axisScaleDiv(QwtPlot::yLeft);
-  start = div->lBound();
-  end = div->hBound();
-  majTicksLst = div->ticks(QwtScaleDiv::MajorTick);
+  const QwtScaleDiv &leftDiv = d_plot->axisScaleDiv(QwtPlot::yLeft);
+  start = leftDiv.lBound();
+  end = leftDiv.hBound();
+  majTicksLst = leftDiv.ticks(QwtScaleDiv::MajorTick);
   ticks = majTicksLst.size();
   step = fabs(end - start)/(double)(ticks - 1.0);
   d_user_step[QwtPlot::yLeft] = step;
   d_user_step[QwtPlot::yRight] = step;
 
   const QwtScaleMap &yMap = d_plot->canvasMap(QwtPlot::yLeft);
-  double y_bottom = yMap.xTransform(intv[QwtPlot::yLeft].minValue());
+  double y_bottom = yMap.invTransform(intv[QwtPlot::yLeft].minValue());
   if (start >= yMap.invTransform(y_bottom + maxSymbolSize))
-    start = div->lBound() - step;
+    start = leftDiv.lBound() - step;
 
-  double y_top = yMap.xTransform(intv[QwtPlot::yLeft].maxValue());
+  double y_top = yMap.invTransform(intv[QwtPlot::yLeft].maxValue());
   if (end <= yMap.invTransform(y_top - maxSymbolSize))
-    end = div->hBound() + step;
+    end = leftDiv.hBound() + step;
 
   d_plot->setAxisScale(QwtPlot::yLeft, start, end, step);
   d_plot->setAxisScale(QwtPlot::yRight, start, end, step);
@@ -1158,9 +1164,10 @@ void Graph::initScaleLimits()
 
 void Graph::invertScale(int axis)
 {
-  QwtScaleDiv *scaleDiv = d_plot->axisScaleDiv(axis);
-  if (scaleDiv)
-    scaleDiv->invert();
+  const QwtScaleDiv &scaleDiv = d_plot->axisScaleDiv(axis);
+  QwtScaleDiv inverted(scaleDiv);
+  inverted.invert();
+  d_plot->setAxisScaleDiv(axis, inverted);
 }
 
 QwtInterval Graph::axisBoundingInterval(int axis)
@@ -1196,9 +1203,9 @@ QwtInterval Graph::axisBoundingInterval(int axis)
  */
 void Graph::niceLogScales(QwtPlot::Axis axis)
 {
-  const QwtScaleDiv *scDiv = d_plot->axisScaleDiv(axis);
-  double start = QMIN(scDiv->lBound(), scDiv->hBound());
-  double end = QMAX(scDiv->lBound(), scDiv->hBound());
+  const QwtScaleDiv &scDiv = d_plot->axisScaleDiv(axis);
+  double start = QMIN(scDiv.lBound(), scDiv.hBound());
+  double end = QMAX(scDiv.lBound(), scDiv.hBound());
 
   // log scales can't represent zero or negative values, 1e-10 as a low range is enough to display all data but still be plottable on a log scale
   start = start < 1e-90 ? 1e-10 : start;
@@ -1212,7 +1219,7 @@ void Graph::niceLogScales(QwtPlot::Axis axis)
 
   // call the QTiPlot function set scale which takes many arguments, fill the arguments with the same settings the plot already has
   setScale(axis, start, end, axisStep(axis),
-      scDiv->ticks(QwtScaleDiv::MajorTick).count(),
+      scDiv.ticks(QwtScaleDiv::MajorTick).count(),
       d_plot->axisMaxMinor(axis),
       ScaleEngine::Log10,
       scaleEng->testAttribute(QwtScaleEngine::Inverted),
@@ -1286,15 +1293,15 @@ void Graph::setScale(QwtPlot::Axis axis, ScaleEngine::Type scaleType)
     return;
   }
 
-  const QwtScaleDiv *scDiv = d_plot->axisScaleDiv(axis);
-  double start = QMIN(scDiv->lBound(), scDiv->hBound());
-  double end = QMAX(scDiv->lBound(), scDiv->hBound());
+  const QwtScaleDiv &scDiv = d_plot->axisScaleDiv(axis);
+  double start = QMIN(scDiv.lBound(), scDiv.hBound());
+  double end = QMAX(scDiv.lBound(), scDiv.hBound());
 
   ScaleEngine *scaleEng = dynamic_cast<ScaleEngine *>(d_plot->axisScaleEngine(axis));
 
   // call the QTiPlot function set scale which takes many arguments, fill the arguments with the same settings the plot already has
   setScale(axis, start, end, axisStep(axis),
-      scDiv->ticks(QwtScaleDiv::MajorTick).count(),
+      scDiv.ticks(QwtScaleDiv::MajorTick).count(),
       d_plot->axisMaxMinor(axis), scaleType,
       scaleEng->testAttribute(QwtScaleEngine::Inverted),
       scaleEng->axisBreakLeft(),
@@ -1452,8 +1459,8 @@ void Graph::setAxisScale(int axis, double start, double end, int type, double st
               start = sp->getMinPositiveValue();
             }
             sp->mutableColorMap().changeScaleType((GraphOptions::ScaleType)type);
-            rightAxis->setColorMap(QwtInterval(start, end), sp->getColorMap());
-            sp->setColorMap(sp->getColorMap());
+            rightAxis->setColorMap(QwtInterval(start, end), &(sp->mutableColorMap()));
+            sp->setColorMap(&(sp->mutableColorMap()));
             // we could check if(sp->isIntensityChanged()) but this doesn't work when one value is changing from zero to say 10^-10, which is a big problem for log plots
             sp->changeIntensity( start,end);
           }
@@ -2056,14 +2063,6 @@ void Graph::setAxesLinewidth(int width)
     return;
 
   d_plot->setAxesLinewidth(width);
-
-  for (int i=0; i<QwtPlot::axisCnt; i++){
-    QwtScaleWidget *scale=dynamic_cast<QwtScaleWidget *>(d_plot->axisWidget(i));
-    if (scale){
-      scale->setPenWidth(width);
-      scale->repaint();
-    }
-  }
   d_plot->replot();
   emit modifiedGraph();
 }
@@ -2076,14 +2075,15 @@ void Graph::loadAxesLinewidth(int width)
 QString Graph::saveCanvas()
 {
   QString s="";
-  int w = d_plot->canvas()->lineWidth();
+  int w = d_plot->lineWidth();
   if (w>0)
   {
     s += "CanvasFrame\t" + QString::number(w)+"\t";
     s += canvasFrameColor().name()+"\n";
   }
-  s += "CanvasBackground\t" + d_plot->canvasBackground().name()+"\t";
-  s += QString::number(d_plot->canvasBackground().alpha())+"\n";
+  QColor bkgdColor = d_plot->canvasBackground().color();
+  s += "CanvasBackground\t" + bkgdColor.name()+"\t";
+  s += QString::number(bkgdColor.alpha())+"\n";
   return s;
 }
 
@@ -2156,11 +2156,11 @@ QString Graph::saveScale()
   {
     s += "scale\t" + QString::number(i)+"\t";
 
-    const QwtScaleDiv *scDiv = d_plot->axisScaleDiv(i);
-    QList<double> lst = scDiv->ticks (QwtScaleDiv::MajorTick);
+    const QwtScaleDiv &scDiv = d_plot->axisScaleDiv(i);
+    QList<double> lst = scDiv.ticks (QwtScaleDiv::MajorTick);
 
-    s += QString::number(QMIN(scDiv->lBound(), scDiv->hBound()), 'g', 15)+"\t";
-    s += QString::number(QMAX(scDiv->lBound(), scDiv->hBound()), 'g', 15)+"\t";
+    s += QString::number(QMIN(scDiv.lBound(), scDiv.hBound()), 'g', 15)+"\t";
+    s += QString::number(QMAX(scDiv.lBound(), scDiv.hBound()), 'g', 15)+"\t";
     s += QString::number(d_user_step[i], 'g', 15)+"\t";
     s += QString::number(d_plot->axisMaxMajor(i))+"\t";
     s += QString::number(d_plot->axisMaxMinor(i))+"\t";
@@ -2332,12 +2332,12 @@ QString Graph::saveCurveLayout(int index)
     s+=QString::number(c->pen().style()-1)+"\t";
     s+=QString::number(c->pen().widthF())+"\t";
 
-    const QwtSymbol symbol = c->symbol();
-    s+=QString::number(symbol.size().width())+"\t";
-    s+=QString::number(SymbolBox::symbolIndex(symbol.style()))+"\t";
-    s+=QString::number(ColorBox::colorIndex(symbol.pen().color()))+"\t";
-    if (symbol.brush().style() != Qt::NoBrush)
-      s+=QString::number(ColorBox::colorIndex(symbol.brush().color()))+"\t";
+    const QwtSymbol *symbol = c->symbol();
+    s+=QString::number(symbol->size().width())+"\t";
+    s+=QString::number(SymbolBox::symbolIndex(symbol->style()))+"\t";
+    s+=QString::number(ColorBox::colorIndex(symbol->pen().color()))+"\t";
+    if (symbol->brush().style() != Qt::NoBrush)
+      s+=QString::number(ColorBox::colorIndex(symbol->brush().color()))+"\t";
     else
       s+=QString::number(-1)+"\t";
 
@@ -2347,7 +2347,7 @@ QString Graph::saveCurveLayout(int index)
     s+=QString::number(ColorBox::colorIndex(c->brush().color()))+"\t";
     s+=QString::number(PatternBox::patternIndex(c->brush().style()))+"\t";
     if (style <= LineSymbols || style == Box)
-      s+=QString::number(symbol.pen().widthF())+"\t";
+      s+=QString::number(symbol->pen().widthF())+"\t";
   }
 
   if(style == VerticalBars || style == HorizontalBars || style == Histogram){
@@ -2429,7 +2429,7 @@ QString Graph::saveCurves()
           s += dynamic_cast<FunctionCurve *>(c)->saveToString();
           continue;
         } else if (c->type() == Box)
-          s += "curve\t" + QString::number(c->x(0)) + "\t" + c->title().text() + "\t";
+          s += "curve\t" + QString::number(c->sample(0).x()) + "\t" + c->title().text() + "\t";
         else
           s += "curve\t" + c->xColumnName() + "\t" + c->title().text() + "\t";
 
@@ -2783,9 +2783,9 @@ int Graph::range(int index, double *start, double *end)
     if (!c)
       return 0;
 
-    *start = c->x(0);
-    *end = c->x(c->dataSize() - 1);
-    return c->dataSize();
+    *start = c->minXValue();
+    *end = c->maxXValue();
+    return static_cast<int>(c->dataSize());
   }
 }
 
@@ -2873,9 +2873,9 @@ void Graph::updateCurveLayout(PlotCurve* c, const CurveLayout *cL)
 
   QPen pen = QPen(ColorBox::color(cL->symCol), cL->penWidth, Qt::SolidLine);
   if (cL->fillCol != -1)
-    c->setSymbol(QwtSymbol(SymbolBox::style(cL->sType), QBrush(ColorBox::color(cL->fillCol)), pen, QSize(cL->sSize, cL->sSize)));
+    c->setSymbol(new QwtSymbol(SymbolBox::style(cL->sType), QBrush(ColorBox::color(cL->fillCol)), pen, QSize(cL->sSize, cL->sSize)));
   else
-    c->setSymbol(QwtSymbol(SymbolBox::style(cL->sType), QBrush(), pen, QSize(cL->sSize, cL->sSize)));
+    c->setSymbol(new QwtSymbol(SymbolBox::style(cL->sType), QBrush(), pen, QSize(cL->sSize, cL->sSize)));
 
   c->setPen(QPen(ColorBox::color(cL->lCol), cL->lWidth, getPenStyle(cL->lStyle)));
 
@@ -3325,9 +3325,9 @@ PlotCurve* Graph::insertCurve(Table* w, const QString& xColName, const QString& 
   c->setPen(QPen(Qt::black, widthLine));
 
   if (style == HorizontalBars)
-    c->setData(Y.data(), X.data(), size);
+    c->setSamples(Y.data(), X.data(), size);
   else if (style != Histogram)
-    c->setData(X.data(), Y.data(), size);
+    c->setSamples(X.data(), Y.data(), size);
 
   if (xColType == Table::Text ){
     if (style == HorizontalBars)
@@ -3393,9 +3393,9 @@ PlotCurve* Graph::insertCurve(PlotCurve* c, int lineWidth, int curveType)
   guessUniqueCurveLayout(colorIndex, symbolIndex);
   if (lineWidth < 0) lineWidth = widthLine;
   c->setPen(QPen(ColorBox::color(colorIndex), lineWidth));
-  QwtSymbol symbol = c->symbol();
-  symbol.setPen(c->pen());
-  symbol.setBrush(QBrush(ColorBox::color(colorIndex)));
+  QwtSymbol *symbol = new QwtSymbol(c->symbol()->style());
+  symbol->setPen(c->pen());
+  symbol->setBrush(QBrush(ColorBox::color(colorIndex)));
   c->setSymbol(symbol);
 
   addLegendItem();
@@ -3445,7 +3445,7 @@ QwtHistogram* Graph::restoreHistogram(Matrix *m, const QStringList& l)
   h->setGap(l[15].toInt());
   h->setOffset(l[16].toInt());
   h->loadData();
-  h->setAxis(l[l.count()-5].toInt(), l[l.count()-4].toInt());
+  h->setAxes(l[l.count()-5].toInt(), l[l.count()-4].toInt());
   h->setVisible(l.last().toInt());
 
   c_type.resize(++n_curves);
@@ -3944,7 +3944,7 @@ void Graph::modifyFunctionCurve(int curve, int type, const QStringList &formulas
       c->formulas() == formulas &&
       c->startRange() == start &&
       c->endRange() == end &&
-      c->dataSize() == points)
+      static_cast<int>(c->dataSize()) == points)
     return;
 
   QString oldLegend = c->legend();
@@ -4134,12 +4134,13 @@ void Graph::createTable(const QwtPlotCurve* curve)
   if (!curve)
     return;
 
-  int size = curve->dataSize();
+  int size = static_cast<int>(curve->dataSize());
   QString text = "1\t2\n";
   for (int i=0; i<size; i++)
   {
-    text += QString::number(curve->x(i))+"\t";
-    text += QString::number(curve->y(i))+"\n";
+    QPointF pt = curve->sample(i);
+    text += QString::number(pt.x())+"\t";
+    text += QString::number(pt.y())+"\n";
   }
   QString legend = tr("Data set generated from curve") + ": " + curve->title().text();
   emit createTable(tr("Table") + "1" + "\t" + legend, size, 2, text);
@@ -4160,7 +4161,10 @@ QString Graph::saveToString(bool saveAsTemplate)
   s+="<SyncScales>" + QString::number(d_synchronize_scales) + "</SyncScales>\n";
   s+="Background\t" + d_plot->paletteBackgroundColor().name() + "\t";
   s+=QString::number(d_plot->paletteBackgroundColor().alpha()) + "\n";
-  s+="Margin\t"+QString::number(d_plot->margin())+"\n";
+  // we only use a single contents margin
+  int left(0), unused(0);
+  d_plot->canvas()->getContentsMargins( &left, &unused, &unused, &unused);
+  s+="Margin\t"+QString::number(left)+"\n";
   s+="Border\t"+QString::number(d_plot->lineWidth())+"\t"+d_plot->frameColor().name()+"\n";
   s+=grid()->saveToString();
   s+=saveEnabledAxes();
@@ -4282,10 +4286,12 @@ void Graph::scaleFonts(double factor)
 
 void Graph::setMargin (int d)
 {
-  if (d_plot->margin() == d)
-    return;
+  // we only use a single contents margin
+  int left(0), unused(0);
+  d_plot->canvas()->getContentsMargins( &left, &unused, &unused, &unused);
+  if(left == d) return;
 
-  d_plot->setMargin(d);
+  d_plot->canvas()->setContentsMargins(d,d,d,d);
   emit modifiedGraph();
 }
 
@@ -4549,7 +4555,7 @@ void Graph::copy(Graph* g)
   d_waterfall_offset_y = g->waterfallYOffset();
 
   Plot *plot = g->plotWidget();
-  d_plot->setMargin(plot->margin());
+  d_plot->canvas()->setContentsMargins(d_plot->canvas()->contentsMargins());
   setBackgroundColor(plot->paletteBackgroundColor());
   setFrame(plot->lineWidth(), plot->frameColor());
   setCanvasBackground(plot->canvasBackground());
@@ -4589,13 +4595,14 @@ void Graph::copy(Graph* g)
     if (it->rtti() == QwtPlotItem::Rtti_PlotCurve){
       DataCurve *cv = dynamic_cast<DataCurve *>(it);
       if (!cv) continue;
-      int n = cv->dataSize();
+      int n = static_cast<int>(cv->dataSize());
       int style = dynamic_cast<PlotCurve *>(it)->type();
       QVector<double> x(n);
       QVector<double> y(n);
       for (int j=0; j<n; j++){
-        x[j]=cv->x(j);
-        y[j]=cv->y(j);
+          QPointF pt = cv->sample(i);
+        x[j]=pt.x();
+        y[j]=pt.y();
       }
 
       PlotCurve *c = 0;
@@ -4646,32 +4653,34 @@ void Graph::copy(Graph* g)
         c = new BoxCurve(cv->table(), cv->title().text(), cv->startRow(), cv->endRow());
         c_keys[i] = d_plot->insertCurve(c);
         dynamic_cast<BoxCurve*>(c)->copy(dynamic_cast<const BoxCurve *>(cv));
-        SingleArrayData dat(x[0], y);
-        c->setData(dat);
+        c->setData(new SingleArrayData(x[0], y));
       } else {
         c = new DataCurve(cv->table(), cv->xColumnName(), cv->title().text(), cv->startRow(), cv->endRow());
         c_keys[i] = d_plot->insertCurve(c);
       }
 
       if (c_type[i] != Box && c_type[i] != ErrorBars){
-        c->setData(x.data(), y.data(), n);
+        c->setSamples(x.data(), y.data(), n);
         if (c->type() != Function && c->type() != Pie)
           dynamic_cast<DataCurve*>(c)->clone(cv);
         else if (c->type() == Pie)
           dynamic_cast<QwtPieCurve*>(c)->clone(dynamic_cast<QwtPieCurve*>(cv));
       }
-
       c->setPen(cv->pen());
       c->setBrush(cv->brush());
       c->setStyle(cv->style());
-      c->setSymbol(cv->symbol());
+      QwtSymbol *copy = new QwtSymbol(c->symbol()->style());
+      copy->setBrush(cv->symbol()->brush());
+      copy->setPen(cv->symbol()->pen());
+      copy->setSize(cv->symbol()->size());
+      c->setSymbol(copy);
 
       if (cv->testCurveAttribute (QwtPlotCurve::Fitted))
         c->setCurveAttribute(QwtPlotCurve::Fitted, true);
       else if (cv->testCurveAttribute (QwtPlotCurve::Inverted))
         c->setCurveAttribute(QwtPlotCurve::Inverted, true);
 
-      c->setAxis(cv->xAxis(), cv->yAxis());
+      c->setAxes(cv->xAxis(), cv->yAxis());
       c->setVisible(cv->isVisible());
 
       QList<QwtPlotCurve *>lst = g->fitCurvesList();
@@ -4691,11 +4700,12 @@ void Graph::copy(Graph* g)
       sp->plot()->enableAxis(QwtPlot::yRight, true);
       sp->mutableColorMap().changeScaleType(sp->getColorMap().getScaleType());
 
-      rightAxis->setColorMap(sp->data().range(),sp->mutableColorMap());
+      QwtInterval dataRange = sp->data()->interval(Qt::ZAxis);
+      rightAxis->setColorMap(dataRange,&(sp->mutableColorMap()));
       sp->plot()->setAxisScale(QwtPlot::yRight,
-          sp->data().range().minValue(),
-          sp->data().range().maxValue());
-      sp->plot()->setAxisScaleDiv(QwtPlot::yRight, *sp->plot()->axisScaleDiv(QwtPlot::yRight));
+          dataRange.minValue(),
+          dataRange.maxValue());
+      sp->plot()->setAxisScaleDiv(QwtPlot::yRight, sp->plot()->axisScaleDiv(QwtPlot::yRight));
 
       //sp->showColorScale((dynamic_cast<Spectrogram *>(it))->colorScaleAxis(), (dynamic_cast<Spectrogram *>(it))->hasColorScale());
       /* sp->setColorBarWidth((dynamic_cast<Spectrogram *>(it))->colorBarWidth());
@@ -4747,9 +4757,9 @@ void Graph::copy(Graph* g)
 
     double step = g->axisStep(i);
     d_user_step[i] = step;
-    const QwtScaleDiv *sd = plot->axisScaleDiv(i);
-    QwtScaleDiv div = sc_engine->divideScale (QMIN(sd->lBound(), sd->hBound()),
-        QMAX(sd->lBound(), sd->hBound()), majorTicks, minorTicks, step);
+    const QwtScaleDiv &sd = plot->axisScaleDiv(i);
+    QwtScaleDiv div = sc_engine->divideScale (QMIN(sd.lBound(), sd.hBound()),
+        QMAX(sd.lBound(), sd.hBound()), majorTicks, minorTicks, step);
 
     if (se->testAttribute(QwtScaleEngine::Inverted))
       div.invert();
@@ -4806,11 +4816,11 @@ void Graph::plotBoxDiagram(Table *w, const QStringList& names, int startRow, int
     c_type.resize(n_curves);
     c_type[n_curves-1] = Box;
 
-    c->setData(SingleArrayData(double(j+1), QVector<double>()));
+    c->setData(new SingleArrayData(double(j+1), QVector<double>()));
     c->loadData();
 
     c->setPen(QPen(ColorBox::color(j), 1));
-    c->setSymbol(QwtSymbol(QwtSymbol::NoSymbol, QBrush(), QPen(ColorBox::color(j), 1), QSize(7,7)));
+    c->setSymbol(new QwtSymbol(QwtSymbol::NoSymbol, QBrush(), QPen(ColorBox::color(j), 1), QSize(7,7)));
   }
 
   if (d_legend)
@@ -4854,9 +4864,9 @@ void Graph::setCurveStyle(int index, int s)
   } else if (s == QwtPlotCurve::Sticks)
     c_type[index] = VerticalDropLines;
   else {//QwtPlotCurve::Lines || QwtPlotCurve::Dots
-    if (c->symbol().style() == QwtSymbol::NoSymbol)
+    if (c->symbol()->style() == QwtSymbol::NoSymbol)
       c_type[index] = Line;
-    else if (c->symbol().style() != QwtSymbol::NoSymbol && (QwtPlotCurve::CurveStyle)s == QwtPlotCurve::NoCurve)
+    else if (c->symbol()->style() != QwtSymbol::NoSymbol && (QwtPlotCurve::CurveStyle)s == QwtPlotCurve::NoCurve)
       c_type[index] = Scatter;
     else
       c_type[index] = LineSymbols;
@@ -4865,7 +4875,7 @@ void Graph::setCurveStyle(int index, int s)
   c->setStyle((QwtPlotCurve::CurveStyle)s);
 }
 
-void Graph::setCurveSymbol(int index, const QwtSymbol& s)
+void Graph::setCurveSymbol(int index, const QwtSymbol *s)
 {
   QwtPlotCurve *c = curve(index);
   if (!c)

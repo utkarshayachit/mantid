@@ -236,8 +236,9 @@ int Filter::sortedCurveData(QwtPlotCurve *c, double start, double end, double **
 
   	int j=0;
     for (int i = i_start; i <= i_end; i++){
-        xtemp[j] = c->x(i);
-        ytemp[j++] = c->y(i);
+        auto pt = c->sample(i);
+        xtemp[j] = pt.x();
+        ytemp[j++] = pt.y();
     }
     size_t *p = new size_t[n];
     gsl_sort_index(p, xtemp, 1, n);
@@ -265,8 +266,9 @@ int Filter::curveData(QwtPlotCurve *c, double start, double end, double **x, dou
 
     int j=0;
     for (int i = i_start; i <= i_end; i++){
-        (*x)[j] = c->x(i);
-        (*y)[j++] = c->y(i);
+        auto pt = c->sample(i);
+        (*x)[j] = pt.x();
+        (*y)[j++] = pt.y();
     }
     return n;
 }
@@ -276,39 +278,40 @@ int Filter::curveRange(QwtPlotCurve *c, double start, double end, int *iStart, i
     if (!c)
         return 0;
 
-    int n = c->dataSize();
+    int n = static_cast<int>(c->dataSize());
     int i_start = 0, i_end = n;
 
-	if (c->x(0) < c->x(n-1)){
-    	for (int i = 0; i < n; i++){
-  	   	 if (c->x(i) >= start){
-  	    	  i_start = i;
-          	break;
-        	}
-		}
-    	for (int i = n-1; i >= 0; i--){
-  	    	if (c->x(i) <= end){
-  	      		i_end = i;
-          		break;
-        	}
-		}
-	} else {
-    	for (int i = 0; i < n; i++){
-  	   	 if (c->x(i) <= end){
-  	    	  i_start = i;
-          	break;
-        	}
-		}
-    	for (int i = n-1; i >= 0; i--){
-  	    	if (c->x(i) >= start){
-  	      		i_end = i;
-          		break;
-        	}
-		}
-	}
 
-	*iStart = QMIN(i_start, i_end);
-	*iEnd = QMAX(i_start, i_end);
+    if (c->minXValue() < c->maxXValue()){
+        for (int i = 0; i < n; i++){
+            if (c->sample(i).x() >= start){
+                i_start = i;
+                break;
+              }
+          }
+        for (int i = n-1; i >= 0; i--){
+            if (c->sample(i).x() <= end){
+                i_end = i;
+                break;
+              }
+          }
+      } else {
+        for (int i = 0; i < n; i++){
+            if (c->sample(i).x() <= end){
+                i_start = i;
+                break;
+              }
+          }
+        for (int i = n-1; i >= 0; i--){
+            if (c->sample(i).x() >= start){
+                i_end = i;
+                break;
+              }
+          }
+      }
+
+    *iStart = QMIN(i_start, i_end);
+    *iEnd = QMAX(i_start, i_end);
     n = abs(i_end - i_start) + 1;
     return n;
 }
@@ -333,7 +336,7 @@ QwtPlotCurve* Filter::addResultCurve(double *x, double *y)
 	DataCurve *c = 0;
 	if (d_graphics_display){
 		c = new DataCurve(d_result_table, tableName + "_1", tableName + "_2");
-		c->setData(x, y, d_points);
+		c->setSamples(x, y, d_points);
     	c->setPen(QPen(ColorBox::color(d_curveColorIndex), 1));
 
 		if (!d_output_graph)

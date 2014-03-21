@@ -176,13 +176,6 @@ void MantidMatrixCurve::loadData()
   computeWaterfallOffsets();
 }
 
-void MantidMatrixCurve::setData(const QwtData &data)
-{
-  if (!dynamic_cast<const MantidQwtMatrixWorkspaceData*>(&data)) 
-    throw std::runtime_error("Only MantidQwtMatrixWorkspaceData can be set to a MantidMatrixCurve");
-  PlotCurve::setData(data);
-}
-
 QRectF MantidMatrixCurve::boundingRect() const
 {
   return MantidCurve::boundingRect();
@@ -190,7 +183,7 @@ QRectF MantidMatrixCurve::boundingRect() const
 
 void MantidMatrixCurve::draw(QPainter *p, 
           const QwtScaleMap &xMap, const QwtScaleMap &yMap,
-          const QRect &rect) const
+          const QRectF &rect) const
 {
   PlotCurve::draw(p,xMap,yMap,rect);
 
