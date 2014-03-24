@@ -426,7 +426,7 @@ void PlotDialog::changePlotType(int plotType)
 
     QwtSymbol *s = new QwtSymbol(QwtSymbol::Ellipse, QBrush(), QPen(), QSize(9, 9));
     if (plotType == Graph::Line)
-      s.setStyle(QwtSymbol::NoSymbol);
+      s->setStyle(QwtSymbol::NoSymbol);
     else if (plotType == Graph::Scatter)
       graph->setCurveStyle(item->plotItemIndex(), QwtPlotCurve::NoCurve);
     else if (plotType == Graph::LineSymbols)
@@ -462,16 +462,16 @@ void PlotDialog::setPlotType(int plotType, int curveNum, const QString & color)
   if (!graph)
     return;
 
-  QwtSymbol s = QwtSymbol(QwtSymbol::Ellipse, QBrush(), QPen(), QSize(5, 5));
+  QwtSymbol *s = new QwtSymbol(QwtSymbol::Ellipse, QBrush(), QPen(), QSize(5, 5));
   if (plotType == Graph::Line)
-    s.setStyle(QwtSymbol::NoSymbol);
+    s->setStyle(QwtSymbol::NoSymbol);
   else if (plotType == Graph::Scatter)
     graph->setCurveStyle(item->plotItemIndex(), QwtPlotCurve::NoCurve);
   else if (plotType == Graph::LineSymbols)
     graph->setCurveStyle(item->plotItemIndex(), QwtPlotCurve::Lines);
 
   if (color != "Default")
-    s.setPen(QPen(QColor(color)));
+    s->setPen(QPen(QColor(color)));
 
   graph->setCurveSymbol(item->plotItemIndex(), s);
 }
@@ -1430,20 +1430,22 @@ void PlotDialog::showStatistics()
     return;
 
   QString tableName = d_app->generateUniqueName(tr("Bins"));
-  Table *t = d_app->newTable(h->dataSize(), 4, tableName,
+  Table *t = d_app->newTable(static_cast<int>(h->dataSize()), 4, tableName,
       tr("Histogram and Probabilities for") + " " + h->title().text());
   if (t)
   {
     double h_sum = 0.0;
-    for (int i = 0; i < h->dataSize(); i++)
-      h_sum += h->y(i);
-
-    double sum = 0.0;
-    for (int i = 0; i < h->dataSize(); i++)
+    for (int i = 0; i < static_cast<int>(h->dataSize()); i++)
     {
-      sum += h->y(i);
-      t->setText(i, 0, QString::number(h->x(i)));
-      t->setText(i, 1, QString::number(h->y(i)));
+      h_sum += h->sample(i).y();
+    }
+    double sum = 0.0;
+    for (int i = 0; i < static_cast<int>(h->dataSize()); i++)
+    {
+      QPointF pt = h->sample(i);
+      sum += pt.y();
+      t->setText(i, 0, QString::number(pt.x()));
+      t->setText(i, 1, QString::number(pt.y()));
       t->setText(i, 2, QString::number(sum));
       t->setText(i, 3, QString::number(sum / h_sum * 100));
     }
@@ -1766,8 +1768,8 @@ int PlotDialog::setPlotType(CurveTreeItem *item)
       if (!c)
         return -1;
 
-      QwtSymbol s = c->symbol();
-      if (s.style() == QwtSymbol::NoSymbol)
+      const QwtSymbol *s = c->symbol();
+      if (s->style() == QwtSymbol::NoSymbol)
       {
         boxPlotType->setCurrentIndex(0);
         return Graph::Line;
@@ -1806,7 +1808,8 @@ void PlotDialog::setActiveLayer(LayerItem *item)
   boxBorderWidth->blockSignals(true);
 
   Plot *p = g->plotWidget();
-  boxMargin->setValue(p->margin());
+  QMargins widgetMargins = p->contentsMargins();
+  boxMargin->setValue(widgetMargins.left()); // global margin
   boxBorderWidth->setValue(p->lineWidth());
   boxBorderColor->setColor(p->frameColor());
 
@@ -1992,14 +1995,14 @@ void PlotDialog::setActiveCurve(CurveTreeItem *item)
   boxAreaColor->setColor(c->brush().color());
 
   //symbol page
-  const QwtSymbol s = c->symbol();
-  boxSymbolSize->setValue(s.size().width() / 2);
-  boxSymbolStyle->setStyle(s.style());
-  boxSymbolColor->setColor(s.pen().color());
-  boxPenWidth->setValue(s.pen().widthF());
-  boxFillSymbol->setChecked(s.brush() != Qt::NoBrush);
-  boxFillColor->setEnabled(s.brush() != Qt::NoBrush);
-  boxFillColor->setColor(s.brush().color());
+  const QwtSymbol *s = c->symbol();
+  boxSymbolSize->setValue(s->size().width() / 2);
+  boxSymbolStyle->setStyle(s->style());
+  boxSymbolColor->setColor(s->pen().color());
+  boxPenWidth->setValue(s->pen().widthF());
+  boxFillSymbol->setChecked(s->brush() != Qt::NoBrush);
+  boxFillColor->setEnabled(s->brush() != Qt::NoBrush);
+  boxFillColor->setColor(s->brush().color());
 
   if (c->type() == Graph::Function)
     return;
@@ -2084,12 +2087,12 @@ void PlotDialog::setActiveCurve(CurveTreeItem *item)
       box99Style->setStyle(b->p99Style());
       box1Style->setStyle(b->p1Style());
 
-      boxPercSize->setValue(s.size().width() / 2);
-      boxFillSymbols->setChecked(s.brush() != Qt::NoBrush);
-      boxPercFillColor->setEnabled(s.brush() != Qt::NoBrush);
-      boxPercFillColor->setColor(s.brush().color());
-      boxEdgeColor->setColor(s.pen().color());
-      boxEdgeWidth->setValue(s.pen().widthF());
+      boxPercSize->setValue(s->size().width() / 2);
+      boxFillSymbols->setChecked(s->brush() != Qt::NoBrush);
+      boxPercFillColor->setEnabled(s->brush() != Qt::NoBrush);
+      boxPercFillColor->setColor(s->brush().color());
+      boxEdgeColor->setColor(s->pen().color());
+      boxEdgeWidth->setValue(s->pen().widthF());
 
       boxRange->setCurrentIndex(b->boxRangeType() - 1);
       boxType->setCurrentIndex(b->boxStyle());
@@ -2290,7 +2293,7 @@ bool PlotDialog::acceptParams()
 
   if (privateTabWidget->currentPage() == axesPage)
   {
-    plotItem->setAxis(boxXAxis->currentIndex() + 2, boxYAxis->currentIndex());
+    plotItem->setAxes(boxXAxis->currentIndex() + 2, boxYAxis->currentIndex());
     graph->setAutoScale();
     return true;
   }
@@ -2382,9 +2385,8 @@ bool PlotDialog::acceptParams()
       br = QBrush();
 
     QPen pen = QPen(boxSymbolColor->color(), boxPenWidth->value(), Qt::SolidLine);
-    QwtSymbol s = QwtSymbol(boxSymbolStyle->selectedSymbol(), br, pen, QSize(size, size));
     QwtPlotCurve *curve = dynamic_cast<QwtPlotCurve*>(plotItem);
-    curve->setSymbol(s);
+    curve->setSymbol(new QwtSymbol(boxSymbolStyle->selectedSymbol(), br, pen, QSize(size, size)));
   }
   else if (privateTabWidget->currentPage() == histogramPage)
   {
@@ -2503,7 +2505,7 @@ bool PlotDialog::acceptParams()
       QBrush br = QBrush(boxPercFillColor->color(), Qt::SolidPattern);
       if (!boxFillSymbols->isChecked())
         br = QBrush();
-      QwtSymbol s = QwtSymbol(QwtSymbol::NoSymbol, br,
+      QwtSymbol *s = new QwtSymbol(QwtSymbol::NoSymbol, br,
           QPen(boxEdgeColor->color(), boxEdgeWidth->value(), Qt::SolidLine), QSize(size, size));
       b->setSymbol(s);
     }

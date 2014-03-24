@@ -4875,11 +4875,14 @@ void Graph::setCurveStyle(int index, int s)
   c->setStyle((QwtPlotCurve::CurveStyle)s);
 }
 
-void Graph::setCurveSymbol(int index, const QwtSymbol *s)
+void Graph::setCurveSymbol(int index, QwtSymbol *s)
 {
   QwtPlotCurve *c = curve(index);
   if (!c)
+  {
+    delete s;
     return;
+  }
 
   c->setSymbol(s);
 }
@@ -4930,7 +4933,7 @@ BoxCurve* Graph::openBoxDiagram(Table *w, const QStringList& l, int fileVersion)
   c_type.resize(n_curves);
   c_type[n_curves-1] = Box;
 
-  c->setData(SingleArrayData(l[1].toDouble(), QVector<double>()));
+  c->setData(new SingleArrayData(l[1].toDouble(), QVector<double>()));
   c->loadData();
 
   c->setMaxStyle(SymbolBox::style(l[16].toInt()));
@@ -5012,8 +5015,8 @@ void Graph::guessUniqueCurveLayout(int& colorIndex, int& symbolIndex)
     {
       colorIndex = std::max(ColorBox::colorIndex(c->pen().color()), colorIndex);
 
-      QwtSymbol symb = c->symbol();
-      symbolIndex = std::max(SymbolBox::symbolIndex(symb.style()), symbolIndex);
+      const QwtSymbol *symb = c->symbol();
+      symbolIndex = std::max(SymbolBox::symbolIndex(symb->style()), symbolIndex);
     }
   }
   if (n_curves > 1)
@@ -5145,14 +5148,15 @@ Spectrogram* Graph::plotSpectrogram(Spectrogram *d_spectrogram, CurveType type)
   enableAxisLabels(QwtPlot::yRight);
 
   //d_spectrogram->setDefaultColorMap();
+  QwtInterval zRange = d_spectrogram->data()->interval(Qt::ZAxis);
   if(type == GrayScale) rightAxis->setColorBarEnabled(false); //rightAxis->setColorMap(d_spectrogram->data().range(),d_spectrogram->colorMap());
-  else rightAxis->setColorMap(d_spectrogram->data().range(),d_spectrogram->mutableColorMap());
+  else rightAxis->setColorMap(zRange, &(d_spectrogram->mutableColorMap()));
   d_plot->setAxisScale(QwtPlot::yRight,
-      d_spectrogram->data().range().minValue(),
-      d_spectrogram->data().range().maxValue());
+      zRange.minValue(),
+      zRange.maxValue());
 
 
-  d_plot->setAxisScaleDiv(QwtPlot::yRight, *d_plot->axisScaleDiv(QwtPlot::yRight));
+  d_plot->setAxisScaleDiv(QwtPlot::yRight, d_plot->axisScaleDiv(QwtPlot::yRight));
 
   for (int i=0; i < QwtPlot::axisCnt; i++)
   {updatedaxis.push_back(0);  }
@@ -5198,7 +5202,7 @@ void Graph::restoreSpectrogram(ApplicationWindow *app, const QStringList& lst)
       s = *(++line);
       QColor color2 = QColor(s.remove("<MaxColor>").remove("</MaxColor>").stripWhiteSpace());
 
-      QwtLinearColorMap colorMap = QwtLinearColorMap(color1, color2);
+      QwtLinearColorMap colorMap(color1, color2);
       colorMap.setMode((QwtLinearColorMap::Mode)mode);
 
       s = *(++line);
@@ -5230,7 +5234,7 @@ void Graph::restoreSpectrogram(ApplicationWindow *app, const QStringList& lst)
         s = (*(++line)).stripWhiteSpace();
         int defaultPen = s.remove("<DefaultPen>").remove("</DefaultPen>").toInt();
         if (!defaultPen)
-          sp->setDefaultContourPen(Qt::NoPen);
+          sp->setDefaultContourPen(QPen(Qt::NoPen));
         else
         {
           s = (*(++line)).stripWhiteSpace();
@@ -5529,13 +5533,12 @@ void Graph::setGrayScale()
       c->setBrush(brush);
     }
 
-    QwtSymbol symbol = c->symbol();
-    pen = symbol.pen();
-    pen.setColor(color);
-    symbol.setPen(pen);
-    if (symbol.brush().style() != Qt::NoBrush)
-      symbol.setBrush(QBrush(color));
-    c->setSymbol(symbol);
+    const QwtSymbol*colorSymbol = c->symbol();
+    QwtSymbol *graySymbol = new QwtSymbol(colorSymbol->style());
+    graySymbol->setPen(pen);
+    if (colorSymbol->brush().style() != Qt::NoBrush)
+      graySymbol->setBrush(QBrush(color));
+    c->setSymbol(graySymbol);
     // QtiPlot: i++;
   }
 
@@ -5593,13 +5596,12 @@ void Graph::setIndexedColors()
       c->setBrush(brush);
     }
 
-    QwtSymbol symbol = c->symbol();
-    pen = symbol.pen();
-    pen.setColor(color);
-    symbol.setPen(pen);
-    if (symbol.brush().style() != Qt::NoBrush)
-      symbol.setBrush(QBrush(color));
-    c->setSymbol(symbol);
+    const QwtSymbol*oldSymbol = c->symbol();
+    QwtSymbol *indexedSymbol = new QwtSymbol(oldSymbol->style());
+    indexedSymbol->setPen(pen);
+    if (oldSymbol->brush().style() != Qt::NoBrush)
+      indexedSymbol->setBrush(QBrush(color));
+    c->setSymbol(indexedSymbol);
     // QtiPlot: i++;
   }
 
@@ -5868,7 +5870,7 @@ void Graph::enablePanningMagnifier(bool on)
   if (d_panner)
     delete d_panner;
 
-  QwtPlotCanvas *cnvs =d_plot->canvas(); //canvas();
+  QWidget *cnvs = d_plot->canvas();
   if (on){
     cnvs->setCursor(Qt::pointingHandCursor);
     d_magnifier = new QwtPlotMagnifier(cnvs);
@@ -5903,7 +5905,7 @@ void Graph::enableFixedAspectRatio(bool on)
   if (d_rescaler)
     delete d_rescaler;
 
-  QwtPlotCanvas *cnvs =d_plot->canvas();
+  QWidget *cnvs =d_plot->canvas();
   if (on){
     d_rescaler = new QwtPlotRescaler(cnvs, QwtPlot::xBottom, QwtPlotRescaler::Fixed);
     d_rescaler->setExpandingDirection(QwtPlotRescaler::ExpandBoth);

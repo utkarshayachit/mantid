@@ -64,6 +64,8 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_linalg.h>
 
+#include "MantidQtAPI/MantidColorMap.h"
+
 Matrix::Matrix(ScriptingEnv *env, const QString& label, ApplicationWindow* parent, const QString& name, Qt::WFlags f)
   : MdiSubWindow(parent, label, name, f), Scripted(env), 
   d_matrix_model(NULL),m_bk_color(),d_stack(NULL),
@@ -71,7 +73,7 @@ Matrix::Matrix(ScriptingEnv *env, const QString& label, ApplicationWindow* paren
   txt_format(),num_precision(0),x_start(0.0),
   x_end(0.0),y_start(0.0),y_end(0.0),
   d_view_type(ViewType::TableView),d_header_view_type(HeaderViewType::ColumnRow),
-  d_color_map(),d_color_map_type(ColorMapType::Rainbow),
+  d_color_map(new QwtLinearColorMap),d_color_map_type(ColorMapType::Rainbow),
   d_column_width(0),d_select_all_shortcut(NULL),
   d_undo_stack(NULL),d_workspace(NULL)
 {
@@ -86,7 +88,7 @@ Matrix::Matrix(ScriptingEnv *env, int r, int c, const QString& label, Applicatio
   txt_format(),num_precision(0),x_start(0.0),
   x_end(0.0),y_start(0.0),y_end(0.0),
   d_view_type(ViewType::TableView),d_header_view_type(HeaderViewType::ColumnRow),
-  d_color_map(),d_color_map_type(ColorMapType::Rainbow),
+  d_color_map(new QwtLinearColorMap),d_color_map_type(ColorMapType::Rainbow),
   d_column_width(0),d_select_all_shortcut(NULL),
   d_undo_stack(NULL),d_workspace(NULL)
 {
@@ -102,7 +104,7 @@ Matrix::Matrix(ScriptingEnv *env, const QImage& image, const QString& label, App
   txt_format(QChar()),num_precision(0),x_start(0.0),
   x_end(0.0),y_start(0.0),y_end(0.0),
   d_view_type(ViewType::TableView),d_header_view_type(HeaderViewType::ColumnRow),
-  d_color_map(),d_color_map_type(ColorMapType::Rainbow),
+  d_color_map(new QwtLinearColorMap),d_color_map_type(ColorMapType::Rainbow),
   d_column_width(0),d_select_all_shortcut(NULL),
   d_undo_stack(NULL),d_workspace(NULL)
 {
@@ -119,7 +121,7 @@ void Matrix::initGlobals()
 
   d_header_view_type = ColumnRow;
   d_color_map_type = GrayScale;
-  d_color_map = QwtLinearColorMap(Qt::black, Qt::white);
+  d_color_map = new QwtLinearColorMap(Qt::black, Qt::white);
   d_column_width = 100;
 
   formula_str = "";
@@ -228,15 +230,15 @@ QString Matrix::saveToString(const QString &info, bool saveAsTemplate)
     s += "ColorPolicy\t" + QString::number(d_color_map_type) + "\n";
   else {
     s += "<ColorMap>\n";
-    s += "\t<Mode>" + QString::number(d_color_map.mode()) + "</Mode>\n";
-    s += "\t<MinColor>" + d_color_map.color1().name() + "</MinColor>\n";
-    s += "\t<MaxColor>" + d_color_map.color2().name() + "</MaxColor>\n";
-    QVector <double> colors = d_color_map.colorStops();
+    s += "\t<Mode>" + QString::number(d_color_map->mode()) + "</Mode>\n";
+    s += "\t<MinColor>" + d_color_map->color1().name() + "</MinColor>\n";
+    s += "\t<MaxColor>" + d_color_map->color2().name() + "</MaxColor>\n";
+    QVector <double> colors = d_color_map->colorStops();
     int stops = (int)colors.size();
     s += "\t<ColorStops>" + QString::number(stops - 2) + "</ColorStops>\n";
     for (int i = 1; i < stops - 1; i++){
       s += "\t<Stop>" + QString::number(colors[i]) + "\t";
-      s += QColor(d_color_map.rgb(QwtInterval(0,1), colors[i])).name();
+      s += QColor(d_color_map->rgb(QwtInterval(0,1), colors[i])).name();
       s += "</Stop>\n";
     }
     s += "</ColorMap>\n";
@@ -1187,7 +1189,7 @@ void Matrix::copy(Matrix *m)
   setColumnsWidth(m->columnsWidth());
   formula_str = m->formula();
   d_color_map_type = m->colorMapType();
-  d_color_map = m->colorMap();
+  d_color_map = ColorMapCloner::cloneQwtLinearMap(m->colorMap());
 
   if (d_view_type == ImageView){
     if (d_table_view)
@@ -1307,8 +1309,9 @@ void Matrix::importImage(const QString& fn)
 
 void Matrix::setGrayScale()
 {
+  delete d_color_map;
   d_color_map_type = GrayScale;
-  d_color_map = QwtLinearColorMap(Qt::black, Qt::white);
+  d_color_map = new QwtLinearColorMap(Qt::black, Qt::white);
   if (d_view_type == ImageView)
     displayImage(d_matrix_model->renderImage());
   emit modifiedWindow(this);
@@ -1318,20 +1321,22 @@ void Matrix::setRainbowColorMap()
 {
   d_color_map_type = Rainbow;
 
-  d_color_map = QwtLinearColorMap(Qt::blue, Qt::red);
-  d_color_map.addColorStop(0.25, Qt::cyan);
-  d_color_map.addColorStop(0.5, Qt::green);
-  d_color_map.addColorStop(0.75, Qt::yellow);
+  delete d_color_map;
+  d_color_map = new QwtLinearColorMap(Qt::blue, Qt::red);
+  d_color_map->addColorStop(0.25, Qt::cyan);
+  d_color_map->addColorStop(0.5, Qt::green);
+  d_color_map->addColorStop(0.75, Qt::yellow);
 
   if (d_view_type == ImageView)
     displayImage(d_matrix_model->renderImage());
   emit modifiedWindow(this);
 }
 
-void Matrix::setColorMap(const QwtLinearColorMap& map)
+void Matrix::setColorMap(const QwtLinearColorMap &map)
 {
+  delete d_color_map;
   d_color_map_type = Custom;
-  d_color_map = map;
+  d_color_map = ColorMapCloner::cloneQwtLinearMap(map);
   if (d_view_type == ImageView)
     displayImage(d_matrix_model->renderImage());
 
@@ -1351,15 +1356,16 @@ void Matrix::setColorMap(const QStringList& lst)
   s = *(++line);
   QColor color2 = QColor(s.remove("<MaxColor>").remove("</MaxColor>").stripWhiteSpace());
 
-  d_color_map = QwtLinearColorMap(color1, color2);
-  d_color_map.setMode((QwtLinearColorMap::Mode)mode);
+  delete d_color_map;
+  d_color_map = new QwtLinearColorMap(color1, color2);
+  d_color_map->setMode((QwtLinearColorMap::Mode)mode);
 
   s = *(++line);
   int stops = s.remove("<ColorStops>").remove("</ColorStops>").stripWhiteSpace().toInt();
   for (int i = 0; i < stops; i++){
     s = (*(++line)).stripWhiteSpace();
     QStringList l = QStringList::split("\t", s.remove("<Stop>").remove("</Stop>"));
-    d_color_map.addColorStop(l[0].toDouble(), QColor(l[1]));
+    d_color_map->addColorStop(l[0].toDouble(), QColor(l[1]));
   }
 }
 
@@ -1522,4 +1528,5 @@ Matrix::~Matrix()
 {
   delete d_undo_stack;
   delete d_matrix_model;
+  delete d_color_map;
 }

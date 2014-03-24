@@ -58,7 +58,7 @@ LegendWidget::LegendWidget(Plot *plot):QWidget(plot),
 	d_text->setRenderFlags(Qt::AlignTop|Qt::AlignLeft);
 	d_text->setBackgroundBrush(QBrush(Qt::NoBrush));
 	d_text->setColor(Qt::black);
-	d_text->setBackgroundPen (QPen(Qt::NoPen));
+	d_text->setBorderPen (QPen(Qt::NoPen));
 	d_text->setPaintAttribute(QwtText::PaintBackground);
 
 	h_space = 5;
@@ -105,8 +105,8 @@ void LegendWidget::paintEvent(QPaintEvent *e)
 
 void LegendWidget::print(QPainter *painter, const QwtScaleMap map[QwtPlot::axisCnt])
 {
-	int x = map[QwtPlot::xBottom].transform(xValue());
-	int y = map[QwtPlot::yLeft].transform(yValue());
+	int x = static_cast<int>(map[QwtPlot::xBottom].transform(xValue()));
+	int y = static_cast<int>(map[QwtPlot::yLeft].transform(yValue()));
 
     const int symbolLineLength = line_length + symbolsMaxWidth();
 	int width, height;
@@ -148,7 +148,8 @@ void LegendWidget::setTextColor(const QColor& c)
 
 void LegendWidget::setOriginCoord(double x, double y)
 {
-	QPoint pos(d_plot->transform(QwtPlot::xBottom, x), d_plot->transform(QwtPlot::yLeft, y));
+	QPoint pos(static_cast<int>(d_plot->transform(QwtPlot::xBottom, x)),
+		   static_cast<int>(d_plot->transform(QwtPlot::yLeft, y)));
 	pos = d_plot->canvas()->mapToParent(pos);
 	move(pos);
 }
@@ -252,7 +253,8 @@ void LegendWidget::drawSymbol(PlotCurve *c, int point, QPainter *p, int x, int y
 		return;
 	}
 
-    QwtSymbol symb = c->symbol();
+
+
     const QBrush br = c->brush();
     QPen pen = c->pen();
     p->save();
@@ -265,13 +267,21 @@ void LegendWidget::drawSymbol(PlotCurve *c, int point, QPainter *p, int x, int y
         } else
             QwtPainter::drawLine(p, x, y, x + l, y);
     }
-    int symb_size = symb.size().width();
-    if (symb_size > 15)
-        symb_size = 15;
-    else if (symb_size < 3)
-        symb_size = 3;
-    symb.setSize(symb_size);
-    symb.draw(p, x + l/2, y);
+    // Ensure symbol is not too big or too small
+    const QwtSymbol *curveSymbol = c->symbol();
+    int symb_size = curveSymbol->size().width();
+    if(symb_size > 15)
+    {
+      symb_size = 15;
+    }
+    else if(symb_size < 3)
+    {
+      symb_size = 3;
+    }
+
+    QwtSymbol displayedSymbol(curveSymbol->style(), curveSymbol->brush(), pen, QSize(symb_size,symb_size));
+    displayedSymbol.drawSymbol(p, QPointF(x + l/2, y));
+
     p->restore();
 }
 
@@ -289,7 +299,7 @@ void LegendWidget::drawText(QPainter *p, const QRect& rect,
   QStringList titles = text.split("\n", QString::KeepEmptyParts);
 
   for (int i=0; i<(int)titles.count(); i++){
-    int w = left_margin + rect.x(); // QtiPlot Rev 1373 has this as 2nd arg: d_frame_pen.width();
+    double w = left_margin + rect.x(); // QtiPlot Rev 1373 has this as 2nd arg: d_frame_pen.width();
     bool  curveSymbol = false;
     QString s = titles[i];
     while (s.contains("\\l(",Qt::CaseInsensitive) || s.contains("\\p{",Qt::CaseInsensitive)){
@@ -303,9 +313,9 @@ void LegendWidget::drawText(QPainter *p, const QRect& rect,
         aux.setColor(d_text->color());
         aux.setRenderFlags (Qt::AlignLeft | Qt::AlignVCenter);
 
-        QSize size = aux.textSize(); // In QtiPlot rev 1373: textSize(p, aux);
-        QRect tr = QRect(QPoint(w, height[i] - size.height()/2), size);
-        aux.draw(p, tr);
+        QSizeF size = aux.textSize(); // In QtiPlot rev 1373: textSize(p, aux);
+        QRectF textRect(QPointF(w, height[i] - size.height()/2), size);
+        aux.draw(p, textRect);
         w += size.width();
 
         int pos1 = s.indexOf("(", pos);
@@ -321,7 +331,7 @@ void LegendWidget::drawText(QPainter *p, const QRect& rect,
           continue;
         }
 
-        drawSymbol(curve, point, p, w, height[i], l);
+        drawSymbol(curve, point, p, static_cast<int>(w), height[i], l);
         w += l + h_space;
         s = s.right(s.length() - pos2 - 1);
       } else { // pie chart?
@@ -332,9 +342,9 @@ void LegendWidget::drawText(QPainter *p, const QRect& rect,
           aux.setColor(d_text->color());
           aux.setRenderFlags (Qt::AlignLeft | Qt::AlignVCenter);
 
-          QSize size = aux.textSize(); // In QtiPlot rev 1373: textSize(p, aux);
-          QRect tr = QRect(QPoint(w, height[i] - size.height()/2), size);
-          aux.draw(p, tr);
+          QSizeF size = aux.textSize(); // In QtiPlot rev 1373: textSize(p, aux);
+          QRectF textRect = QRectF(QPointF(w, height[i] - size.height()/2), size);
+          aux.draw(p, textRect);
           w += size.width();
 
           int pos1 = s.indexOf("{", pos);
@@ -344,7 +354,7 @@ void LegendWidget::drawText(QPainter *p, const QRect& rect,
           continue;
           }
           int point = s.mid(pos1 + 1, pos2 - pos1 - 1).toInt() - 1;
-          drawSymbol(dynamic_cast<PlotCurve*>(d_plot->curve(0)), point, p, w, height[i], l);
+          drawSymbol(dynamic_cast<PlotCurve*>(d_plot->curve(0)), point, p, static_cast<int>(w), height[i], l);
           w += l;
           s = s.right(s.length() - pos2 - 1);
         } else {
@@ -355,9 +365,9 @@ void LegendWidget::drawText(QPainter *p, const QRect& rect,
             aux.setColor(d_text->color());
             aux.setRenderFlags (Qt::AlignLeft | Qt::AlignVCenter);
 
-            QSize size = aux.textSize(); // In QtiPlot rev 1373: textSize(p, aux);
-            QRect tr = QRect(QPoint(w, height[i] - size.height()/2), size);
-            aux.draw(p, tr);
+            QSizeF size = aux.textSize(); // In QtiPlot rev 1373: textSize(p, aux);
+            QRectF textRect(QPointF(w, height[i] - size.height()/2), size);
+            aux.draw(p, textRect);
             w += size.width();
 
             int pos1 = s.indexOf(",", pos);
@@ -367,7 +377,7 @@ void LegendWidget::drawText(QPainter *p, const QRect& rect,
               continue;
             }
             int point = s.mid(pos1 + 1, pos3 - pos1 - 1).toInt() - 1;
-            drawSymbol(dynamic_cast<PlotCurve*>(d_plot->curve(0)), point, p, w, height[i], l);
+            drawSymbol(dynamic_cast<PlotCurve*>(d_plot->curve(0)), point, p, static_cast<int>(w), height[i], l);
             w += l;
             s = s.right(s.length() - pos3 - 1);
           }
@@ -383,9 +393,9 @@ void LegendWidget::drawText(QPainter *p, const QRect& rect,
       aux.setColor(d_text->color());
       aux.setRenderFlags (Qt::AlignLeft | Qt::AlignVCenter);
 
-      QSize size = aux.textSize(); // In QtiPlot rev 1373: textSize(p, aux);
-      QRect tr = QRect(QPoint(w, height[i] - size.height()/2), size);
-      aux.draw(p, tr);
+      QSizeF size = aux.textSize(); // In QtiPlot rev 1373: textSize(p, aux);
+      QRectF textRect(QPointF(w, height[i] - size.height()/2), size);
+      aux.draw(p, textRect);
     }
   }
   p->restore();
@@ -416,8 +426,8 @@ QVector<int> LegendWidget::itemsHeight(int y, int symbolLineLength, int &width, 
       if (pos >= 0 && (pos2==-1 || pos2>pos3)){
         QwtText aux(parse(s.left(pos))); //not a pie chart
         aux.setFont(d_text->font());
-        QSize size = aux.textSize(); // In QtiPlot rev 1373: textSize(p, aux);
-        textL += size.width();
+        QSizeF size = aux.textSize(); // In QtiPlot rev 1373: textSize(p, aux);
+        textL += static_cast<int>(size.width());
 
         int pos1 = s.indexOf("(", pos);
         int pos2 = s.indexOf(")", pos1);
@@ -439,8 +449,8 @@ QVector<int> LegendWidget::itemsHeight(int y, int symbolLineLength, int &width, 
         if (pos >= 0){
           QwtText aux(parse(s.left(pos)));
           aux.setFont(d_text->font());
-          QSize size = aux.textSize(); // In QtiPlot rev 1373: textSize(p, aux);
-          textL += size.width();
+          QSizeF size = aux.textSize(); // In QtiPlot rev 1373: textSize(p, aux);
+          textL += static_cast<int>(size.width());
           textL += symbolLineLength;
           int pos2=s.indexOf("}", pos);
           if (pos2==-1) pos2=pos+3;
@@ -450,8 +460,8 @@ QVector<int> LegendWidget::itemsHeight(int y, int symbolLineLength, int &width, 
           if (pos >= 0){
             QwtText aux(parse(s.left(pos)));
             aux.setFont(d_text->font());
-            QSize size = aux.textSize(); // In QtiPlot rev 1373: textSize(p, aux);
-            textL += size.width();
+            QSizeF size = aux.textSize(); // In QtiPlot rev 1373: textSize(p, aux);
+            textL += static_cast<int>(size.width());
             textL += symbolLineLength;
             int pos2=s.indexOf(")", pos);
             if (pos2==-1) pos2=pos+3;
@@ -464,13 +474,13 @@ QVector<int> LegendWidget::itemsHeight(int y, int symbolLineLength, int &width, 
 
     QwtText aux(parse(s));
     aux.setFont(d_text->font());
-    QSize size = aux.textSize();
-    textL += size.width();
+    QSizeF size = aux.textSize();
+    textL += static_cast<int>(size.width());
 
     if (textL > maxL)
       maxL = textL;
 
-    int textH = size.height();
+    int textH = static_cast<int>(size.height());
     height += textH;
 
     heights[i] = y + h + textH/2;
@@ -526,12 +536,12 @@ int LegendWidget::symbolsMaxWidth()
           maxL = 2*d_text->font().pointSize();//10;
           line_length = 0;
         } else {
-          int l = c->symbol().size().width();
+          int l = static_cast<int>(c->symbol()->size().width());
           if (l < 3)
             l = 3;
           else if (l > 15)
             l = 15;
-          if (l>maxL && c->symbol().style() != QwtSymbol::NoSymbol)
+          if (l>maxL && c->symbol()->style() != QwtSymbol::NoSymbol)
             maxL = l;
         }
       }

@@ -10,7 +10,6 @@
 #include "MantidQtAPI/GraphOptions.h"
 #include "DllOption.h"
 
-
 /**
    The class inherits from QwtColorMap and implements reading a color color map from a file. 
    There is also a mode which indicates the scale type. 
@@ -107,6 +106,15 @@ private:
 
 };
 
+//-----------------------------------------------------------------------------
+// ColorMapCloner
+//-----------------------------------------------------------------------------
 
+class ColorMapCloner
+{
+public:
+  /// Helper function to clone a QwtLinearColorMap
+  static QwtLinearColorMap * cloneQwtLinearMap(const QwtLinearColorMap & orig);
+};
 
 #endif //MANTIDCOLORMAP_H_

@@ -515,7 +515,7 @@ QImage MatrixModel::renderImage()
     QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
 	
 	QImage image(QSize(d_cols, d_rows), QImage::Format_RGB32);
-	QwtLinearColorMap color_map = d_matrix->colorMap();
+	const QwtLinearColorMap & color_map = d_matrix->colorMap();
 
 	double minValue = 0.0, maxValue = 0.0;
 	d_matrix->range(&minValue, &maxValue);

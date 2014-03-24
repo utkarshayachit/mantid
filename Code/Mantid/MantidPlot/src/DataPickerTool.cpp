@@ -118,7 +118,8 @@ void DataPickerTool::setSelection(QwtPlotCurve *curve, int point_index)
 
   QPointF selectedPt = d_selected_curve->sample(static_cast<int>(d_selected_point));
   d_restricted_move_pos =
-      QPoint(plot()->transform(xAxis(), selectedPt.x()), plot()->transform(yAxis(), selectedPt.y()));
+      QPoint(static_cast<int>(plot()->transform(xAxis(), selectedPt.x())),
+             static_cast<int>(plot()->transform(yAxis(), selectedPt.y())));
 
   if (dynamic_cast<PlotCurve *>(d_selected_curve)->type() == Graph::Function) 
   {

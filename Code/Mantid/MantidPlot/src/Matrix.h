@@ -136,11 +136,11 @@ public:
   void rotate90(bool clockwise = true);
   void fft(bool inverse = false);
 
-  ColorMapType colorMapType(){return d_color_map_type;};
+  ColorMapType colorMapType(){return d_color_map_type;}
   void setColorMapType(ColorMapType mapType);
 
-  const QwtLinearColorMap & colorMap(){return d_color_map;};
-  void setColorMap(const QwtLinearColorMap& map);
+  const QwtLinearColorMap & colorMap(){return *d_color_map;};
+  void setColorMap(const QwtLinearColorMap &map);
   //! Used when restoring from project files
   void setColorMap(const QStringList& lst);
 
@@ -335,7 +335,7 @@ public slots:
   //! Keeps track of the header view type;
   HeaderViewType d_header_view_type;
   //! The color map used to display images.
-  QwtLinearColorMap d_color_map;
+  QwtLinearColorMap *d_color_map;
   //! The color map type.
   ColorMapType d_color_map_type;
   //! Column width in pixels;

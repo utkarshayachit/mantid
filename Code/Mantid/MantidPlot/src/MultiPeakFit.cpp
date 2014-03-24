@@ -224,7 +224,7 @@ void MultiPeakFit::insertPeakFunctionCurve(double *x, double *y, int peak)
 
 	FunctionCurve *c = new FunctionCurve(FunctionCurve::Normal, title);
 	c->setPen(QPen(ColorBox::color(d_peaks_color), 1));
-	c->setData(x, y, d_points);
+	c->setSamples(x, y, d_points);
 	c->setRange(d_x[0], d_x[d_n-1]);
 
 	QString formula = "y0+"+peakFormula(peak + 1, d_profile);
@@ -346,7 +346,7 @@ void MultiPeakFit::generateFitCurve()
 				c->setPen(QPen(ColorBox::color(d_curveColorIndex), 2));
 			else
 				c->setPen(QPen(ColorBox::color(d_curveColorIndex), 1));
-			c->setData(X.data(), Y.data(), d_points);//c->setData(X, Y, d_points);
+			c->setSamples(X.data(), Y.data(), d_points);//c->setData(X, Y, d_points);
 			d_output_graph->insertPlotItem(c, Graph::Line);
 			d_output_graph->addFitCurve(c);
 
@@ -358,7 +358,7 @@ void MultiPeakFit::generateFitCurve()
 					label = tableName + "_" + tr("peak") + QString::number(i+1);
 					c = new DataCurve(d_result_table, tableName + "_1", label);
 					c->setPen(QPen(ColorBox::color(d_peaks_color), 1));
-					c->setData(X.data(), Y.data(), d_points);//c->setData(X, Y, d_points);
+					c->setSamples(X.data(), Y.data(), d_points);//c->setData(X, Y, d_points);
 					d_output_graph->insertPlotItem(c, Graph::Line);
 					d_output_graph->addFitCurve(c);
 				}

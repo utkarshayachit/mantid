@@ -29,6 +29,7 @@
 #include "QwtErrorPlotCurve.h"
 #include "QwtBarCurve.h"
 
+#include <qwt_point_data.h>
 #include <qwt_painter.h>
 #include <qwt_symbol.h>
 
@@ -68,7 +69,7 @@ void QwtErrorPlotCurve::draw(QPainter *painter, const QwtScaleMap &xMap, const Q
     return;
 
   if (to < 0)
-    to = dataSize() - 1;
+    to = static_cast<int>(dataSize()) - 1;
 
   painter->save();
   painter->setPen(pen());
@@ -80,11 +81,11 @@ void QwtErrorPlotCurve::drawErrorBars(QPainter *painter, const QwtScaleMap &xMap
     const QwtScaleMap &yMap, int from, int to) const
 {
   int sh = 0, sw = 0;
-  const QwtSymbol symbol = d_master_curve->symbol();
-  if (symbol.style() != QwtSymbol::NoSymbol)
+  const QwtSymbol *symbol = d_master_curve->symbol();
+  if (symbol->style() != QwtSymbol::NoSymbol)
   {
-    sh = symbol.size().height();
-    sw = symbol.size().width();
+    sh = symbol->size().height();
+    sw = symbol->size().width();
   }
 
   double d_xOffset = 0.0;
@@ -98,15 +99,16 @@ void QwtErrorPlotCurve::drawErrorBars(QPainter *painter, const QwtScaleMap &xMap
 
   for (int i = from; i <= to; i += skipPoints)
   {
-    const int xi = xMap.transform(x(i) + d_xOffset);
-    const int yi = yMap.transform(y(i) + d_yOffset);
+    QPointF pt = sample(i);
+    const double xi = xMap.transform(pt.x() + d_xOffset);
+    const double yi = yMap.transform(pt.y() + d_yOffset);
 
     if (type == Vertical)
     {
-      const int yh = yMap.transform(y(i) + err[i]);
-      const int yl = yMap.transform(y(i) - err[i]);
-      const int yhl = yi - sh / 2;
-      const int ylh = yi + sh / 2;
+      const double yh = yMap.transform(pt.y() + err[i]);
+      const double yl = yMap.transform(pt.y() - err[i]);
+      const double yhl = yi - sh / 2;
+      const double ylh = yi + sh / 2;
 
       if (plusSide())
       {
@@ -123,10 +125,10 @@ void QwtErrorPlotCurve::drawErrorBars(QPainter *painter, const QwtScaleMap &xMap
     }
     else if (type == Horizontal)
     {
-      const int xp = xMap.transform(x(i) + err[i]);
-      const int xm = xMap.transform(x(i) - err[i]);
-      const int xpm = xi + sw / 2;
-      const int xmp = xi - sw / 2;
+      const double xp = xMap.transform(pt.x() + err[i]);
+      const double xm = xMap.transform(pt.x() - err[i]);
+      const double xpm = xi + sw / 2;
+      const double xmp = xi - sw / 2;
 
       if (plusSide())
       {
@@ -146,7 +148,7 @@ void QwtErrorPlotCurve::drawErrorBars(QPainter *painter, const QwtScaleMap &xMap
 
 double QwtErrorPlotCurve::errorValue(int i)
 {
-  if (i >= 0 && i < dataSize())
+  if (i >= 0 && i < static_cast<int>(dataSize()))
     return err[i];
   else
     return 0.0;
@@ -187,35 +189,36 @@ QRectF QwtErrorPlotCurve::boundingRect() const
 {
   QRectF rect = QwtPlotCurve::boundingRect();
 
-  int size = dataSize();
+  int size = static_cast<int>(dataSize());
 
   QVector<double> X(size), Y(size), min(size), max(size);
   for (int i = 0; i < size; i++)
   {
-    X[i] = x(i);
-    Y[i] = y(i);
+    QPointF pt = sample(i);
+    X[i] = pt.x();
+    Y[i] = pt.y();
     if (type == Vertical)
     {
-      min[i] = y(i) - err[i];
-      max[i] = y(i) + err[i];
+      min[i] = pt.y() - err[i];
+      max[i] = pt.y() + err[i];
     }
     else
     {
-      min[i] = x(i) - err[i];
-      max[i] = x(i) + err[i];
+      min[i] = pt.x() - err[i];
+      max[i] = pt.x() + err[i];
     }
   }
 
-  QVectorData *erMin, *erMax;
+  QwtPointArrayData *erMin, *erMax;
   if (type == Vertical)
   {
-    erMin = new QVectorData(X, min);
-    erMax = new QVectorData(X, max);
+    erMin = new QwtPointArrayData(X, min);
+    erMax = new QwtPointArrayData(X, max);
   }
   else
   {
-    erMin = new QVectorData(min, Y);
-    erMax = new QVectorData(max, Y);
+    erMin = new QwtPointArrayData(min, Y);
+    erMax = new QwtPointArrayData(max, Y);
   }
 
   QRectF minrect = erMin->boundingRect();
@@ -238,7 +241,7 @@ void QwtErrorPlotCurve::setMasterCurve(DataCurve *c)
     return;
 
   d_master_curve = c;
-  setAxis(c->xAxis(), c->yAxis());
+  setAxes(c->xAxis(), c->yAxis());
   d_start_row = c->startRow();
   d_end_row = c->endRow();
   c->addErrorBars(this);
@@ -307,7 +310,7 @@ void QwtErrorPlotCurve::loadData()
   Y.resize(data_size);
   err.resize(data_size);
 
-  setData(X.data(), Y.data(), data_size);
+  setSamples(X.data(), Y.data(), data_size);
   setErrors(err);
 }
 

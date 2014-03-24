@@ -211,7 +211,7 @@ void FunctionDialog::setCurveToModify(Graph *g, int curve)
 		boxFunction->setText(formulas[0]);
 		boxFrom->setText(QString::number(c->startRange(), 'g', 15));
 		boxTo->setText(QString::number(c->endRange(), 'g', 15));
-		boxPoints->setValue(c->dataSize());
+		boxPoints->setValue(static_cast<int>(c->dataSize()));
 	} else if (c->functionType() == FunctionCurve::Polar) {
 		optionStack->setCurrentIndex(2);
 		boxType->setCurrentItem(2);
@@ -221,7 +221,7 @@ void FunctionDialog::setCurveToModify(Graph *g, int curve)
 		boxPolarParameter->setText(c->variable());
 		boxPolarFrom->setText(QString::number(c->startRange(), 'g', 15));
 		boxPolarTo->setText(QString::number(c->endRange(), 'g', 15));
-		boxPolarPoints->setValue(c->dataSize());
+		boxPolarPoints->setValue(static_cast<int>(c->dataSize()));
 	} else if (c->functionType() == FunctionCurve::Parametric) {
 		boxType->setCurrentItem(1);
 		optionStack->setCurrentIndex(1);
@@ -231,7 +231,7 @@ void FunctionDialog::setCurveToModify(Graph *g, int curve)
 		boxParameter->setText(c->variable());
 		boxParFrom->setText(QString::number(c->startRange(), 'g', 15));
 		boxParTo->setText(QString::number(c->endRange(), 'g', 15));
-		boxParPoints->setValue(c->dataSize());
+		boxParPoints->setValue(static_cast<int>(c->dataSize()));
 	}
 }
 

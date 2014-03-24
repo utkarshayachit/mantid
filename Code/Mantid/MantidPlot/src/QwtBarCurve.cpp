@@ -60,13 +60,13 @@ void QwtBarCurve::draw(QPainter *painter,
         return;
 
     if (to < 0)
-        to = dataSize() - 1;
+        to = static_cast<int>(dataSize()) - 1;
 
     painter->save();
     painter->setPen(QwtPlotCurve::pen());
     painter->setBrush(QwtPlotCurve::brush());
 
-    int ref;
+    double ref;
 	double bar_width = 0;
 
     if (bar_style == Vertical)
@@ -74,12 +74,16 @@ void QwtBarCurve::draw(QPainter *painter,
     else
        ref= xMap.transform(1e-100);
 
-	if (bar_style == Vertical)
+        QPointF fromPt = sample(from);
+        QPointF fromP1Pt = sample(from+1);
+        if (bar_style == Vertical)
 	{
-		int dx = abs(xMap.transform(x(from+1))-xMap.transform(x(from)));
+		double dx = fabs(xMap.transform(fromP1Pt.x())-xMap.transform(fromPt.x()));
 		for (int i=from+2; i<to; i++)
 		{
-			int min = abs(xMap.transform(x(i+1))-xMap.transform(x(i)));
+		    QPointF pt = sample(i);
+		    QPointF ptP1 = sample(i+1);
+		    double min = fabs(xMap.transform(ptP1.x())-xMap.transform(pt.x()));
 			if (min <= dx)
 				dx=min;
 		}
@@ -87,36 +91,39 @@ void QwtBarCurve::draw(QPainter *painter,
 	}
 	else
 	{
-		int dy = abs(yMap.transform(y(from+1))-yMap.transform(y(from)));
+		double dy = fabs(yMap.transform(fromP1Pt.y())-yMap.transform(fromPt.y()));
 		for (int i=from+2; i<to; i++)
 		{
-			int min = abs(yMap.transform(y(i+1))-yMap.transform(y(i)));
+		    QPointF pt = sample(i);
+		    QPointF ptP1 = sample(i+1);
+			double min = fabs(yMap.transform(ptP1.y())-yMap.transform(pt.y()));
 			if (min <= dy)
 				dy=min;
 		}
 		bar_width = dy*(1-bar_gap*0.01);
 	}
 
-	const int half_width = static_cast<int>((0.5-bar_offset*0.01)*bar_width);
-	int bw1 = static_cast<int>(bar_width) + 1;
+	const double half_width = (0.5-bar_offset*0.01)*bar_width;
+	double bw1 = bar_width + 1;
 	for (int i=from; i<=to; i++)
 	{
-		const int px = xMap.transform(x(i));
-        const int py = yMap.transform(y(i));
+		QPointF pt = sample(i);
+		const double px = xMap.transform(pt.x());
+		const double py = yMap.transform(pt.y());
 
 		if (bar_style == Vertical)
 		{
-			if (y(i) < 0)
-				painter->drawRect(px-half_width, ref, bw1, (py-ref));
+			if (pt.y() < 0.0)
+				painter->drawRect(QRectF(px-half_width, ref, bw1, (py-ref)));
 			else
-				painter->drawRect(px-half_width, py, bw1, (ref-py+1));
+				painter->drawRect(QRectF(px-half_width, py, bw1, (ref-py+1)));
 		}
 		else
 		{
-			if (x(i) < 0)
-				painter->drawRect(px, py-half_width, (ref-px), bw1);
+			if (pt.x() < 0.0)
+				painter->drawRect(QRectF(px, py-half_width, (ref-px), bw1));
 			else
-				painter->drawRect(ref, py-half_width, (px-ref), bw1);
+				painter->drawRect(QRectF(ref, py-half_width, (px-ref), bw1));
 		}
 	}
 	painter->restore();
@@ -164,17 +171,17 @@ double QwtBarCurve::dataOffset()
 	if (bar_style == Vertical)
 	{
 		const QwtScaleMap &xMap = plot()->canvasMap(xAxis());
-		int dx = abs(xMap.transform(x(1))-xMap.transform(x(0)));
+		double dx = fabs(xMap.transform(sample(0).x())-xMap.transform(sample(0).x()));
 		double bar_width = dx*(1-bar_gap*0.01);
 		if (plot()->isVisible())
 		{
-			for (int i = 2; i<dataSize(); i++)
+			for (int i = 2; i<static_cast<int>(dataSize()); i++)
 			{
-				int min = abs(xMap.transform(x(i+1))-xMap.transform(x(i)));
+				double min = fabs(xMap.transform(sample(i+1).x())-xMap.transform(sample(i).x()));
 				if (min <= dx)
 					dx=min;
 			}
-			int x1 = xMap.transform(minXValue()) + static_cast<int>(bar_offset*0.01*bar_width);
+			double x1 = xMap.transform(minXValue()) + bar_offset*0.01*bar_width;
 			return xMap.invTransform(x1) - minXValue();
 		}
 		else
@@ -183,21 +190,20 @@ double QwtBarCurve::dataOffset()
 	else
 	{
 		const QwtScaleMap &yMap = plot()->canvasMap(yAxis());
-		int dy = abs(yMap.transform(y(1))-yMap.transform(y(0)));
+		double dy = fabs(yMap.transform(sample(1).y())-yMap.transform(sample(0).y()));
 		double bar_width = dy*(1-bar_gap*0.01);
 		if (plot()->isVisible())
 		{
-			for (int i=2; i<dataSize(); i++)
+			for (int i=2; i<static_cast<int>(dataSize()); i++)
 			{
-				int min = abs(yMap.transform(y(i+1))-yMap.transform(y(i)));
+				double min = fabs(yMap.transform(sample(i+1).y())-yMap.transform(sample(i).y()));
 				if (min <= dy)
 					dy=min;
 			}
-			int y1 = yMap.transform(minYValue()) + static_cast<int>(bar_offset*0.01*bar_width);
+			double y1 = yMap.transform(minYValue()) + bar_offset*0.01*bar_width;
 			return yMap.invTransform(y1) - minYValue();
 		}
 		else
 			return 0.5*bar_offset*0.01*bar_width;
 	}
-return 0;
 }

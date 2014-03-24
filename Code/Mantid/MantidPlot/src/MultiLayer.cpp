@@ -437,37 +437,37 @@ QSize MultiLayer::arrangeLayers(bool userSize)
         Graph *gr = static_cast<Graph *>(graphsList.at(i));
 		QwtPlot *plot = gr->plotWidget();
 		QwtPlotLayout *plotLayout=plot->plotLayout();
-		QRect cRect=plotLayout->canvasRect();
-		double ch = (double) cRect.height();
-		double cw = (double) cRect.width();
+		QRectF cRect=plotLayout->canvasRect();
+		double ch = cRect.height();
+		double cw = cRect.width();
 
-		QRect tRect=plotLayout->titleRect ();
+		QRectF tRect=plotLayout->titleRect ();
 		QwtScaleWidget *scale=(QwtScaleWidget *) plot->axisWidget (QwtPlot::xTop);
 
-		int topHeight = 0;
+		double topHeight = 0;
 		if (!tRect.isNull())
 			topHeight += tRect.height() + plotLayout->spacing();
 		if (scale){
-			QRect sRect=plotLayout->scaleRect (QwtPlot::xTop);
+			QRectF sRect=plotLayout->scaleRect (QwtPlot::xTop);
 			topHeight += sRect.height();
 		}
-		gsl_vector_set (xTopR, i, double(topHeight)/ch);
+		gsl_vector_set (xTopR, i, topHeight/ch);
 
 		scale=(QwtScaleWidget *) plot->axisWidget (QwtPlot::xBottom);
 		if (scale){
-			QRect sRect = plotLayout->scaleRect (QwtPlot::xBottom);
+			QRectF sRect = plotLayout->scaleRect (QwtPlot::xBottom);
 			gsl_vector_set (xBottomR, i, double(sRect.height())/ch);
 		}
 
 		scale=(QwtScaleWidget *) plot->axisWidget (QwtPlot::yLeft);
 		if (scale){
-			QRect sRect = plotLayout->scaleRect (QwtPlot::yLeft);
+			QRectF sRect = plotLayout->scaleRect (QwtPlot::yLeft);
 			gsl_vector_set (yLeftR, i, double(sRect.width())/cw);
 		}
 
 		scale=(QwtScaleWidget *) plot->axisWidget (QwtPlot::yRight);
 		if (scale){
-			QRect sRect = plotLayout->scaleRect (QwtPlot::yRight);
+			QRectF sRect = plotLayout->scaleRect (QwtPlot::yRight);
 			gsl_vector_set (yRightR, i, double(sRect.width())/cw);
 		}
 

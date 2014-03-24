@@ -30,6 +30,7 @@
 #include "MatrixCommand.h"
 #include <QApplication>
 #include <gsl/gsl_math.h>
+#include "MantidQtAPI/MantidColorMap.h"
 
 /*************************************************************************/
 /*           Class MatrixEditCellCommand                                 */
@@ -261,12 +262,17 @@ MatrixSetColorMapCommand::MatrixSetColorMapCommand(Matrix *m, Matrix::ColorMapTy
 QUndoCommand(text),
 d_matrix(m),
 d_map_type_before(type_before),
-d_map_type_after(type_after)
+d_map_type_after(type_after),
+d_map_before(ColorMapCloner::cloneQwtLinearMap(map_before)),
+d_map_after(ColorMapCloner::cloneQwtLinearMap(map_after))
 {
     setText(m->objectName() + ": " + text);
+}
 
-	d_map_before = QwtLinearColorMap(map_before);
-	d_map_after = QwtLinearColorMap(map_after);
+MatrixSetColorMapCommand::~MatrixSetColorMapCommand()
+{
+  delete d_map_before;
+  delete d_map_after;
 }
 
 void MatrixSetColorMapCommand::redo()
@@ -284,8 +290,8 @@ void MatrixSetColorMapCommand::redo()
 		break;
 
 		case Matrix::Custom:
-			d_matrix->setColorMap(d_map_after);
-		break;
+			d_matrix->setColorMap(*d_map_after);
+	    break;
 	}
 }
 
@@ -304,7 +310,7 @@ void MatrixSetColorMapCommand::undo()
 		break;
 
 		case Matrix::Custom:
-			d_matrix->setColorMap(d_map_before);
+			d_matrix->setColorMap(*d_map_before);
 		break;
 	}
 }

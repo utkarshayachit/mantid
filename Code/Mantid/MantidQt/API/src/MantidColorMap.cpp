@@ -342,3 +342,25 @@ QVector<QRgb> MantidColorMap::colorTable(const QwtInterval & interval) const
   return rgbtable;
 }
 
+
+//-----------------------------------------------------------------------------
+// ColorMapCloner
+//-----------------------------------------------------------------------------
+
+/**
+ * Return a copy of the given colour map
+ * @param orig The original map
+ */
+QwtLinearColorMap * ColorMapCloner::cloneQwtLinearMap(const QwtLinearColorMap &orig)
+{
+  QwtLinearColorMap* copyMap = new QwtLinearColorMap( orig.color1(), orig.color2(),
+                                                      orig.format());
+  copyMap->setMode(orig.mode());
+  QVector<double> colourStops = orig.colorStops();
+  QwtInterval unity(0.0,1.0);
+  for ( int i = 1; i < colourStops.size() - 1; ++i)
+  {
+      copyMap->addColorStop( colourStops[i], orig.rgb(unity, colourStops[i]));
+  }
+  return copyMap;
+}

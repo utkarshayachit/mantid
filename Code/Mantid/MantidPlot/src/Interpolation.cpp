@@ -163,7 +163,7 @@ int Interpolation::sortedCurveData(QwtPlotCurve *c, double start, double end, do
         break;
         }
     for (int i = i_end-1; i >= 0; i--)
-            if (c->sample().x() < end && i < npts){
+            if (c->sample(i).x() < end && i < npts){
   	      i_end = i + 1;
           break;
         }

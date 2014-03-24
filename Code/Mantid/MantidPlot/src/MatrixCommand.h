@@ -138,13 +138,14 @@ public:
     MatrixSetColorMapCommand(Matrix *m, Matrix::ColorMapType d_map_type_before,
 					const QwtLinearColorMap& d_map_before, Matrix::ColorMapType d_map_type_after,
 					const QwtLinearColorMap& d_map_after, const QString& text);
+    ~MatrixSetColorMapCommand();
     virtual void redo();
     virtual void undo();
 
 private:
     Matrix *d_matrix;
     Matrix::ColorMapType d_map_type_before, d_map_type_after;
-    QwtLinearColorMap d_map_before, d_map_after;
+    QwtLinearColorMap *d_map_before, *d_map_after;
 };
 
 class MatrixDeleteRowsCommand: public QUndoCommand

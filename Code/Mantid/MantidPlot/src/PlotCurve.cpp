@@ -83,7 +83,7 @@ QString PlotCurve::saveCurveLayout()
     s += "</Brush>\n";
   }
 
-  const QwtSymbol symbol = this->symbol();
+  const QwtSymbol &symbol = *(this->symbol());
   if (symbol.style() != QwtSymbol::NoSymbol){
     s += "<Symbol>\n";
     s += "\t<Style>" + QString::number(SymbolBox::symbolIndex(symbol.style())) + "</Style>\n";
@@ -137,13 +137,13 @@ void PlotCurve::restoreCurveLayout(const QStringList& lst)
       }
       setBrush(brush);
     } else if (s == "<Symbol>"){
-      QwtSymbol symbol;
+      QwtSymbol *symbol = new QwtSymbol;
       while(s != "</Symbol>"){
         s = (*(++line)).stripWhiteSpace();
         if (s.contains("<Style>"))
-          symbol.setStyle(SymbolBox::style(s.remove("<Style>").remove("</Style>").toInt()));
+          symbol->setStyle(SymbolBox::style(s.remove("<Style>").remove("</Style>").toInt()));
         else if (s.contains("<Size>"))
-          symbol.setSize((QwtSymbol::Style)s.remove("<Size>").remove("</Size>").toInt());
+          symbol->setSize((QwtSymbol::Style)s.remove("<Size>").remove("</Size>").toInt());
         else if (s == "<SymbolPen>"){
           QPen pen;
           while(s != "</SymbolPen>"){
@@ -155,7 +155,7 @@ void PlotCurve::restoreCurveLayout(const QStringList& lst)
             else if (s.contains("<Width>"))
               pen.setWidthF(s.remove("<Width>").remove("</Width>").toDouble());
           }
-          symbol.setPen(pen);
+          symbol->setPen(pen);
         } else if (s == "<SymbolBrush>"){
           QBrush brush;
           while(s != "</SymbolBrush>"){
@@ -165,7 +165,7 @@ void PlotCurve::restoreCurveLayout(const QStringList& lst)
             else if (s.contains("<Style>"))
               brush.setStyle(PatternBox::brushStyle(s.remove("<Style>").remove("</Style>").toInt()));
           }
-          symbol.setBrush(brush);
+          symbol->setBrush(brush);
         }
         setSymbol(symbol);
       }
@@ -195,7 +195,7 @@ void PlotCurve::drawCurve(QPainter *p, int style, const QwtScaleMap &xMap, const
 
 void PlotCurve::setSkipSymbolsCount(int count)
 {
-  if (count < 1 || count > dataSize())
+  if (count < 1 || count > static_cast<int>(dataSize()))
     return;
 
   d_skip_symbols = count;
@@ -229,18 +229,18 @@ void PlotCurve::drawSymbols(QPainter *painter, const QwtSymbol &symbol, const Qw
   //QtiPlot has added method to QwtPainter: painter->setPen(QwtPainter::scaledPen(symbol.pen()));
   painter->setPen(symbol.pen());
 
-  const QwtMetricsMap &metricsMap = QwtPainter::metricsMap();
-
-  QRect rect;
-  rect.setSize(metricsMap.screenToLayout(symbol.size()));
+  QRectF rectF;
+  QSize rect = symbol.size();
+  rectF.setSize(QSizeF(rect.width(), rect.height()));
 
   for (int i = from; i <= to; i += d_skip_symbols)
   {
-    const int xi = xMap.transform(x(i));
-    const int yi = yMap.transform(y(i));
+    QPointF pt = sample(i);
+    const double xi = xMap.transform(pt.x());
+    const double yi = yMap.transform(pt.y());
 
-    rect.moveCenter(QPoint(xi, yi));
-    symbol.draw(painter, rect);
+    rectF.moveCenter(QPointF(xi, yi));
+    symbol.drawSymbol(painter, rectF);
   }
 }
 
@@ -251,7 +251,7 @@ void PlotCurve::drawSideLines(QPainter *p, const QwtScaleMap &xMap, const QwtSca
     return;
 
   if (to < 0)
-    to = dataSize() - 1;
+    to = static_cast<int>(dataSize()) - 1;
 
   p->save();
   QPen pen = p->pen();
@@ -260,11 +260,13 @@ void PlotCurve::drawSideLines(QPainter *p, const QwtScaleMap &xMap, const QwtSca
   p->setPen(pen);
 
   double lw = 0.5*pen.widthF();
-  const double xl = xMap.xTransform(x(from)) - lw;
-  const double xr = xMap.xTransform(x(to)) + lw;
-  const double yl = yMap.xTransform(y(from)) - lw;
-  const double yr = yMap.xTransform(y(to)) - lw;
-  const double base = yMap.xTransform(baseline());
+  const QPointF fromPt = sample(from);
+  const QPointF toPt = sample(to);
+  const double xl = xMap.invTransform(fromPt.x()) - lw;
+  const double xr = xMap.invTransform(toPt.x()) + lw;
+  const double yl = yMap.invTransform(fromPt.y()) - lw;
+  const double yr = yMap.invTransform(toPt.y()) - lw;
+  const double base = yMap.invTransform(baseline());
 
   p->drawLine(QPointF(xl, yl), QPointF(xl, base));
   p->drawLine(QPointF(xr, yr), QPointF(xr, base));
@@ -522,13 +524,13 @@ void DataCurve::loadData()
     return;
   } else {
     if (d_type == Graph::HorizontalBars){
-      setData(Y.data(), X.data(), size);
+      setSamples(Y.data(), X.data(), size);
       foreach(DataCurve *c, d_error_bars)
-        c->setData(Y.data(), X.data(), size);
+        c->setSamples(Y.data(), X.data(), size);
     } else {
-      setData(X.data(), Y.data(), size);
+      setSamples(X.data(), Y.data(), size);
       foreach(DataCurve *c, d_error_bars)
-        c->setData(X.data(), Y.data(), size);
+        c->setSamples(X.data(), Y.data(), size);
     }
 
     if (xColType == Table::Text){
@@ -617,15 +619,16 @@ int DataCurve::tableRow(int point)const
     return -1;
 
   int xColType = d_table->columnType(xcol);
+  QPointF dataPt = sample(point);
   if (xColType == Table::Date){
     QString format = d_table->columnFormat(xcol);
     QDate date0 = QDate::fromString (d_table->text(d_start_row, xcol), format);
     for (int i = d_start_row; i <= d_end_row; i++ ){
       QDate d = QDate::fromString (d_table->text(i, xcol), format);
       if (d.isValid()){
-        if (d_type == Graph::HorizontalBars && date0.daysTo(d) == y(point) && d_table->cell(i, ycol) == x(point))
+        if (d_type == Graph::HorizontalBars && date0.daysTo(d) == dataPt.y() && d_table->cell(i, ycol) == dataPt.x())
           return i;
-        else if (date0.daysTo(d) == x(point) && d_table->cell(i, ycol) == y(point))
+        else if (date0.daysTo(d) == dataPt.x() && d_table->cell(i, ycol) == dataPt.y())
           return i;
       }
     }
@@ -635,16 +638,16 @@ int DataCurve::tableRow(int point)const
     for (int i = d_start_row; i <= d_end_row; i++ ){
       QTime t = QTime::fromString (d_table->text(i, xcol), format);
       if (t.isValid()){
-        if (d_type == Graph::HorizontalBars && t0.msecsTo(t) == y(point) && d_table->cell(i, ycol) == x(point))
+        if (d_type == Graph::HorizontalBars && t0.msecsTo(t) == dataPt.y() && d_table->cell(i, ycol) == dataPt.x())
           return i;
-        if (t0.msecsTo(t) == x(point) && d_table->cell(i, ycol) == y(point))
+        if (t0.msecsTo(t) == dataPt.x() && d_table->cell(i, ycol) == dataPt.y())
           return i;
       }
     }
   }
 
-  double x_val = x(point);
-  double y_val = y(point);
+  double x_val = dataPt.x();
+  double y_val = dataPt.y();
   for (int i = d_start_row; i <= d_end_row; i++ ){
     if (d_table->cell(i, xcol) == x_val && d_table->cell(i, ycol) == y_val)
       return i;
@@ -702,21 +705,22 @@ void DataCurve::loadLabels()
 
     int x_axis = xAxis();
     int y_axis = yAxis();
-    m->setAxis(x_axis, y_axis);
+    m->setAxes(x_axis, y_axis);
 
-    QSize size = t.textSize();
+    QSizeF size = t.textSize();
     int dx = static_cast<int>(d_labels_x_offset*0.01*size.height());
     int dy = -static_cast<int>((d_labels_y_offset*0.01 + 0.5)*size.height());
-    int x2 = d_plot->transform(x_axis, x(index)) + dx;
-    int y2 = d_plot->transform(y_axis, y(index)) + dy;
+    QPointF valuePt = sample(index);
+    int x2 = static_cast<int>(d_plot->transform(x_axis,valuePt.x())) + dx;
+    int y2 = static_cast<int>(d_plot->transform(y_axis, valuePt.y())) + dy;
     switch(d_labels_align){
     case Qt::AlignLeft:
       break;
     case Qt::AlignHCenter:
-      x2 -= size.width()/2;
+      x2 -= static_cast<int>(size.width())/2;
       break;
     case Qt::AlignRight:
-      x2 -= size.width();
+      x2 -= static_cast<int>(size.width());
       break;
     }
     m->setXValue(d_plot->invTransform(x_axis, x2));
@@ -801,22 +805,23 @@ void DataCurve::updateLabelsPosition()
   foreach(PlotMarker *m, d_labels_list)
   {
     int index = m->index();
-    QSize size = m->label().textSize();
+    QSizeF size = m->label().textSize();
     int x_axis = xAxis();
     int y_axis = yAxis();
-    int dx = static_cast<int>(d_labels_x_offset * 0.01 * size.height());int
-    dy = -static_cast<int>((d_labels_y_offset * 0.01 + 0.5) * size.height());int
-    x2 = d_plot->transform(x_axis, x(index)) + dx;
-    int y2 = d_plot->transform(y_axis, y(index)) + dy;
+    int dx = static_cast<int>(d_labels_x_offset * 0.01 * size.height());
+    int dy = -static_cast<int>((d_labels_y_offset * 0.01 + 0.5) * size.height());
+    QPointF indexPt = sample(index);
+    int x2 = static_cast<int>(d_plot->transform(x_axis, indexPt.x())) + dx;
+    int y2 = static_cast<int>(d_plot->transform(y_axis, indexPt.y())) + dy;
     switch (d_labels_align)
     {
     case Qt::AlignLeft:
       break;
     case Qt::AlignHCenter:
-      x2 -= size.width() / 2;
+      x2 -= static_cast<int>(size.width()) / 2;
       break;
     case Qt::AlignRight:
-      x2 -= size.width();
+      x2 -= static_cast<int>(size.width());
       break;
     }
     m->setXValue(d_plot->invTransform(x_axis, x2));
@@ -936,9 +941,9 @@ bool DataCurve::selectedLabels(const QPoint& pos)
   d_selected_label = NULL;
   foreach(PlotMarker *m, d_labels_list)
   {
-    int x = d_plot->transform(xAxis(), m->xValue());
-    int y = d_plot->transform(yAxis(), m->yValue());
-    if (QRect(QPoint(x, y), m->label().textSize()).contains(pos))
+    double x = d_plot->transform(xAxis(), m->xValue());
+    double y = d_plot->transform(yAxis(), m->yValue());
+    if (QRectF(QPointF(x, y), m->label().textSize()).contains(pos))
     {
       d_selected_label = m;
       d_click_pos_x = d_plot->invTransform(xAxis(), pos.x());
@@ -960,7 +965,7 @@ bool DataCurve::hasSelectedLabels() const
 
   foreach(PlotMarker *m, d_labels_list)
   {
-    if (m->label().backgroundPen() == QPen(Qt::blue))
+    if (m->label().borderPen() == QPen(Qt::blue))
       return true;
     else
       return false;
@@ -981,10 +986,10 @@ void DataCurve::setLabelsSelected(bool on)
 
     if (on)
     {
-      t.setBackgroundPen(QPen(Qt::blue));
+      t.setBorderPen(QPen(Qt::blue));
     }
     else
-      t.setBackgroundPen(QPen(Qt::NoPen));
+      t.setBorderPen(QPen(Qt::NoPen));
     m->setLabel(t);
   }
   if (on)
@@ -1019,10 +1024,10 @@ void DataCurve::moveLabels(const QPoint& pos)
     return;
 
   d_plot->replot();
-  int d_x = pos.x() - d_plot->transform(xAxis(), d_click_pos_x);
-  int d_y = pos.y() - d_plot->transform(yAxis(), d_click_pos_y);
+  int d_x = pos.x() - static_cast<int>(d_plot->transform(xAxis(), d_click_pos_x));
+  int d_y = pos.y() - static_cast<int>(d_plot->transform(yAxis(), d_click_pos_y));
 
-  int height = d_selected_label->label().textSize().height();
+  int height = static_cast<int>(d_selected_label->label().textSize().height());
   d_labels_x_offset += static_cast<int>(d_x * 100.0 / (double) height);d_labels_y_offset
                     -= static_cast<int>(d_y * 100.0 / (double) height);
 
@@ -1048,14 +1053,14 @@ PlotMarker::PlotMarker(int index, double angle) :
 void PlotMarker::draw(QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &) const
 {
   p->save();
-  int x = xMap.transform(xValue());
-  int y = yMap.transform(yValue());
+  int x = static_cast<int>(xMap.transform(xValue()));
+  int y = static_cast<int>(yMap.transform(yValue()));
 
   p->translate(x, y);
   p->rotate(-d_angle);
 
   QwtText text = label();
-  text.draw(p, QRect(QPoint(0, 0), text.textSize()));
+  text.draw(p, QRectF(QPointF(0.0, 0.0), text.textSize()));
   p->restore();
 }
 

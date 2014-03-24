@@ -106,17 +106,13 @@ public:
 protected:
     void showEvent (QShowEvent * event);
     void printFrame(QPainter *painter, const QRect &rect) const;
-    // 'Dummy' QRect argument inserted into printCanvas method to avoid Intel
-    // compiler warning (about printCanvas signature not matching that in base class)
-    void printCanvas(QPainter *painter, const QRect&, const QRect &canvasRect,
-                         const QwtScaleMap map[axisCnt]) const;
         virtual void drawItems (QPainter *painter, const QRectF &rect,
                         const QwtScaleMap map[axisCnt]) const;
 
 
-	void drawInwardTicks(QPainter *painter, const QRect &rect,
+	void drawInwardTicks(QPainter *painter, const QRectF &rect,
 							const QwtScaleMap&map, int axis, bool min, bool maj) const;
-    void drawBreak(QPainter *painter, const QRect &rect, const QwtScaleMap &map, int axis) const;
+    void drawBreak(QPainter *painter, const QRectF &rect, const QwtScaleMap &map, int axis) const;
 
 	Grid *d_grid;
 	QMap<int, QwtPlotItem*> d_curves;
