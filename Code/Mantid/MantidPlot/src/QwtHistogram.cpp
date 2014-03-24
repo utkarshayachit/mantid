@@ -74,22 +74,23 @@ void QwtHistogram::drawSeries(QPainter *painter,
 		return;
 
 	if (to < 0)
-		to = dataSize() - 1;
+		to = static_cast<int>(dataSize()) - 1;
 
 	painter->save();
 	painter->setPen(QwtPlotCurve::pen());
 	painter->setBrush(QwtPlotCurve::brush());
 
-	const int ref= yMap.transform(baseline());
-	const int dx=abs(xMap.transform(x(from+1)) - xMap.transform(x(from)));
-	const int bar_width=static_cast<int>(dx*(1-gap()*0.01));
-	const int half_width = static_cast<int>(0.5*(dx-bar_width));
-	const int xOffset = static_cast<int>(0.01*offset()*bar_width);
+	const double ref= yMap.transform(baseline());
+	const double dx=fabs(xMap.transform(sample(from+1).x()) - xMap.transform(sample(from).x()));
+	const double bar_width=dx*(1-gap()*0.01);
+	const double half_width = 0.5*(dx-bar_width);
+	const double xOffset = 0.01*offset()*bar_width;
 
 	for (int i=from; i<=to; i++){
-		const int px1 = xMap.transform(x(i));
-		const int py1 = yMap.transform(y(i));
-		painter->drawRect(px1+half_width+xOffset,py1,bar_width+1,(ref-py1+1));
+		QPointF pt = sample(i);
+		const double px1 = xMap.transform(pt.x());
+		const double py1 = yMap.transform(pt.y());
+		painter->drawRect(QRectF(px1+half_width+xOffset,py1,bar_width+1,(ref-py1+1)));
 	}
 
 	painter->restore();
@@ -98,8 +99,8 @@ void QwtHistogram::drawSeries(QPainter *painter,
 QRectF QwtHistogram::boundingRect() const
 {
 	QRectF rect = QwtPlotCurve::boundingRect();
-	rect.setLeft(rect.left()-x(1));
-	rect.setRight(rect.right()+x(dataSize()-1));
+	rect.setLeft(rect.left()-sample(1).x());
+	rect.setRight(rect.right()+sample(static_cast<int>(dataSize())-1).x());
 	rect.setTop(0);
 	rect.setBottom(1.2*rect.bottom());
 	return rect;
@@ -141,7 +142,7 @@ void QwtHistogram::loadData()
 			Y[i] = 0;
 			X[i] = 0;
 		}
-		setData(X, Y.data(), 2);
+		setSamples(X, Y.data(), 2);
 		return;
 	}
 
@@ -191,7 +192,7 @@ void QwtHistogram::loadData()
 		gsl_histogram_get_range (h, i, &lower, &upper);
 		X[i] = lower;
 	}
-	setData(X.data(), Y.data(), n);
+	setSamples(X.data(), Y.data(), n);
 
 	d_mean = gsl_histogram_mean(h);
 	d_standard_deviation = gsl_histogram_sigma(h);
@@ -253,7 +254,7 @@ void QwtHistogram::loadDataFromMatrix()
 		gsl_histogram_get_range (h, i, &lower, &upper);
 		X[i] = lower;
 	}
-	setData(X.data(), Y.data(), n);
+	setSamples(X.data(), Y.data(), n);
 
 	d_mean = gsl_histogram_mean(h);
 	d_standard_deviation = gsl_histogram_sigma(h);
@@ -272,7 +273,7 @@ void QwtHistogram::initData(double *Y, int size)
 			y[i] = 0;
 			x[i] = 0;
 		}
-		setData(x, y, 2);
+		setSamples(x, y, 2);
 		return;
 	}
 
@@ -306,7 +307,7 @@ void QwtHistogram::initData(double *Y, int size)
 		x[i] = lower;
 	}
 
-	setData(x.data(), y.data(), n);//setData(x, y, n);
+	setSamples(x.data(), y.data(), n);//setData(x, y, n);
 
 	d_bin_size = (d_end - d_begin)/(double)n;
 	d_autoBin = true;

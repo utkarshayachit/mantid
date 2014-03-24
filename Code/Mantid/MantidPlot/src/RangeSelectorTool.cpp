@@ -33,6 +33,7 @@
 #include "cursors.h"
 
 #include <qwt_symbol.h>
+#include <qwt_picker_machine.h>
 #include <QPoint>
 #include <QApplication>
 #include <QClipboard>
@@ -62,26 +63,29 @@ RangeSelectorTool::RangeSelectorTool(Graph *graph, const QObject *status_target,
     d_enabled = true;
 	d_visible = true;
 	d_active_point = 0;
-	d_inactive_point = d_selected_curve->dataSize() - 1;
+	d_inactive_point = static_cast<int>(d_selected_curve->dataSize()) - 1;
 	int marker_size = 20;
 
-	d_active_marker.setSymbol(QwtSymbol(QwtSymbol::Cross, QBrush(QColor(255,255,255,0)),//QBrush(QColor(255,255,0,128)),
+	d_active_marker.setSymbol(new QwtSymbol(QwtSymbol::Cross, QBrush(QColor(255,255,255,0)),//QBrush(QColor(255,255,0,128)),
 				QPen(Qt::red,2), QSize(marker_size,marker_size)));
 	d_active_marker.setLineStyle(QwtPlotMarker::VLine);
 	d_active_marker.setLinePen(QPen(Qt::red, 1, Qt::DashLine));
-	d_inactive_marker.setSymbol(QwtSymbol(QwtSymbol::Cross, QBrush(QColor(255,255,255,0)), //QBrush(QColor(255,255,0,128)),
+	d_inactive_marker.setSymbol(new QwtSymbol(QwtSymbol::Cross, QBrush(QColor(255,255,255,0)), //QBrush(QColor(255,255,0,128)),
 				QPen(Qt::black,2), QSize(marker_size,marker_size)));
 	d_inactive_marker.setLineStyle(QwtPlotMarker::VLine);
 	d_inactive_marker.setLinePen(QPen(Qt::black, 1, Qt::DashLine));
-	d_active_marker.setValue(d_selected_curve->x(d_active_point),
-			d_selected_curve->y(d_active_point));
-	d_inactive_marker.setValue(d_selected_curve->x(d_inactive_point),
-			d_selected_curve->y(d_inactive_point));
+
+        QPointF activePtValue = d_selected_curve->sample(d_active_point);
+        d_active_marker.setValue(activePtValue.x(), activePtValue.y());
+
+        QPointF inactivePtValue = d_selected_curve->sample(d_inactive_point);
+        d_inactive_marker.setValue(inactivePtValue.x(), inactivePtValue.y());
+
 	d_active_marker.attach(d_graph->plotWidget());
 	d_inactive_marker.attach(d_graph->plotWidget());
 
 	setTrackerMode(QwtPicker::AlwaysOn);
-	setSelectionFlags(QwtPicker::PointSelection | QwtPicker::ClickSelection);
+	setStateMachine(new QwtPickerClickPointMachine);
 	d_graph->plotWidget()->canvas()->setCursor(QCursor(getQPixmap("vizor_xpm"), -1, -1));
 	d_graph->plotWidget()->canvas()->setFocus();
 	d_graph->plotWidget()->replot();
@@ -115,10 +119,12 @@ void RangeSelectorTool::pointSelected(const QPoint &pos)
         d_selected_curve = curve;
 
         d_active_point = point;
-		d_active_marker.setValue(d_selected_curve->x(d_active_point), d_selected_curve->y(d_active_point));
+        QPointF ptValue = d_selected_curve->sample(d_active_point);
+        d_active_marker.setValue(ptValue.x(), ptValue.y());
 
-        d_active_point > 0 ? d_inactive_point = 0 : d_inactive_point = d_selected_curve->dataSize() - 1;
-		d_inactive_marker.setValue(curve->x(d_inactive_point), curve->y(d_inactive_point));
+        d_active_point > 0 ? d_inactive_point = 0 : d_inactive_point = static_cast<int>(d_selected_curve->dataSize()) - 1;
+        ptValue = curve->sample(d_inactive_point);
+        d_inactive_marker.setValue(ptValue.x(), ptValue.y());
 		emitStatusText();
 		emit changed();
 	}
@@ -131,9 +137,11 @@ void RangeSelectorTool::setSelectedCurve(QwtPlotCurve *curve)
 		return;
 	d_selected_curve = curve;
 	d_active_point = 0;
-	d_inactive_point = d_selected_curve->dataSize() - 1;
-	d_active_marker.setValue(d_selected_curve->x(d_active_point), d_selected_curve->y(d_active_point));
-	d_inactive_marker.setValue(d_selected_curve->x(d_inactive_point), d_selected_curve->y(d_inactive_point));
+	d_inactive_point = static_cast<int>(d_selected_curve->dataSize()) - 1;
+	QPointF ptValue = d_selected_curve->sample(d_active_point);
+	d_active_marker.setValue(ptValue.x(), ptValue.y());
+	ptValue = d_selected_curve->sample(d_inactive_point);
+	d_inactive_marker.setValue(ptValue.x(), ptValue.y());
 	emitStatusText();
 	emit changed();
 }
@@ -143,7 +151,8 @@ void RangeSelectorTool::setActivePoint(int point)
 	if (!d_enabled || point == d_active_point)
 		return;
 	d_active_point = point;
-	d_active_marker.setValue(d_selected_curve->x(d_active_point), d_selected_curve->y(d_active_point));
+	QPointF ptValue = d_selected_curve->sample(d_active_point);
+	d_active_marker.setValue(ptValue.x(), ptValue.y());
 	emitStatusText();
 	emit changed();
 }
@@ -152,12 +161,13 @@ void RangeSelectorTool::emitStatusText()
 {
     QLocale locale = d_graph->plotWidget()->locale();
     if ((static_cast<PlotCurve *>(d_selected_curve))->type() == Graph::Function){
+        QPointF ptValue = d_selected_curve->sample(d_active_point);
          emit statusText(QString("%1 <=> %2[%3]: x=%4; y=%5")
 			.arg(d_active_marker.xValue() > d_inactive_marker.xValue() ? tr("Right") : tr("Left"))
 			.arg(d_selected_curve->title().text())
 			.arg(d_active_point + 1)
-			.arg(locale.toString(d_selected_curve->x(d_active_point), 'G', 16))
-			.arg(locale.toString(d_selected_curve->y(d_active_point), 'G', 16)));
+			 .arg(locale.toString(ptValue.x(), 'G', 16))
+			 .arg(locale.toString(ptValue.y(), 'G', 16)));
     } else {
         Table *t = (static_cast<DataCurve*>(d_selected_curve))->table();
         if (!t)
@@ -231,7 +241,7 @@ bool RangeSelectorTool::keyEventFilter(QKeyEvent *ke)
 		case Qt::Key_Plus:
 			{
 				if (ke->modifiers() & Qt::ControlModifier) {
-					int n_points = d_selected_curve->dataSize();
+					int n_points = static_cast<int>(d_selected_curve->dataSize());
 					setActivePoint((d_active_point + 1) % n_points);
 					d_graph->plotWidget()->replot();
 				} else
@@ -242,7 +252,7 @@ bool RangeSelectorTool::keyEventFilter(QKeyEvent *ke)
 		case Qt::Key_Minus:
 			{
 				if (ke->modifiers() & Qt::ControlModifier) {
-					int n_points = d_selected_curve->dataSize();
+					int n_points = static_cast<int>(d_selected_curve->dataSize());
 					setActivePoint((d_active_point - 1 + n_points) % n_points);
 					d_graph->plotWidget()->replot();
 				} else
@@ -271,8 +281,9 @@ void RangeSelectorTool::copySelection()
     QLocale locale = d_graph->plotWidget()->locale();
     QString text;
     for (int i = start_point; i <= end_point; i++){
-        text += locale.toString(d_selected_curve->x(i), 'G', 16) + "\t";
-        text += locale.toString(d_selected_curve->y(i), 'G', 16) + "\n";
+        QPointF ptValue = d_selected_curve->sample(i);
+        text += locale.toString(ptValue.x(), 'G', 16) + "\t";
+        text += locale.toString(ptValue.y(), 'G', 16) + "\n";
     }
 
 	QApplication::clipboard()->setText(text);
@@ -310,9 +321,11 @@ void RangeSelectorTool::clearSelection()
 
         if (ok_update){
             d_active_point = 0;
-            d_inactive_point = d_selected_curve->dataSize() - 1;
-            d_active_marker.setValue(d_selected_curve->x(d_active_point), d_selected_curve->y(d_active_point));
-            d_inactive_marker.setValue(d_selected_curve->x(d_inactive_point), d_selected_curve->y(d_inactive_point));
+            d_inactive_point = static_cast<int>(d_selected_curve->dataSize()) - 1;
+            QPointF ptValue = d_selected_curve->sample(d_active_point);
+            d_active_marker.setValue(ptValue.x(), ptValue.y());
+            ptValue = d_selected_curve->sample(d_inactive_point);
+            d_inactive_marker.setValue(ptValue.x(), ptValue.y());
             emitStatusText();
             emit changed();
             d_graph->plotWidget()->replot();
@@ -377,8 +390,10 @@ void RangeSelectorTool::pasteSelection()
 
     t->notifyChanges();
 
-    d_active_marker.setValue(d_selected_curve->x(d_active_point), d_selected_curve->y(d_active_point));
-    d_inactive_marker.setValue(d_selected_curve->x(d_inactive_point), d_selected_curve->y(d_inactive_point));
+    QPointF ptValue = d_selected_curve->sample(d_active_point);
+    d_active_marker.setValue(ptValue.x(), ptValue.y());
+    ptValue = d_selected_curve->sample(d_inactive_point);
+    d_inactive_marker.setValue(ptValue.x(), ptValue.y());
     emitStatusText();
     emit changed();
     d_graph->plotWidget()->replot();

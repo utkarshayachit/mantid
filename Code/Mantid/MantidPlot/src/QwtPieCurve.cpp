@@ -84,7 +84,7 @@ void QwtPieCurve::clone(QwtPieCurve* c)
 
 void QwtPieCurve::draw(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, int from, int to) const
 {
-  int size = dataSize();
+  int size = static_cast<int>(dataSize());
   if ( !painter ||  size <= 0 )
     return;
 
@@ -140,10 +140,11 @@ void QwtPieCurve::drawDisk(QPainter *painter, const QwtScaleMap &xMap, const Qwt
         if (d_categories)
           s += QString::number(d_table_rows[0]) + "\n";
 
+        double y0 = sample(0).y();
         if (d_values && d_percentages)
-          s += (static_cast<Plot *>(plot()))->locale().toString(y(0), 'g', 4) + " (100%)";
+          s += (static_cast<Plot *>(plot()))->locale().toString(y0, 'g', 4) + " (100%)";
         else if (d_values)
-          s += (static_cast<Plot *>(plot()))->locale().toString(y(0), 'g', 4);
+          s += (static_cast<Plot *>(plot()))->locale().toString(y0, 'g', 4);
         else if (d_percentages)
           s += "100%";
         l->setText(s);
@@ -194,16 +195,16 @@ void QwtPieCurve::drawSlices(QPainter *painter, const QwtScaleMap &xMap, const Q
 
   double sum = 0.0;
   for (int i = from; i <= to; i++)
-    sum += y(i);
+    sum += sample(i).y();
 
   const int sign = d_counter_clockwise ? 1 : -1;
 
-  const int size = dataSize();
+  const int size = static_cast<int>(dataSize());
   double *start_angle = new double[size];
   double *end_angle = new double[size];
   double aux_angle = d_start_azimuth;
   for (int i = from; i <= to; i++){
-    double a = -sign*y(i)/sum*360.0;
+    double a = -sign*sample(i).y()/sum*360.0;
     start_angle[i] = aux_angle;
 
     double end = aux_angle + a;
@@ -224,7 +225,7 @@ void QwtPieCurve::drawSlices(QPainter *painter, const QwtScaleMap &xMap, const Q
 
   QLocale locale = (static_cast<Plot *>(plot()))->locale();
   for (int i = from; i <= to; i++){
-    const double yi = y(i);
+    const double yi = sample(i).y();
     const double q = yi/sum;
     const int value = (int)(q*5760);
 
@@ -393,7 +394,7 @@ void QwtPieCurve::loadData()
   }
   X.resize(size);
   d_table_rows.resize(size);
-  setData(X.data(), X.data(), size);
+  setSamples(X.data(), X.data(), size);
 
   int labels = d_texts_list.size();
   //If there are no labels (initLabels() wasn't called yet) or if we have enough labels: do nothing!
@@ -445,10 +446,10 @@ void QwtPieCurve::removeLabel(PieLabel *l)
 void QwtPieCurve::initLabels()
 {
   int size = abs(d_end_row - d_start_row) + 1;
-  int dataPoints = dataSize();
+  int dataPoints = static_cast<int>(dataSize());
   double sum = 0.0;
   for (int i = 0; i < dataPoints; i++)
-    sum += y(i);
+    sum += sample(i).y();
 
   Plot *d_plot = static_cast<Plot *>(plot());
   QLocale locale = d_plot->locale();
@@ -456,7 +457,7 @@ void QwtPieCurve::initLabels()
     PieLabel* l = new PieLabel(d_plot, this);
     d_texts_list << l;
     if (i < dataPoints)
-      l->setText(locale.toString(y(i)/sum*100, 'g', 4) + "%");
+      l->setText(locale.toString(sample(i).y()/sum*100, 'g', 4) + "%");
     else
       l->hide();
   }

@@ -35,6 +35,7 @@
 #include "PlotCurve.h"
 #include "pixmaps.h"
 #include <qwt_symbol.h>
+#include <qwt_picker_machine.h>
 
 ScreenPickerTool::ScreenPickerTool(Graph *graph, const QObject *status_target, const char *status_slot)
 	: QwtPlotPicker(graph->plotWidget()->canvas()),
@@ -43,7 +44,7 @@ ScreenPickerTool::ScreenPickerTool(Graph *graph, const QObject *status_target, c
 	d_selection_marker.setLineStyle(QwtPlotMarker::Cross);
 	d_selection_marker.setLinePen(QPen(Qt::red,1));
 	setTrackerMode(QwtPicker::AlwaysOn);
-	setSelectionFlags(QwtPicker::PointSelection | QwtPicker::ClickSelection);
+	setStateMachine(new QwtPickerClickPointMachine);
 	d_graph->plotWidget()->canvas()->setCursor(QCursor(getQPixmap("cursor_xpm"), -1, -1));
 
 	if (status_target)
@@ -150,7 +151,7 @@ void DrawPointTool::appendPoint(const QPointF &pos)
 
 	int rows = 0;
 	if (d_curve)
-		rows = d_curve->dataSize();
+		rows = static_cast<int>(d_curve->dataSize());
 
 	if (d_table->numRows() <= rows)
 		d_table->setNumRows(rows + 10);
@@ -160,9 +161,9 @@ void DrawPointTool::appendPoint(const QPointF &pos)
 
 	if (!d_curve){
 		d_curve = new DataCurve(d_table, d_table->colName(0), d_table->colName(1));
-		d_curve->setAxis(QwtPlot::xBottom, QwtPlot::yLeft);
+		d_curve->setAxes(QwtPlot::xBottom, QwtPlot::yLeft);
 		d_curve->setPen(QPen(Qt::black, d_app->defaultCurveLineWidth));
-		d_curve->setSymbol(QwtSymbol(QwtSymbol::Ellipse, QBrush(Qt::black),
+		d_curve->setSymbol(new QwtSymbol(QwtSymbol::Ellipse, QBrush(Qt::black),
 						  QPen(Qt::black, d_app->defaultCurveLineWidth),
 						  QSize(d_app->defaultSymbolSize, d_app->defaultSymbolSize)));
 		d_graph->insertPlotItem(d_curve, Graph::LineSymbols);

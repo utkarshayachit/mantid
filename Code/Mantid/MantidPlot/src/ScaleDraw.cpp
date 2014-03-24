@@ -277,22 +277,22 @@ void ScaleDraw::drawLabel(QPainter *painter, double value) const
 		if (lbl.isEmpty())
 			return;
 
-		const QPoint pos = labelPosition(value);
+		const QPointF pos = labelPosition(value);
 
-		QSize labelSize = lbl.textSize(painter->font());
-		if ( labelSize.height() % 2 )
-			labelSize.setHeight(labelSize.height() + 1);
+		QSizeF labelSize = lbl.textSize(painter->font());
+		if ( static_cast<int>(labelSize.height()) % 2 )
+			labelSize.setHeight(labelSize.height() + 1.0);
 
-		const QMatrix m = labelMatrix(pos, labelSize);
+		const QTransform m = labelTransformation(pos, labelSize);
 
 		painter->save();
-		painter->setMatrix(m, true);
+		painter->setTransform(m, true);
 		if (d_selected)
-			lbl.setBackgroundPen(QPen(Qt::blue));
+			lbl.setBorderPen(QPen(Qt::blue));
 		else
-			lbl.setBackgroundPen(QPen(Qt::NoPen));
+			lbl.setBorderPen(QPen(Qt::NoPen));
 
-		lbl.draw(painter, QRect(QPoint(0, 0), labelSize));
+		lbl.draw(painter, QRectF(QPointF(0.0, 0.0), labelSize));
 		painter->restore();
 }
 
@@ -439,31 +439,12 @@ void ScaleDraw::drawBreak(QPainter *painter) const
 		painter->save();
 		painter->setRenderHint(QPainter::Antialiasing);
 
-		int len = majTickLength();
+		double len = tickLength(QwtScaleDiv::MajorTick);
+		const QwtScaleMap &scalingMap = scaleMap();
+		QPointF pos = this->pos();
 
-		QwtScaleMap scaleMap = map();
-		const QwtMetricsMap metricsMap = QwtPainter::metricsMap();
-		QPoint pos = this->pos();
-
-		if ( !metricsMap.isIdentity() ){
-			QwtPainter::resetMetricsMap();
-			pos = metricsMap.layoutToDevice(pos);
-
-			if ( orientation() == Qt::Vertical ){
-				scaleMap.setPaintInterval(
-					metricsMap.layoutToDeviceY((int)scaleMap.p1()),
-					metricsMap.layoutToDeviceY((int)scaleMap.p2()));
-				len = metricsMap.layoutToDeviceX(len);
-			} else {
-				scaleMap.setPaintInterval(
-					metricsMap.layoutToDeviceX((int)scaleMap.p1()),
-					metricsMap.layoutToDeviceX((int)scaleMap.p2()));
-				len = metricsMap.layoutToDeviceY(len);
-			}
-		}
-
-		int lval = scaleMap.transform(sc_engine->axisBreakLeft());
-		int rval = scaleMap.transform(sc_engine->axisBreakRight());
+		double lval = scalingMap.transform(sc_engine->axisBreakLeft());
+		double rval = scalingMap.transform(sc_engine->axisBreakRight());
 		switch(alignment()){
 		case LeftScale:
 			QwtPainter::drawLine(painter, pos.x(), lval, pos.x() - len, lval + len);
@@ -483,7 +464,6 @@ void ScaleDraw::drawBreak(QPainter *painter) const
 			break;
 		}
 
-		QwtPainter::setMetricsMap(metricsMap); // restore metrics map
 		painter->restore();
 	//}
 }
@@ -496,10 +476,10 @@ void ScaleDraw::drawBackbone(QPainter *painter) const
 	if(sc_engine!=NULL)
 	{*/
 		if (!sc_engine->hasBreak()){
-			const int len = length();
-			const int bw = painter->pen().width();
-			const int bw2 = bw / 2;
-			QPoint pos = this->pos();
+			const double len = length();
+			const double bw = painter->pen().width();
+			const double bw2 = 0.5*bw;
+			QPointF pos = this->pos();
 			switch(alignment()){
 			case LeftScale:
 				QwtPainter::drawLine(painter, pos.x() - bw2,
@@ -521,37 +501,21 @@ void ScaleDraw::drawBackbone(QPainter *painter) const
 			return;
 		}
 
-		QwtScaleMap scaleMap = map();
-		const QwtMetricsMap metricsMap = QwtPainter::metricsMap();
-		QPoint pos = this->pos();
+		const QwtScaleMap &scalingMap = scaleMap();
 
-		if ( !metricsMap.isIdentity() ){
-			QwtPainter::resetMetricsMap();
-			pos = metricsMap.layoutToDevice(pos);
-
-			if ( orientation() == Qt::Vertical ){
-				scaleMap.setPaintInterval(
-					metricsMap.layoutToDeviceY((int)scaleMap.p1()),
-					metricsMap.layoutToDeviceY((int)scaleMap.p2()));
-			} else {
-				scaleMap.setPaintInterval(
-					metricsMap.layoutToDeviceX((int)scaleMap.p1()),
-					metricsMap.layoutToDeviceX((int)scaleMap.p2()));
-			}
-		}
-
-		const int start = scaleMap.transform(sc_engine->axisBreakLeft());
-		const int end = scaleMap.transform(sc_engine->axisBreakRight());
-		int lb = start, rb = end;
+		const double start = scalingMap.transform(sc_engine->axisBreakLeft());
+		const double end = scalingMap.transform(sc_engine->axisBreakRight());
+		double lb = start, rb = end;
 		if (sc_engine->testAttribute(QwtScaleEngine::Inverted)){
 			lb = end;
 			rb = start;
 		}
 
-		const int bw = painter->pen().width();
-		const int bw2 = bw / 2;
-		const int len = length() - 1;
-		int aux;
+		QPointF pos = this->pos();
+		const double bw = painter->pen().width();
+		const double bw2 = 0.5*bw;
+		const double len = length() - 1.0;
+		double aux;
 		switch(alignment())
 		{
 		case LeftScale:

@@ -84,7 +84,7 @@ public:
 
   void setGrayScale();
   void setDefaultColorMap();
-  static QwtLinearColorMap defaultColorMap();
+  static const QwtLinearColorMap * defaultColorMap();
 
   void loadColorMap(const QString& file);
   void setCustomColorMap(const QwtLinearColorMap& map);

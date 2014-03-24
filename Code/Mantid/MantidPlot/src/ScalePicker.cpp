@@ -109,7 +109,7 @@ rect.setRect(rect.x() - margin, rect.y() - margin, rect.width() + 2 * margin, re
 if (scale->title().text().isEmpty())
 	return rect;
 
-int dh = scale->title().textSize().height();
+int dh = static_cast<int>(scale->title().textSize().height());
 switch(scale->alignment())
     {
     case QwtScaleDraw::LeftScale:
@@ -152,7 +152,7 @@ QwtPlot *ScalePicker::plot()
 
 QRect ScalePicker::scaleTicksRect(const QwtScaleWidget *scale) const
 {
-	int majTickLength = scale->scaleDraw()->majTickLength();
+	int majTickLength = static_cast<int>(scale->scaleDraw()->tickLength(QwtScaleDiv::MajorTick));
 	QRect rect = scale->rect();
 	switch(scale->alignment())
 	{
@@ -181,7 +181,7 @@ QRect ScalePicker::titleRect(const QwtScaleWidget *scale) const
 	int margin = scale->margin();
 	rect = rect.adjusted (margin, margin, -margin, -margin);
 
-	int dh = scale->title().textSize().height();
+	int dh = static_cast<int>(scale->title().textSize().height());
 	switch(scale->alignment())
     {
     	case QwtScaleDraw::LeftScale:
@@ -225,10 +225,10 @@ void ScalePicker::selectTitle(QwtScaleWidget *scale, bool select)
 
     QwtText title = scale->title();
     if (select){
-        title.setBackgroundPen(QPen(Qt::blue));
+        title.setBorderPen(QPen(Qt::blue));
 		g->notifyFontChange(title.font());
     } else
-        title.setBackgroundPen(QPen(Qt::NoPen));
+        title.setBorderPen(QPen(Qt::NoPen));
 
     scale->setTitle(title);
 }
@@ -264,7 +264,7 @@ void ScalePicker::deselect()
 	d_labels_selected = false;
 
 	QwtText title = d_selected_axis->title();
-    title.setBackgroundPen(QPen(Qt::NoPen));
+    title.setBorderPen(QPen(Qt::NoPen));
     d_selected_axis->setTitle(title);
 
 	ScaleDraw *sc_draw = static_cast<ScaleDraw *>(d_selected_axis->scaleDraw());

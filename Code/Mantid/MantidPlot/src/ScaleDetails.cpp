@@ -228,9 +228,9 @@ void ScaleDetails::initWidgets()
   else
   {
     Plot *d_plot = m_graph->plotWidget();
-    const QwtScaleDiv *scDiv = d_plot->axisScaleDiv(m_mappedaxis);
-    double start = QMIN(scDiv->lBound(), scDiv->hBound());
-    double end = QMAX(scDiv->lBound(), scDiv->hBound());
+    const QwtScaleDiv &scDiv = d_plot->axisScaleDiv(m_mappedaxis);
+    double start = QMIN(scDiv.lBound(), scDiv.hBound());
+    double end = QMAX(scDiv.lBound(), scDiv.hBound());
     ScaleDraw::ScaleType type = m_graph->axisType(m_mappedaxis);
     if (type == ScaleDraw::Date)
     {
@@ -295,7 +295,7 @@ void ScaleDetails::initWidgets()
       m_dspnStep->setSingleStep(0.1);
     }
 
-    double range = fabs(scDiv->range());
+    double range = fabs(scDiv.range());
     QwtScaleEngine *qwtsc_engine = d_plot->axisScaleEngine(m_mappedaxis);
     ScaleEngine* sc_engine = dynamic_cast<ScaleEngine*>(qwtsc_engine);
     if (sc_engine)
@@ -324,9 +324,9 @@ void ScaleDetails::initWidgets()
       m_dspnStepBeforeBreak->setValue(sc_engine->stepBeforeBreak());
       m_dspnStepAfterBreak->setValue(sc_engine->stepAfterBreak());
 
-      QwtScaleTransformation::Type scale_type = sc_engine->type();
+      ScaleEngine::Type scale_type = sc_engine->type();
       m_cmbMinorTicksBeforeBreak->clear();
-      if (scale_type == QwtScaleTransformation::Log10)
+      if (scale_type == ScaleEngine::Log10)
       {
         m_cmbMinorTicksBeforeBreak->addItems(QStringList() << "0" << "2" << "4" << "8");
       }
@@ -342,7 +342,7 @@ void ScaleDetails::initWidgets()
       m_chkInvert->setChecked(sc_engine->testAttribute(QwtScaleEngine::Inverted));
       m_cmbScaleType->setCurrentItem(scale_type);
       m_cmbMinorValue->clear();
-      if (scale_type == QwtScaleTransformation::Log10)
+      if (scale_type == ScaleEngine::Log10)
       {
         m_cmbMinorValue->addItems(QStringList() << "0" << "2" << "4" << "8");
       }
@@ -365,7 +365,7 @@ void ScaleDetails::initWidgets()
       m_grpAxesBreaks->setEnabled(false);
     }
 
-    QList<double> lst = scDiv->ticks(QwtScaleDiv::MajorTick);
+    QList<double> lst = scDiv.ticks(QwtScaleDiv::MajorTick);
     m_spnMajorValue->setValue(lst.count());
 
     checkstep();
