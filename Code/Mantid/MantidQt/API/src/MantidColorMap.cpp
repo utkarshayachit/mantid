@@ -344,14 +344,15 @@ QVector<QRgb> MantidColorMap::colorTable(const QwtInterval & interval) const
 
 
 //-----------------------------------------------------------------------------
-// ColorMapCloner
+// ColorMapHelper
 //-----------------------------------------------------------------------------
 
 /**
- * Return a copy of the given colour map
+ * Return a copy of the given QwtLinearColor map
  * @param orig The original map
+ * @return A new instance clone from the original
  */
-QwtLinearColorMap * ColorMapCloner::cloneQwtLinearMap(const QwtLinearColorMap &orig)
+QwtLinearColorMap * ColorMapHelper::cloneQwtLinearMap(const QwtLinearColorMap &orig)
 {
   QwtLinearColorMap* copyMap = new QwtLinearColorMap( orig.color1(), orig.color2(),
                                                       orig.format());
@@ -360,7 +361,40 @@ QwtLinearColorMap * ColorMapCloner::cloneQwtLinearMap(const QwtLinearColorMap &o
   QwtInterval unity(0.0,1.0);
   for ( int i = 1; i < colourStops.size() - 1; ++i)
   {
-      copyMap->addColorStop( colourStops[i], orig.rgb(unity, colourStops[i]));
+    copyMap->addColorStop( colourStops[i], orig.rgb(unity, colourStops[i]));
   }
   return copyMap;
+}
+
+/**
+ * @param source The source object
+ * @return A new instance clone from the original
+ */
+QwtColorMap * ColorMapHelper::clone(const QwtColorMap & source)
+{
+  if(auto *mmap = dynamic_cast<const MantidColorMap*>(&source))
+  {
+    return mmap->copy();
+  }
+  else if(auto *lmap = dynamic_cast<const QwtLinearColorMap*>(&source))
+  {
+    return cloneQwtLinearMap(*lmap);
+  }
+  else throw std::invalid_argument("Cannot clone unknown QwtColorMap derivative.");
+}
+
+/**
+ * Returns a clone of the object with a different scale type if applicable to that type
+ * @param source The source object
+ * @param type A new scale type for the object
+ * @return  A new instance clone from the original
+ */
+QwtColorMap * ColorMapHelper::clone(const QwtColorMap & source, GraphOptions::ScaleType type)
+{
+  auto * cloned = clone(source);
+  if(auto *mmap = dynamic_cast<MantidColorMap*>(cloned))
+  {
+    mmap->changeScaleType(type);
+  }
+  return cloned;
 }

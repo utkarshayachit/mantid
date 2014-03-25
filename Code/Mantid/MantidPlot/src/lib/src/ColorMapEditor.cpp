@@ -27,6 +27,7 @@
  ***************************************************************************/
 #include "ColorMapEditor.h"
 #include "DoubleSpinBox.h"
+#include "MantidQtAPI/MantidColorMap.h"
 
 #include <QPushButton>
 #include <QTableWidget>
@@ -40,7 +41,7 @@
 
 ColorMapEditor::ColorMapEditor(const QLocale& locale, int precision, QWidget* parent)
 : QWidget(parent),
-  color_map(QwtLinearColorMap()),
+  color_map(new QwtLinearColorMap()),
   min_val(0),
   max_val(1),
   d_locale(locale),
@@ -94,13 +95,14 @@ void ColorMapEditor::updateColorMap()
   int rows = table->rowCount();
   QColor c_min = QColor(table->item(0, 1)->text());
   QColor c_max = QColor(table->item(rows - 1, 1)->text());
-  QwtLinearColorMap map(c_min, c_max);
+  auto *map = new QwtLinearColorMap (c_min, c_max);
   for (int i = 1; i < rows-1; i++){
     QwtInterval range = QwtInterval(min_val, max_val);
     double val = (((DoubleSpinBox*)table->cellWidget(i, 0))->value() - min_val)/range.width();
-    map.addColorStop (val, QColor(table->item(i, 1)->text()));
+    map->addColorStop (val, QColor(table->item(i, 1)->text()));
   }
 
+  delete color_map;
   color_map = map;
   setScaledColors(scaleColorsBox->isChecked());
 }
@@ -146,7 +148,8 @@ void ColorMapEditor::setColorMap(const QwtLinearColorMap& map)
   }
   table->blockSignals(false);
 
-  color_map = map;
+  delete color_map;
+  color_map = ColorMapHelper::cloneQwtLinearMap(map);
 }
 
 void ColorMapEditor::setRange(double min, double max)
@@ -172,7 +175,7 @@ void ColorMapEditor::insertLevel()
   QwtInterval range = QwtInterval(min_val, max_val);
   double mapped_val = (val - min_val)/range.width();
 
-  QColor c = QColor(color_map.rgb(QwtInterval(0, 1), mapped_val));
+  QColor c = QColor(color_map->rgb(QwtInterval(0, 1), mapped_val));
 
   table->blockSignals(true);
   table->insertRow(row);
@@ -272,9 +275,9 @@ void ColorMapEditor::enableButtons(int row)
 void ColorMapEditor::setScaledColors(bool scale)
 {
   if (scale)
-    color_map.setMode(QwtLinearColorMap::ScaledColors);
+    color_map->setMode(QwtLinearColorMap::ScaledColors);
   else
-    color_map.setMode(QwtLinearColorMap::FixedColors);
+    color_map->setMode(QwtLinearColorMap::FixedColors);
 
   scalingChanged();
 }

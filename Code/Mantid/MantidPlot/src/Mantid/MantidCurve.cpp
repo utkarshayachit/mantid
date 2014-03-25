@@ -49,7 +49,7 @@ void MantidCurve::applyStyleChoice(Graph::CurveType style, MultiLayer* ml, int& 
 
   QwtPlotCurve::CurveStyle qwtStyle;
   const int symbolSize = ml->applicationWindow()->defaultSymbolSize;
-  const QwtSymbol symbol(QwtSymbol::Ellipse, QBrush(Qt::black),QPen(),QSize(symbolSize,symbolSize));
+  QwtSymbol *symbol = new QwtSymbol(QwtSymbol::Ellipse, QBrush(Qt::black),QPen(),QSize(symbolSize,symbolSize));
   switch(style)
   {
   case Graph::Line :
@@ -81,7 +81,7 @@ QRectF MantidCurve::boundingRect() const
 {
   if (m_boundingRect.isNull())
   {
-    const QwtData* data = mantidData();
+    const auto * data = mantidData();
     if (data->size() == 0) return QRectF(0,0,1,1);
     double y_min = std::numeric_limits<double>::infinity();
     double y_max = -y_min;
@@ -154,9 +154,9 @@ void MantidCurve::doDraw(QPainter *p,
           const QRectF&, MantidQwtWorkspaceData const * const d) const
 {
   int sh = 0;
-  if (symbol().style() != QwtSymbol::NoSymbol)
+  if (symbol()->style() != QwtSymbol::NoSymbol)
   {
-    sh = symbol().size().height() / 2;
+    sh = symbol()->size().height() / 2;
   }
 
   int xi0 = 0;
@@ -173,14 +173,14 @@ void MantidCurve::doDraw(QPainter *p,
   const int skipPoints = skipSymbolsCount();
   for (int i = 0; i < static_cast<int>(d->esize()); i += skipPoints)
   {
-    const int xi = xMap.transform(d->ex(i));
+    const int xi = static_cast<int>(xMap.transform(d->ex(i)));
     if (m_drawAllErrorBars || (xi > x1 && xi < x2 && (i == 0 || abs(xi - xi0) > dx2)))
     {
-      const double Y = y(i);
+      const double Y = sample(i).y();
       const double E = d->e(i);
-      const int yi = yMap.transform(Y);
-      const int ei1 = yMap.transform(Y - E);
-      const int ei2 = yMap.transform(Y + E);
+      const int yi = static_cast<int>(yMap.transform(Y));
+      const int ei1 =static_cast<int>( yMap.transform(Y - E));
+      const int ei2 = static_cast<int>(yMap.transform(Y + E));
       const int yhl = yi - sh;
       const int ylh = yi + sh;
 

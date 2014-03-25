@@ -12392,7 +12392,7 @@ void ApplicationWindow::analyzeCurve(Graph *g, Analysis operation, const QString
     QwtPlotCurve* c = g->curve(curveTitle);
     if (c){
       ScaleEngine *se = dynamic_cast<ScaleEngine *>(g->plotWidget()->axisScaleEngine(c->xAxis()));
-      if(se->type() == ScaleEngine::Log10)
+      if(se->type() == GraphOptions::Log10)
         fitter = new LogisticFit (this, g);
       else
         fitter = new SigmoidalFit (this, g);

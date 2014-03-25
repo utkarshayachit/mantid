@@ -388,7 +388,7 @@ bool Graph::isColorBarEnabled(int axis) const
 bool Graph::isLog(const QwtPlot::Axis& axis) const
 {
   ScaleEngine *sc_engine = dynamic_cast<ScaleEngine *>(d_plot->axisScaleEngine(axis));
-  return ( sc_engine && sc_engine->type() == ScaleEngine::Log10 );
+  return ( sc_engine && sc_engine->type() == GraphOptions::Log10 );
 }
 
 ScaleDraw::ScaleType Graph::axisType(int axis)
@@ -1221,7 +1221,7 @@ void Graph::niceLogScales(QwtPlot::Axis axis)
   setScale(axis, start, end, axisStep(axis),
       scDiv.ticks(QwtScaleDiv::MajorTick).count(),
       d_plot->axisMaxMinor(axis),
-      ScaleEngine::Log10,
+      GraphOptions::Log10,
       scaleEng->testAttribute(QwtScaleEngine::Inverted),
       scaleEng->axisBreakLeft(),
       scaleEng->axisBreakRight(),
@@ -1274,21 +1274,21 @@ void Graph::setScale(int axis, double start, double end, double step,
 /** Overload of setScale() to that only allows setting the axis type
  *  to linear or log. Does nothing if the scale is already the that type
  *  @param axis :: the scale to change either QwtPlot::xBottom or QwtPlot::yLeft
- *  @param scaleType :: either ScaleEngine::Log10 or ::Linear
+ *  @param scaleType :: either GraphOptions::Log10 or ::Linear
  */
-void Graph::setScale(QwtPlot::Axis axis, ScaleEngine::Type scaleType)
+void Graph::setScale(QwtPlot::Axis axis, GraphOptions::ScaleType scaleType)
 {
   //check if the scale is already of the desired type,
   ScaleEngine *sc_engine = dynamic_cast<ScaleEngine *>(d_plot->axisScaleEngine(axis));
-  ScaleEngine::Type type = sc_engine->type();
-  if ( scaleType == ScaleEngine::Log10 )
+  GraphOptions::ScaleType type = sc_engine->type();
+  if ( scaleType == GraphOptions::Log10 )
   {
-    if ( type ==  ScaleEngine::Log10 )
+    if ( type ==  GraphOptions::Log10 )
     {
       return;
     }
   }
-  else if ( type == ScaleEngine::Linear )
+  else if ( type == GraphOptions::Linear )
   {
     return;
   }
@@ -1321,51 +1321,51 @@ void Graph::setScale(QwtPlot::Axis axis, QString logOrLin)
 {
   if ( logOrLin == "log" )
   {
-    setScale(axis, ScaleEngine::Log10);
+    setScale(axis, GraphOptions::Log10);
   }
   else if ( logOrLin == "linear" )
   {
-    setScale(axis, ScaleEngine::Linear);
+    setScale(axis, GraphOptions::Linear);
   }
 }
 
 void Graph::logLogAxes()
 {
-  setScale(QwtPlot::xBottom, ScaleEngine::Log10);
-  setScale(QwtPlot::yLeft, ScaleEngine::Log10);
+  setScale(QwtPlot::xBottom, GraphOptions::Log10);
+  setScale(QwtPlot::yLeft, GraphOptions::Log10);
   notifyChanges();
 }
 
 void Graph::logXLinY()
 {
-  setScale(QwtPlot::xBottom, ScaleEngine::Log10);
-  setScale(QwtPlot::yLeft, ScaleEngine::Linear);
+  setScale(QwtPlot::xBottom, GraphOptions::Log10);
+  setScale(QwtPlot::yLeft, GraphOptions::Linear);
   notifyChanges();
 }
 
 void Graph::logYlinX()
 {
-  setScale(QwtPlot::xBottom, ScaleEngine::Linear);
-  setScale(QwtPlot::yLeft, ScaleEngine::Log10);
+  setScale(QwtPlot::xBottom, GraphOptions::Linear);
+  setScale(QwtPlot::yLeft, GraphOptions::Log10);
   notifyChanges();
 }
 
 void Graph::linearAxes()
 {
-  setScale(QwtPlot::xBottom, ScaleEngine::Linear);
-  setScale(QwtPlot::yLeft, ScaleEngine::Linear);
+  setScale(QwtPlot::xBottom, GraphOptions::Linear);
+  setScale(QwtPlot::yLeft, GraphOptions::Linear);
   notifyChanges();
 }
 
 void Graph::logColor()
 {
-  setScale(QwtPlot::yRight, ScaleEngine::Log10);
+  setScale(QwtPlot::yRight, GraphOptions::Log10);
   notifyChanges();
 }
 
 void Graph::linColor()
 {
-  setScale(QwtPlot::yRight, ScaleEngine::Linear);
+  setScale(QwtPlot::yRight, GraphOptions::Linear);
   notifyChanges();
 }
 
@@ -1377,7 +1377,7 @@ void Graph::setAxisScale(int axis, double start, double end, int type, double st
 	ScaleEngine *sc_engine =dynamic_cast<ScaleEngine*>(qwtsc_engine);*/
   if( !sc_engine ) return;
 
-  ScaleEngine::Type old_type = sc_engine->type();
+  GraphOptions::ScaleType old_type = sc_engine->type();
 
   // If not specified, keep the same as now
   if( type < 0 ) type = axisType(axis);
@@ -1385,12 +1385,12 @@ void Graph::setAxisScale(int axis, double start, double end, int type, double st
   if (type != old_type)
   {
     // recalculate boundingRect of MantidCurves
-    emit axisScaleChanged(axis,type == ScaleEngine::Log10);
+    emit axisScaleChanged(axis,type == GraphOptions::Log10);
   }
 
   if (type == GraphOptions::Log10)
   {
-    sc_engine->setType(ScaleEngine::Log10);
+    sc_engine->setType(GraphOptions::Log10);
     if (start <= 0)
     {
       double s_min = DBL_MAX;
@@ -1438,7 +1438,7 @@ void Graph::setAxisScale(int axis, double start, double end, int type, double st
   }
   else
   {
-    sc_engine->setType(ScaleEngine::Linear);
+    sc_engine->setType(GraphOptions::Linear);
   }
 
   if (axis == QwtPlot::yRight)
@@ -1454,13 +1454,11 @@ void Graph::setAxisScale(int axis, double start, double end, int type, double st
           QwtScaleWidget *rightAxis = d_plot->axisWidget(QwtPlot::yRight);
           if(rightAxis)
           {
-            if (type == ScaleEngine::Log10 && (start <= 0 || start == DBL_MAX))
+            if (type == GraphOptions::Log10 && (start <= 0 || start == DBL_MAX))
             {
               start = sp->getMinPositiveValue();
             }
-            sp->mutableColorMap().changeScaleType((GraphOptions::ScaleType)type);
-            rightAxis->setColorMap(QwtInterval(start, end), &(sp->mutableColorMap()));
-            sp->setColorMap(&(sp->mutableColorMap()));
+            sp->setCustomColorMap(QwtInterval(start, end), ColorMapHelper::clone(*sp->colorMap(), (GraphOptions::ScaleType)type));
             // we could check if(sp->isIntensityChanged()) but this doesn't work when one value is changing from zero to say 10^-10, which is a big problem for log plots
             sp->changeIntensity( start,end);
           }
@@ -4698,10 +4696,10 @@ void Graph::copy(Graph* g)
       else
         rightAxis->setColorBarEnabled(false);
       sp->plot()->enableAxis(QwtPlot::yRight, true);
-      sp->mutableColorMap().changeScaleType(sp->getColorMap().getScaleType());
 
       QwtInterval dataRange = sp->data()->interval(Qt::ZAxis);
-      rightAxis->setColorMap(dataRange,&(sp->mutableColorMap()));
+      sp->setCustomColorMap(dataRange, ColorMapHelper::clone(*sp->colorMap()));
+
       sp->plot()->setAxisScale(QwtPlot::yRight,
           dataRange.minValue(),
           dataRange.maxValue());
@@ -5122,14 +5120,12 @@ Spectrogram* Graph::plotSpectrogram(Spectrogram *d_spectrogram, CurveType type)
   }
   else if (type == ColorMap)
   {
-    d_spectrogram->mutableColorMap().changeScaleType(GraphOptions::Linear);
     d_spectrogram->setDefaultColorMap();
     d_spectrogram->setDisplayMode(QwtPlotSpectrogram::ImageMode, true);
     d_spectrogram->setDisplayMode(QwtPlotSpectrogram::ContourMode, false);
   }
   else if (type == ColorMapContour)
   {
-    d_spectrogram->mutableColorMap().changeScaleType(GraphOptions::Linear);
     d_spectrogram->setDefaultColorMap();
     d_spectrogram->setDisplayMode(QwtPlotSpectrogram::ImageMode, true);
     d_spectrogram->setDisplayMode(QwtPlotSpectrogram::ContourMode, true);
@@ -5150,7 +5146,10 @@ Spectrogram* Graph::plotSpectrogram(Spectrogram *d_spectrogram, CurveType type)
   //d_spectrogram->setDefaultColorMap();
   QwtInterval zRange = d_spectrogram->data()->interval(Qt::ZAxis);
   if(type == GrayScale) rightAxis->setColorBarEnabled(false); //rightAxis->setColorMap(d_spectrogram->data().range(),d_spectrogram->colorMap());
-  else rightAxis->setColorMap(zRange, &(d_spectrogram->mutableColorMap()));
+  else
+  {
+    rightAxis->setColorMap(zRange, ColorMapHelper::clone(*d_spectrogram->colorMap()));
+  }
   d_plot->setAxisScale(QwtPlot::yRight,
       zRange.minValue(),
       zRange.maxValue());
@@ -5202,8 +5201,8 @@ void Graph::restoreSpectrogram(ApplicationWindow *app, const QStringList& lst)
       s = *(++line);
       QColor color2 = QColor(s.remove("<MaxColor>").remove("</MaxColor>").stripWhiteSpace());
 
-      QwtLinearColorMap colorMap(color1, color2);
-      colorMap.setMode((QwtLinearColorMap::Mode)mode);
+      auto *colorMap = new QwtLinearColorMap(color1, color2);
+      colorMap->setMode((QwtLinearColorMap::Mode)mode);
 
       s = *(++line);
       int stops = s.remove("<ColorStops>").remove("</ColorStops>").stripWhiteSpace().toInt();
@@ -5211,7 +5210,7 @@ void Graph::restoreSpectrogram(ApplicationWindow *app, const QStringList& lst)
       {
         s = (*(++line)).stripWhiteSpace();
         QStringList l = QStringList::split("\t", s.remove("<Stop>").remove("</Stop>"));
-        colorMap.addColorStop(l[0].toDouble(), QColor(l[1]));
+        colorMap->addColorStop(l[0].toDouble(), QColor(l[1]));
       }
       sp->setCustomColorMap(colorMap);
       ++line;

@@ -33,6 +33,7 @@
 
 #include "PlotToolInterface.h"
 #include <QObject>
+#include <QPointF>
 
 class ApplicationWindow;
 class QwtPlotCurve;

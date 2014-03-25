@@ -31,6 +31,7 @@
 
 #include "PlotCurve.h"
 #include <qwt_plot.h>
+#include <qwt_point_data.h>
 
 class QwtPlot;
 
@@ -50,15 +51,16 @@ public:
 
 	QRectF boundingRect() const;
 
-	using DataCurve::draw; // Unhide base class method (avoids Intel compiler warning)
-	void draw(QPainter *painter,const QwtScaleMap &xMap,
-		const QwtScaleMap &yMap, int from, int to) const;
+        virtual void drawSeries(QPainter *painter,
+            const QwtScaleMap &xMap, const QwtScaleMap &yMap,
+            const QRectF &canvasRect, int from, int to ) const;
 
-	void drawVector(QPainter *painter, const QwtScaleMap &xMap,
-		const QwtScaleMap &yMap, int from, int to) const;
+        virtual void drawVector( QPainter *,
+            const QwtScaleMap &xMap, const QwtScaleMap &yMap,
+            const QRectF &canvasRect, int from, int to ) const;
 
-	void drawArrowHead(QPainter *p, int xs, int ys, int xe, int ye) const;
-	double theta(int x0, int y0, int x1, int y1) const;
+	void drawArrowHead(QPainter *p, double xs, double ys, double xe, double ye) const;
+	double theta(double x0, double y0, double x1, double y1) const;
 
 	QString vectorEndXAColName(){return d_end_x_a;};
 	QString vectorEndYMColName(){return d_end_y_m;};
@@ -93,7 +95,7 @@ public:
 	void updateColumnNames(const QString& oldName, const QString& newName, bool updateTableName);
 
 protected:
-	QVectorData *vectorEnd;
+	QwtPointArrayData *vectorEnd;
 	QPen pen;
 	bool filledArrow;
 	int d_style, d_headLength, d_headAngle, d_position;

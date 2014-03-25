@@ -1189,7 +1189,7 @@ void Matrix::copy(Matrix *m)
   setColumnsWidth(m->columnsWidth());
   formula_str = m->formula();
   d_color_map_type = m->colorMapType();
-  d_color_map = ColorMapCloner::cloneQwtLinearMap(m->colorMap());
+  d_color_map = ColorMapHelper::cloneQwtLinearMap(m->colorMap());
 
   if (d_view_type == ImageView){
     if (d_table_view)
@@ -1336,7 +1336,7 @@ void Matrix::setColorMap(const QwtLinearColorMap &map)
 {
   delete d_color_map;
   d_color_map_type = Custom;
-  d_color_map = ColorMapCloner::cloneQwtLinearMap(map);
+  d_color_map = ColorMapHelper::cloneQwtLinearMap(map);
   if (d_view_type == ImageView)
     displayImage(d_matrix_model->renderImage());
 

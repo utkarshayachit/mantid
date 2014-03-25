@@ -81,7 +81,7 @@ TextEditor::TextEditor(Graph *g): QTextEdit(g), d_target(NULL)
                 move(QPoint(d_target->x() - rect.height(), d_target->y() + rect.y() + rect.height()/2));
 
 			t.setText(" ");
-			t.setBackgroundPen(QPen(Qt::NoPen));
+			t.setBorderPen(QPen(Qt::NoPen));
 			scale->setTitle(t);
 		}
 	}

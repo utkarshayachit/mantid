@@ -55,7 +55,7 @@ public:
    */
   ColorMapEditor(const QLocale& locale = QLocale::system(), int precision = 6, QWidget* parent = 0);
   //! Returns the customized color map.
-  const QwtLinearColorMap & colorMap(){return color_map;};
+  const QwtLinearColorMap & colorMap(){return *color_map;};
   //! Use this function to initialize the color map to be edited.
   void setColorMap(const QwtLinearColorMap& map);
   //! Use this function to initialize the values range.
@@ -84,7 +84,7 @@ private:
   QCheckBox *scaleColorsBox;
 
   //! Color map object
-  QwtLinearColorMap color_map;
+  QwtLinearColorMap *color_map;
   //! Levels range
   double min_val, max_val;
   //! Locale settings used to display level values

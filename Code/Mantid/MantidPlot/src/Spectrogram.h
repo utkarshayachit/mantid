@@ -84,11 +84,10 @@ public:
 
   void setGrayScale();
   void setDefaultColorMap();
-  static const QwtLinearColorMap * defaultColorMap();
 
-  void loadColorMap(const QString& file);
-  void setCustomColorMap(const QwtLinearColorMap& map);
-  void setMantidColorMap(const MantidColorMap &map);
+  void setCustomColorMap(QwtColorMap *map);
+  void setCustomColorMap(const QwtInterval & interval, QwtColorMap *map);
+
   void updateData(Matrix *m);
 
   //! Used when saving a project file
@@ -111,8 +110,6 @@ public:
   void setLabelsFont(const QFont& font);
 
   QList <PlotMarker *> labelsList(){return d_labels_list;};
-  const MantidColorMap & getColorMap() const;
-  MantidColorMap & mutableColorMap();
   void saveSettings();
   void loadSettings();
   void setColorMapFileName(QString colormapName);
@@ -129,7 +126,6 @@ public:
   void updateForNewMaxData(const double new_max);
   void updateForNewMinData(const double new_min);
   void recount();
-  void setCustomColorMap(const QwtColorMap &map);
 
   void setContourLevels (const QList<double> & levels);
   bool hasSelectedLabels();
@@ -159,8 +155,6 @@ protected:
   //! Flags
   ColorMapPolicy color_map_policy;
 
-  QwtLinearColorMap color_map;
-
   QList<QPen> d_pen_list;
   //! Flag telling if we display the labels
   bool d_show_labels;
@@ -180,9 +174,7 @@ protected:
   int d_labels_align;
   //! Labels font
   QFont d_labels_font;
-  //! Pointer to the parent plot
-  //Graph *d_graph;
-  MantidColorMap mColorMap;
+  /// Current color map file
   QString mCurrentColorMap;
 
   int m_nRows;

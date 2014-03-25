@@ -107,14 +107,18 @@ private:
 };
 
 //-----------------------------------------------------------------------------
-// ColorMapCloner
+// ColorMapHelper
 //-----------------------------------------------------------------------------
 
-class ColorMapCloner
+class ColorMapHelper
 {
 public:
   /// Helper function to clone a QwtLinearColorMap
   static QwtLinearColorMap * cloneQwtLinearMap(const QwtLinearColorMap & orig);
+  /// Helper to try and clone any type of color map
+  static QwtColorMap * clone(const QwtColorMap & source);
+  /// Clone and change scale type if necessary
+  static QwtColorMap *clone(const QwtColorMap & source, GraphOptions::ScaleType type);
 };
 
 #endif //MANTIDCOLORMAP_H_

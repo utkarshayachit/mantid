@@ -65,7 +65,10 @@ MantidMatrixCurve::MantidMatrixCurve(const MantidMatrixCurve& c)
   m_xUnits(c.m_xUnits),
   m_yUnits(c.m_yUnits)
 {
-  setData(c.data());
+  auto * mwsData = dynamic_cast<const MantidQwtMatrixWorkspaceData*>(c.data());
+  if(!mwsData) throw std::invalid_argument("Unable to copy MantidMatrixCurve. Unexpected data source type.");
+  setData(new MantidQwtMatrixWorkspaceData(*mwsData));
+
   observePostDelete();
   connect( this, SIGNAL(resetData(const QString&)), this, SLOT(dataReset(const QString&)) );
   observeAfterReplace();
@@ -99,8 +102,7 @@ void MantidMatrixCurve::init(Graph* g,bool distr,Graph::CurveType style)
   Mantid::API::MatrixWorkspace_const_sptr matrixWS = boost::dynamic_pointer_cast<const Mantid::API::MatrixWorkspace>(workspace);
   //we need to censor the data if there is a log scale because it can't deal with negative values, only the y-axis has been found to be problem so far
   const bool log = g->isLog(QwtPlot::yLeft);
-  MantidQwtMatrixWorkspaceData data(matrixWS,m_index, log,distr);
-  setData(data);
+  setData(new MantidQwtMatrixWorkspaceData(matrixWS,m_index, log,distr));
   Mantid::API::Axis* ax = matrixWS->getAxis(0);
   if (ax->unit())
   {
@@ -189,7 +191,7 @@ void MantidMatrixCurve::draw(QPainter *p,
 
   if (m_drawErrorBars)// drawing error bars
   {
-    const MantidQwtMatrixWorkspaceData* d = dynamic_cast<const MantidQwtMatrixWorkspaceData*>(&data());
+    const MantidQwtMatrixWorkspaceData* d = dynamic_cast<const MantidQwtMatrixWorkspaceData*>(data());
     if (!d)
     {
       throw std::runtime_error("Only MantidQwtMatrixWorkspaceData can be set to a MantidMatrixCurve");
@@ -202,7 +204,7 @@ void MantidMatrixCurve::draw(QPainter *p,
 
 void MantidMatrixCurve::itemChanged()
 {
-  MantidQwtMatrixWorkspaceData* d = dynamic_cast<MantidQwtMatrixWorkspaceData*>(&data());
+  MantidQwtMatrixWorkspaceData* d = dynamic_cast<MantidQwtMatrixWorkspaceData*>(data());
   if (d && d->m_isHistogram)
   {
     if (style() == Steps) d->m_binCentres = false;
@@ -250,11 +252,11 @@ void MantidMatrixCurve::dataReset(const QString& wsName)
   // Acquire a read-lock on the matrix workspace data
   ReadLock _lock(*mws);
 
-  const MantidQwtMatrixWorkspaceData * new_mantidData(NULL);
+  MantidQwtMatrixWorkspaceData * new_mantidData(NULL);
   try 
   {
     new_mantidData = mantidData()->copy(mws);
-    setData(*new_mantidData);
+    setData(new_mantidData);
     // Queue this plot to be updated once all MantidQwtMatrixWorkspaceData objects for this workspace have been
     emit dataUpdated();
   } 
@@ -298,13 +300,13 @@ int MantidMatrixCurve::workspaceIndex()const
 
 MantidQwtMatrixWorkspaceData* MantidMatrixCurve::mantidData()
 {
-  MantidQwtMatrixWorkspaceData* d = dynamic_cast<MantidQwtMatrixWorkspaceData*>(&data());
+  MantidQwtMatrixWorkspaceData* d = dynamic_cast<MantidQwtMatrixWorkspaceData*>(data());
   return d;
 }
 
 const MantidQwtMatrixWorkspaceData* MantidMatrixCurve::mantidData()const
 {
-  const MantidQwtMatrixWorkspaceData* d = dynamic_cast<const MantidQwtMatrixWorkspaceData*>(&data());
+  const MantidQwtMatrixWorkspaceData* d = dynamic_cast<const MantidQwtMatrixWorkspaceData*>(data());
   return d;
 }
 

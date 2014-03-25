@@ -362,7 +362,7 @@ public slots:
                 double left_break = -DBL_MAX, double right_break = DBL_MAX, int pos = 50,
                 double stepBeforeBreak = 0.0, double stepAfterBreak = 0.0, int minTicksBeforeBreak = 4,
                 int minTicksAfterBreak = 4, bool log10AfterBreak = false, int breakWidth = 4, bool breakDecoration = true);
-  void setScale(QwtPlot::Axis axis, ScaleEngine::Type scaleType);
+  void setScale(QwtPlot::Axis axis, GraphOptions::ScaleType scaleType);
   void setScale(QwtPlot::Axis axis, QString logOrLin);
   double axisStep(int axis){return d_user_step[axis];};
   //! Set the axis scale

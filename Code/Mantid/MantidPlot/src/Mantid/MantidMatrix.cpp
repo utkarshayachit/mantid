@@ -725,8 +725,12 @@ Spectrogram* MantidMatrix::plotSpectrogram(Graph* plot, ApplicationWindow* app, 
   {
     if(project)
     {
-      spgrm->mutableColorMap().loadMap(prjData->getColormapFile());
-      spgrm->setCustomColorMap(spgrm->mutableColorMap());
+      auto *cloned = ColorMapHelper::clone(*spgrm->colorMap());
+      if(auto * mmap = dynamic_cast<MantidColorMap*>(cloned))
+      {
+        mmap->loadMap(prjData->getColormapFile());
+      }
+      spgrm->setCustomColorMap(cloned);
       spgrm->setIntensityChange(prjData->getIntensity());
       if(!prjData->getGrayScale())spgrm->setGrayScale();
       if(prjData->getContourMode())

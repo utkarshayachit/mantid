@@ -83,7 +83,7 @@ void TranslateCurveTool::selectCurvePoint(QwtPlotCurve *curve, int point_index)
 	}
 		
 	d_selected_curve = curve;
-	d_curve_point = QPointF(curve->x(point_index), curve->y(point_index));
+	d_curve_point = curve->sample(point_index);
 	delete d_sub_tool;
 
 	// Phase 2: select destination
@@ -153,13 +153,14 @@ void TranslateCurveTool::selectDestination(const QPointF &point)
 	int prec; char f;
 	tab->columnNumericFormat(col, &f, &prec);
 	int row_start = c->tableRow(0);
-    int row_end = row_start + c->dataSize();
+    int row_end = row_start + static_cast<int>(c->dataSize());
 
     QLocale locale = d_app->locale();
 	for (int i=row_start; i<row_end; i++){
+		QPointF pt = d_selected_curve->sample(i);
 		if (!tab->text(i, col).isEmpty())
 			tab->setText(i, col, locale.toString(
-					(d_dir==Horizontal ? d_selected_curve->x(i) : d_selected_curve->y(i)) + d, f, prec));
+					(d_dir==Horizontal ? pt.x() : pt.y()) + d, f, prec));
 	}
 	d_app->updateCurves(tab, col_name);
 	d_app->modifiedProject();

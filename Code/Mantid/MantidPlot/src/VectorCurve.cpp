@@ -29,7 +29,6 @@
 #include "VectorCurve.h"
 
 #include <qwt_painter.h>
-#include <qwt_double_rect.h>
 #include <QPainter>
 
 VectorCurve::VectorCurve(VectorStyle style, Table *t, const QString& xColName, const char *name,
@@ -58,39 +57,43 @@ d_headLength = vc->d_headLength;
 d_headAngle = vc->d_headAngle;
 d_position = vc->d_position;
 pen = vc->pen;
-vectorEnd = (QVectorData *)vc->vectorEnd->copy();
+vectorEnd = (vc->vectorEnd) ? new QwtPointArrayData(*vc->vectorEnd) : NULL;
 }
 
-void VectorCurve::draw(QPainter *painter,
-    const QwtScaleMap &xMap, const QwtScaleMap &yMap, int from, int to) const
+void VectorCurve::drawSeries( QPainter *painter,
+    const QwtScaleMap &xMap, const QwtScaleMap &yMap,
+    const QRectF &canvasRect, int from, int to ) const
 {
     if ( !painter || dataSize() <= 0 )
         return;
 
     if (to < 0)
-        to = dataSize() - 1;
+        to = static_cast<int>(dataSize()) - 1;
 
-	QwtPlotCurve::draw(painter, xMap, yMap, from, to);
+        QwtPlotCurve::drawSeries(painter, xMap, yMap, canvasRect, from, to);
 
     painter->save();
     painter->setPen(pen);
-    drawVector(painter, xMap, yMap, from, to);
+    drawVector(painter, xMap, yMap, canvasRect, from, to);
     painter->restore();
 }
 
-void VectorCurve::drawVector(QPainter *painter,
-    const QwtScaleMap &xMap, const QwtScaleMap &yMap, int from, int to) const
+void VectorCurve::drawVector( QPainter *painter,
+    const QwtScaleMap &xMap, const QwtScaleMap &yMap,
+    const QRectF &canvasRect, int from, int to ) const
 {
+  Q_UNUSED(canvasRect);
 if (d_style == XYAM)
 {
  for (int i = from; i <= to; i++)
 	{
-	const double x0 = x(i);
-	const double y0 = y(i);
-	const double angle = vectorEnd->x(i);
-	const double mag = vectorEnd->y(i);
+	QPointF dataPt = sample(i);
+	const double x0 = dataPt.x();
+	const double y0 = dataPt.y();
+	const double angle = vectorEnd->xData().at(i);
+	const double mag = vectorEnd->yData().at(i);
 
-	int xs = 0, ys = 0, xe = 0, ye = 0;
+	double xs = 0, ys = 0, xe = 0, ye = 0;
 	switch(d_position)
 		{
 		case Tail:
@@ -126,17 +129,18 @@ else
 	{
 	for (int i = from; i <= to; i++)
 		{
-		const int xs = xMap.transform(x(i));
-		const int ys = yMap.transform(y(i));
-		const int xe = xMap.transform(vectorEnd->x(i));
-		const int ye = yMap.transform(vectorEnd->y(i));
+		QPointF dataPt = sample(i);
+		const double xs = xMap.transform(dataPt.x());
+		const double ys = yMap.transform(dataPt.y());
+		const double xe = xMap.transform(vectorEnd->xData().at(i));
+		const double ye = yMap.transform(vectorEnd->yData().at(i));
 		QwtPainter::drawLine(painter, xs, ys, xe, ye);
 		drawArrowHead(painter, xs, ys, xe, ye);
 		}
 	}
 }
 
-void VectorCurve::drawArrowHead(QPainter *p, int xs, int ys, int xe, int ye) const
+void VectorCurve::drawArrowHead(QPainter *p, double xs, double ys, double xe, double ye) const
 {
 p->save();
 p->translate(xe, ye);
@@ -158,7 +162,7 @@ QwtPainter::drawPolygon(p,endArray);
 p->restore();
 }
 
-double VectorCurve::theta(int x0, int y0, int x1, int y1) const
+double VectorCurve::theta(double x0, double y0, double x1, double y1) const
 {
 double t,pi=4*atan(-1.0);
 if (x1==x0)
@@ -190,7 +194,7 @@ loadData();
 
 void VectorCurve::setVectorEnd(const QVector<double>&x, const QVector<double>&y)
 {
-    vectorEnd=new QVectorData(x, y);
+    vectorEnd=new QwtPointArrayData(x, y);
 }
 
 double VectorCurve::width()
@@ -243,8 +247,8 @@ if (d_style == XYXY){
 	rect.setLeft(QMIN((double)rect.left(), (double)vrect.left()));
 	rect.setRight(QMAX((double)rect.right(), (double)vrect.right()));
 } else {
-	const double angle = vectorEnd->x(0);
-	double mag = vectorEnd->y(0);
+	const double angle = vectorEnd->xData().at(0);
+	double mag = vectorEnd->yData().at(0);
 	switch(d_position)
 		{
 		case Tail:
@@ -370,9 +374,9 @@ void VectorCurve::loadData()
 		return;
 
     X.resize(size); Y.resize(size); X2.resize(size); Y2.resize(size);
-	setData(X.data(), Y.data(), size);
+        setSamples(X.data(), Y.data(), size);
 	foreach(DataCurve *c, d_error_bars)
-        c->setData(X.data(), Y.data(), size);
+	c->setSamples(X.data(), Y.data(), size);
 	setVectorEnd(X2, Y2);
 }
 

@@ -47,7 +47,6 @@ Spectrogram::Spectrogram():
 			d_matrix(0),d_funct(0),//Mantid
 	    color_axis(QwtPlot::yRight),
 	    color_map_policy(Default),
-	    color_map(),
 			d_show_labels(true),
 			d_white_out_labels(false),
 			d_labels_angle(0.0),
@@ -61,32 +60,32 @@ Spectrogram::Spectrogram():
 			m_nColumns(0),
 			m_bIntensityChanged(false)
 {
+  setDefaultColorMap();
 }
 
 Spectrogram::Spectrogram(Matrix *m):
       QObject(), QwtPlotSpectrogram(QString(m->objectName())),
 			d_matrix(m),d_funct(0),//Mantid
 	    color_axis(QwtPlot::yRight),
-	    color_map_policy(Default),mColorMap()
-//color_map(QwtLinearColorMap()),
+	    color_map_policy(Default)
 {
   setData(new MatrixData(m));
   double step = fabs(data()->interval(Qt::ZAxis).maxValue() - data()->interval(Qt::ZAxis).minValue())/5.0;
 
   QList<double> contourLevels;
-  for ( double level = data().range().minValue() + step;
+  for ( double level = data()->interval(Qt::ZAxis).minValue() + step;
       level < data()->interval(Qt::ZAxis).maxValue(); level += step )
     contourLevels += level;
 
   setContourLevels(contourLevels);
+  setDefaultColorMap();
 }
 
 Spectrogram::Spectrogram(Function2D *f,int nrows, int ncols,double left, double top, double width, double height,double minz,double maxz)
 :	QObject(), QwtPlotSpectrogram(),
  	d_matrix(0),d_funct(f),
  	color_axis(QwtPlot::yRight),
- 	color_map_policy(Default),
-        color_map()
+        color_map_policy(Default)
 {
   setData(new FunctionData(f,nrows,ncols,left,top,width,height,minz,maxz));
   double step = fabs(data()->interval(Qt::ZAxis).maxValue() - data()->interval(Qt::ZAxis).minValue())/5.0;
@@ -97,7 +96,7 @@ Spectrogram::Spectrogram(Function2D *f,int nrows, int ncols,double left, double 
     contourLevels += level;
 
   setContourLevels(contourLevels);
-
+  setDefaultColorMap();
 }
 
 Spectrogram::Spectrogram(Function2D *f,int nrows, int ncols,QRectF bRect,double minz,double maxz)
@@ -115,14 +114,13 @@ Spectrogram::Spectrogram(Function2D *f,int nrows, int ncols,QRectF bRect,double 
  	d_labels_x_offset(0), 	d_labels_y_offset(0),
  	d_labels_align(Qt::AlignHCenter),
  	d_labels_font(QFont()),
- 	mColorMap(),
  	m_nRows(nrows),
  	m_nColumns(ncols),
  	mScaledValues(0),
  	m_bIntensityChanged(false)
 {
   setTitle("UserHelperFunction");
-  setData(FunctionData(f,nrows,ncols,bRect,minz,maxz));
+  setData(new FunctionData(f,nrows,ncols,bRect,minz,maxz));
   double step = fabs(data()->interval(Qt::ZAxis).maxValue() - data()->interval(Qt::ZAxis).minValue())/5.0;
 
   QList<double> contourLevels;
@@ -130,6 +128,7 @@ Spectrogram::Spectrogram(Function2D *f,int nrows, int ncols,QRectF bRect,double 
       level < data()->interval(Qt::ZAxis).maxValue(); level += step )
     contourLevels += level;
   setContourLevels(contourLevels);
+  setDefaultColorMap();
 }
 
 
@@ -153,13 +152,13 @@ void Spectrogram::updateData(Matrix *m)
   if (!plot)
     return;
 
-  setData(MatrixData(m));
+  setData(new MatrixData(m));
   setLevelsNumber(levels());
 
   QwtScaleWidget *colorAxis = plot->axisWidget(color_axis);
   if (colorAxis)
   {
-    colorAxis->setColorMap(data()->interval(Qt::ZAxis), colorMap());
+    colorAxis->setColorMap(data()->interval(Qt::ZAxis), ColorMapHelper::clone(*colorMap()));
   }
   plot->setAxisScale(color_axis, data()->interval(Qt::ZAxis).minValue(), data()->interval(Qt::ZAxis).maxValue());
   plot->replot();
@@ -223,19 +222,19 @@ void Spectrogram::showColorScale(int axis, bool on)
   }
 
   // First we switch axes
-  setAxis(xAxis, yAxis);
+  setAxes(xAxis, yAxis);
 
   // Next we switch axes scales
-  QwtScaleDiv *scDiv = plot->axisScaleDiv(oldMainAxis);
+  const QwtScaleDiv &scDiv = plot->axisScaleDiv(oldMainAxis);
   if (axis == QwtPlot::xBottom || axis == QwtPlot::xTop)
-    plot->setAxisScale(xAxis, scDiv->lBound(), scDiv->hBound());
+    plot->setAxisScale(xAxis, scDiv.lBound(), scDiv.hBound());
   else if (axis == QwtPlot::yLeft || color_axis == QwtPlot::yRight)
-    plot->setAxisScale(yAxis, scDiv->lBound(), scDiv->hBound());
+    plot->setAxisScale(yAxis, scDiv.lBound(), scDiv.hBound());
 
   colorAxis = plot->axisWidget(color_axis);
   plot->setAxisScale(color_axis, data()->interval(Qt::ZAxis).minValue(), data()->interval(Qt::ZAxis).maxValue());
   colorAxis->setColorBarEnabled(on);
-  colorAxis->setColorMap(data()->interval(Qt::ZAxis), colorMap());
+  colorAxis->setColorMap(data()->interval(Qt::ZAxis), ColorMapHelper::clone(*colorMap()));
   if (!plot->axisEnabled(color_axis))
     plot->enableAxis(color_axis);
   colorAxis->show();
@@ -273,22 +272,23 @@ Spectrogram* Spectrogram::copy()
   new_s->setDisplayMode(QwtPlotSpectrogram::ContourMode, testDisplayMode(QwtPlotSpectrogram::ContourMode));
   new_s->color_map_policy = color_map_policy;
   if (new_s->color_map_policy == GrayScale)
+  {
     new_s->setGrayScale();
-  else new_s->setCustomColorMap(new_s->getColorMap());
-
-  new_s->setAxis(xAxis(), yAxis());
+  }
+  else
+  {
+    new_s->setCustomColorMap(ColorMapHelper::clone(*new_s->colorMap()));
+  }
+  new_s->setAxes(xAxis(), yAxis());
   new_s->setDefaultContourPen(defaultContourPen());
   new_s->setLevelsNumber(levels());
 
-  new_s->mutableColorMap().changeScaleType(getColorMap().getScaleType());
   return new_s;
 }
 
 void Spectrogram::setGrayScale()
 {
-  color_map = QwtLinearColorMap(Qt::black, Qt::white);
-  setColorMap(color_map);
-  //setColorMap(mColorMap);
+  setColorMap(new QwtLinearColorMap(Qt::black, Qt::white)); // must be separate instance to that below
   color_map_policy = GrayScale;
 
   QwtPlot *plot = this->plot();
@@ -298,7 +298,7 @@ void Spectrogram::setGrayScale()
   QwtScaleWidget *colorAxis = plot->axisWidget(color_axis);
   if (colorAxis)
   {
-    colorAxis->setColorMap(data()->interval(Qt::ZAxis), colorMap());
+    colorAxis->setColorMap(data()->interval(Qt::ZAxis), new QwtLinearColorMap(Qt::black, Qt::white));
   }
 }
 
@@ -311,41 +311,40 @@ void Spectrogram::setDefaultColorMap()
   QString lastColormapFile = settings.value("ColormapFile", "").toString();
   settings.endGroup();
 
+  QwtPlot *plot = this->plot();
+  MantidColorMap *cMap;
+  GraphOptions::ScaleType colorScaleType = plot ? ScaleEngineTraits::scaleType(*plot->axisScaleEngine(color_axis)) : GraphOptions::Linear;
   if (lastColormapFile.size() > 0)
   {
-      mCurrentColorMap = lastColormapFile;
-      mColorMap.loadMap(lastColormapFile);
+    mCurrentColorMap = lastColormapFile;
+    cMap = new MantidColorMap(lastColormapFile, colorScaleType);
   }
   else
   {
-    //option 2 use the default colormap from MantidColorMap.
-    mColorMap.setupDefaultMap();
+      cMap = new MantidColorMap;
+      cMap->changeScaleType(colorScaleType);
   }
-  
-  setColorMap(mColorMap);
-      
+  setColorMap(cMap);
   color_map_policy = Default;
 
-  QwtPlot *plot = this->plot();
   if (!plot)
     return;
 
   QwtScaleWidget *colorAxis = plot->axisWidget(color_axis);
   if (colorAxis)
-    colorAxis->setColorMap(this->data()->interval(Qt::ZAxis), this->colorMap());
-
+    colorAxis->setColorMap(this->data()->interval(Qt::ZAxis), cMap->copy());
 }
 
-void Spectrogram::loadColorMap(const QString& file)
+/// Takes ownership of give color map
+void Spectrogram::setCustomColorMap(QwtColorMap *map)
 {
-  mColorMap.loadMap(file);
-  setMantidColorMap(mColorMap);
+  setCustomColorMap(this->data()->interval(Qt::ZAxis), map);
 }
 
-void Spectrogram::setCustomColorMap(const QwtColorMap &map)
+/// Takes ownership of give color map
+void Spectrogram::setCustomColorMap(const QwtInterval &interval, QwtColorMap *map)
 {
   setColorMap(map);
-  //color_map = map;
   color_map_policy = Custom;
   QwtPlot *plot = this->plot();
   if (!plot)
@@ -354,34 +353,8 @@ void Spectrogram::setCustomColorMap(const QwtColorMap &map)
   QwtScaleWidget *colorAxis = plot->axisWidget(color_axis);
   if (colorAxis)
   {
-    colorAxis->setColorMap(this->data()->interval(Qt::ZAxis), this->getColorMap());
+    colorAxis->setColorMap(interval, ColorMapHelper::clone(*map));
   }
-}
-
-void Spectrogram::setCustomColorMap(const QwtLinearColorMap& map)
-{
-  setColorMap(map);
-  color_map = map;
-  color_map_policy = Custom;
-
-  QwtPlot *plot = this->plot();
-  if (!plot)
-    return;
-
-  QwtScaleWidget *colorAxis = plot->axisWidget(color_axis);
-  if (colorAxis)
-  {
-    colorAxis->setColorMap(this->data()->interval(Qt::ZAxis), this->colorMap());
-  }
-}
-
-const QwtLinearColorMap *Spectrogram::defaultColorMap()
-{
-  QwtLinearColorMap colorMap = new QwtLinearColorMap(Qt::blue, Qt::red);
-  colorMap->addColorStop(0.25, Qt::cyan);
-  colorMap->addColorStop(0.5, Qt::green);
-  colorMap->addColorStop(0.75, Qt::yellow);
-  return colorMap;
 }
 
 void Spectrogram::setColorMapPen(bool on)
@@ -391,7 +364,7 @@ void Spectrogram::setColorMapPen(bool on)
 
   d_color_map_pen = on;
   if (on) {
-    setDefaultContourPen(Qt::NoPen);
+    setDefaultContourPen(QPen(Qt::NoPen));
     d_pen_list.clear();
   }
 }
@@ -421,7 +394,7 @@ void Spectrogram::createLabels()
 
     int x_axis = xAxis();
     int y_axis = yAxis();
-    m->setAxis(x_axis, y_axis);
+    m->setAxes(x_axis, y_axis);
 
     QwtPlot *d_plot = plot();
     if (!d_plot)
@@ -499,9 +472,9 @@ void Spectrogram::selectLabel(bool on)
       return;
 
     if (d_selected_label && m == d_selected_label && on)
-      t.setBackgroundPen(QPen(Qt::blue));
+      t.setBorderPen(QPen(Qt::blue));
     else
-      t.setBackgroundPen(QPen(Qt::NoPen));
+      t.setBorderPen(QPen(Qt::NoPen));
 
     m->setLabel(t);
   }
@@ -519,13 +492,15 @@ bool Spectrogram::selectedLabels(const QPoint& pos)
   /*if (d_plot->hasActiveTool())
 		return false;*/
   foreach(PlotMarker *m, d_labels_list){
-    int x = d_plot->transform(xAxis(), m->xValue());
-    int y = d_plot->transform(yAxis(), m->yValue());
+    double x = d_plot->transform(xAxis(), m->xValue());
+    double y = d_plot->transform(yAxis(), m->yValue());
 
-    QMatrix wm;
+    QTransform wm;
     wm.translate(x, y);
     wm.rotate(-d_labels_angle);
-    if (wm.mapToPolygon(QRect(QPoint(0, 0), m->label().textSize())).containsPoint(pos, Qt::OddEvenFill)){
+    QSizeF floatlabelSize = m->label().textSize();
+    QSize labelSize(static_cast<int>(floatlabelSize.width()), static_cast<int>(floatlabelSize.height()));
+    if (wm.mapToPolygon(QRect(QPoint(0, 0), labelSize)).containsPoint(pos, Qt::OddEvenFill)){
       d_selected_label = m;
       d_click_pos_x = d_plot->invTransform(xAxis(), pos.x());
       d_click_pos_y = d_plot->invTransform(yAxis(), pos.y());
@@ -547,18 +522,6 @@ QString Spectrogram::saveToString()
   {
     s += "\t<ColorMap>\n";
     if(!mCurrentColorMap.isEmpty())s+="\t\tFileName\t"+mCurrentColorMap+"\n";
-    s += "\t\t<Mode>" + QString::number(color_map.mode()) + "</Mode>\n";
-    s += "\t\t<MinColor>" + color_map.color1().name() + "</MinColor>\n";
-    s += "\t\t<MaxColor>" + color_map.color2().name() + "</MaxColor>\n";
-    QVector <double> colors = color_map.colorStops();
-    int stops = (int)colors.size();
-    s += "\t\t<ColorStops>" + QString::number(stops - 2) + "</ColorStops>\n";
-    for (int i = 1; i < stops - 1; i++)
-    {
-      s += "\t\t<Stop>" + QString::number(colors[i]) + "\t";
-      s += QColor(color_map.rgb(QwtInterval(0,1), colors[i])).name();
-      s += "</Stop>\n";
-    }
     s += "\t</ColorMap>\n";
   }
   s += "\t<Image>"+QString::number(testDisplayMode(QwtPlotSpectrogram::ImageMode))+"</Image>\n";
@@ -592,26 +555,7 @@ QString Spectrogram::saveToString()
   s+="\t<IntensityChanged>"+QString::number(isIntensityChanged())+"</IntensityChanged>\n";
   return s+"</spectrogram>\n";
 }
-/**
- * Returns a reference to the constant colormap
- */
-const MantidColorMap & Spectrogram::getColorMap() const
-{
 
-  return mColorMap;
-
-}
-void Spectrogram::setMantidColorMap(const MantidColorMap &map)
-{
-  setColorMap(map);
-}
-/**
- * Returns a reference to the colormap
- */
-MantidColorMap & Spectrogram::mutableColorMap()
-{
-  return mColorMap;
-}
 /**
  * Save properties of the window a persistent store
  */
@@ -621,7 +565,7 @@ void Spectrogram::saveSettings()
   settings.beginGroup("Mantid/2DPlotSpectrogram");
   //settings.setValue("BackgroundColor", mInstrumentDisplay->currentBackgroundColor());
   settings.setValue("ColormapFile", mCurrentColorMap);
-  settings.setValue("ScaleType",getColorMap().getScaleType());
+  settings.setValue("ScaleType", ScaleEngineTraits::scaleType(*plot()->axisScaleEngine(color_axis)));
   settings.endGroup();
 }
 /**
@@ -635,12 +579,11 @@ void Spectrogram::loadSettings()
 
   //Load Colormap. If the file is invalid the default stored colour map is used
   mCurrentColorMap = settings.value("ColormapFile", "").toString();
-  // Set values from settings
-  mutableColorMap().loadMap(mCurrentColorMap);
-
-  GraphOptions::ScaleType type = (GraphOptions::ScaleType)settings.value("ScaleType", GraphOptions::Log10).toUInt();
-
-  mutableColorMap().changeScaleType(type);
+  if(!mCurrentColorMap.isEmpty())
+  {
+    GraphOptions::ScaleType type = (GraphOptions::ScaleType)settings.value("ScaleType", GraphOptions::Log10).toUInt();
+    setCustomColorMap(new MantidColorMap(mCurrentColorMap, type));
+  }
 
   settings.endGroup();
 }
@@ -653,20 +596,20 @@ void Spectrogram::setColorMapFileName(QString colormapName)
 }
 QRectF Spectrogram::boundingRect() const
 {
-  return d_matrix?d_matrix->boundingRect() : data().boundingRect();
+  return d_matrix?d_matrix->boundingRect() : QRectF();
 }
 
 double Spectrogram::getMinPositiveValue()const
 {
   //const QwtRasterData* r = &data();
-  const SpectrogramData* d = dynamic_cast<const SpectrogramData*>(&data());
+  const SpectrogramData* d = dynamic_cast<const SpectrogramData*>(data());
   return d ? d->getMinPositiveValue() : 1e-10;
 }
 
 void Spectrogram::setContourPenList(QList<QPen> lst)
 {
   d_pen_list = lst;
-  setDefaultContourPen(Qt::NoPen);
+  setDefaultContourPen(QPen(Qt::NoPen));
   d_color_map_pen = false;
 }
 
@@ -687,7 +630,7 @@ void Spectrogram::setContourLinePen(int index, const QPen &pen)
   }
 
   d_pen_list[index] = pen;
-  setDefaultContourPen(Qt::NoPen);
+  setDefaultContourPen(QPen(Qt::NoPen));
   d_color_map_pen = false;
 }
 
@@ -791,9 +734,9 @@ void Spectrogram::drawContourLines (QPainter *p, const QwtScaleMap &xMap, const 
 
     const QPolygonF &lines = contourLines[level];
     for ( int i = 0; i < (int)lines.size(); i += 2 ){
-      const QPointF p1( xMap.xTransform(lines[i].x()),
+      const QPointF p1( xMap.invTransform(lines[i].x()),
           yMap.transform(lines[i].y()) );
-      const QPointF p2( xMap.xTransform(lines[i + 1].x()),
+      const QPointF p2( xMap.invTransform(lines[i + 1].x()),
           yMap.transform(lines[i + 1].y()) );
 
       p->drawLine(p1, p2);
@@ -830,14 +773,14 @@ void Spectrogram::updateLabels(QPainter *p, const QwtScaleMap &xMap, const QwtSc
     PlotMarker *mrk = d_labels_list[l];
     if (!mrk)
       return;
-    QSize size = mrk->label().textSize();
-    int dx =static_cast<int>((d_labels_x_offset )*0.01*size.height()); //static_cast<int>((d_labels_x_offset + mrk->xLabelOffset())*0.01*size.height());
-    int dy = -static_cast<int>(((d_labels_y_offset )*0.01 + 0.5)*size.height());
+    QSizeF size = mrk->label().textSize();
+    double dx = (d_labels_x_offset )*0.01*size.height(); //static_cast<int>((d_labels_x_offset + mrk->xLabelOffset())*0.01*size.height());
+    double dy = -((d_labels_y_offset )*0.01 + 0.5)*size.height();
 
     double x = lines[i].x();
     double y = lines[i].y();
-    int x2 = d_plot->transform(x_axis, x) + dx;
-    int y2 = d_plot->transform(y_axis, y) + dy;
+    int x2 = static_cast<int>(d_plot->transform(x_axis, x) + dx);
+    int y2 = static_cast<int>(d_plot->transform(y_axis, y) + dy);
 
     mrk->setValue(d_plot->invTransform(x_axis, x2),
         d_plot->invTransform(y_axis, y2));
@@ -865,7 +808,7 @@ changes the intensity of the colors
  */
 void Spectrogram::changeIntensity( double start,double end)
 {
-  setData(FunctionData(d_funct,m_nRows,m_nColumns,boundingRect(),start,end));
+  setData(new FunctionData(d_funct,m_nRows,m_nColumns,boundingRect(),start,end));
 }
 /**
  sets the flag for intensity changes
@@ -900,36 +843,38 @@ QImage Spectrogram::renderImage(
   if ( area.isEmpty() )
     return QImage();
 
-  QImage image(imageSize, this->colorMap().format() == QwtColorMap::RGB
+  QImage image(imageSize, this->colorMap()->format() == QwtColorMap::RGB
       ? QImage::Format_ARGB32 : QImage::Format_Indexed8 );
 
   const QwtInterval intensityRange = data()->interval(Qt::ZAxis);
   if ( !intensityRange.isValid() )
     return image;
 
-  if ( this->colorMap().format() == QwtColorMap::RGB )
+  if ( this->colorMap()->format() == QwtColorMap::RGB )
   {
     return QwtPlotSpectrogram::renderImage(xMap,yMap,area, imageSize);
   }
-  else if ( this->colorMap().format() == QwtColorMap::Indexed )
+  else if ( this->colorMap()->format() == QwtColorMap::Indexed )
   {
+    QRectF rect = QwtScaleMap::transform(xMap, yMap, area);
+
     // Modify the colour table so that the last colour is white and transparent
     // which will indicate no value
-    QVector<QRgb> ctable = this->colorMap().colorTable(intensityRange);
+    QVector<QRgb> ctable = this->colorMap()->colorTable(intensityRange);
     ctable.back() = qRgba(255,255,255,0);
     image.setColorTable(ctable);
 
     image.fill(255);
 
     // image2matrix_yMap[image_row] ->  matrix_row or -1
-    std::vector<int> image2matrix_yMap(rect.height(),-1);
+    std::vector<int> image2matrix_yMap(static_cast<int>(rect.height()),-1);
 
     for(size_t row = 0; row < mantidFun->rows(); ++row)
     {
       double ymin,ymax;
       mantidFun->getRowYRange(row,ymin,ymax);
-      int imax = yMap.transform(ymin)-rect.top(); // image row corresponding to ymin
-      int imin = yMap.transform(ymax)-rect.top(); // image row corresponding to ymax
+      int imax = static_cast<int>(yMap.transform(ymin)) - static_cast<int>(rect.top()); // image row corresponding to ymin
+      int imin = static_cast<int>(yMap.transform(ymax)) - static_cast<int>(rect.top()); // image row corresponding to ymax
       if (imin < 0)
       {
         if (imax < 0) break;
@@ -938,22 +883,22 @@ QImage Spectrogram::renderImage(
           imin = 0;
         }
       }
-      if (imax > rect.height()-1)
+      if (imax > static_cast<int>(rect.height())-1)
       {
-        if (imin > rect.height()-1)
+        if (imin > static_cast<int>(rect.height())-1)
         {
           continue;
         }
         else
         {
-          imax = rect.height()-1;
+          imax = static_cast<int>(rect.height())-1;
         }
       }
       std::fill(image2matrix_yMap.begin()+imin,image2matrix_yMap.begin()+imax+1,static_cast<int>(row));
 
     }
 
-    int imageWidth = rect.width();
+    int imageWidth =  static_cast<int>(rect.width());
     int row0 = -2;
     for(size_t i=0; i < image2matrix_yMap.size() ;++i)
     {
@@ -977,7 +922,7 @@ QImage Spectrogram::renderImage(
       if (xmin != std::numeric_limits<double>::infinity() && xmin == xmin &&
           xmax != std::numeric_limits<double>::infinity() && xmax == xmax)
       {
-        jmin = xMap.transform(xmin)-rect.left();
+        jmin =  static_cast<int>(xMap.transform(xmin)) -  static_cast<int>(rect.left());
       }
       else
       {
@@ -1001,7 +946,7 @@ QImage Spectrogram::renderImage(
         }
         if (col >= nX) break;
         double val = mantidFun->value(row,col);
-        *line++ = this->colorMap().colorIndex(intensityRange,val);
+        *line++ = this->colorMap()->colorIndex(intensityRange,val);
       }
 
     }

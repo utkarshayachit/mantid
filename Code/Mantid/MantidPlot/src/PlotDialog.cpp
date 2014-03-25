@@ -2318,9 +2318,9 @@ bool PlotDialog::acceptParams()
     //updates the spectrogram,colormap widget with the loaded file
     else if (customScaleBox->isChecked())
     {
-      sp->mutableColorMap().loadMap(mCurrentColorMap);
-      // sp->setDefaultColorMap();
-      sp->setCustomColorMap(sp->mutableColorMap());
+      auto * colorBarScaler = sp->plot()->axisScaleEngine(sp->colorScaleAxis());
+      sp->setCustomColorMap(new MantidColorMap(mCurrentColorMap,
+                                               ScaleEngineTraits::scaleType(*colorBarScaler)));
       //sets the selected colormapfile name to spectrogram
       sp->setColorMapFileName(mCurrentColorMap);
       //saves the settings

@@ -27,6 +27,8 @@
  *                                                                         *
  ***************************************************************************/
 #include <qwt_symbol.h>
+#include <QPixmap>
+#include <QString>
 
 //! A QwtSymbol displaying a custom image
 class ImageSymbol: public QwtSymbol
@@ -35,8 +37,7 @@ public:
   ImageSymbol(const QString& fileName);
   ImageSymbol(const QPixmap& pixmap, const QString& fileName = QString());
 
-  virtual ImageSymbol *clone() const;
-  virtual void draw(QPainter *p, const QRect &r) const;
+  virtual void drawSymbol(QPainter *p, const QRectF &r) const;
 
   QPixmap pixmap(){return d_pixmap;};
   QString imagePath(){return d_image_path;};

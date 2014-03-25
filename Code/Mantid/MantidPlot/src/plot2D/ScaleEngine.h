@@ -31,20 +31,14 @@
 
 #include <qwt_scale_engine.h>
 #include <qwt_transform.h>
+#include "MantidQtAPI/GraphOptions.h"
 #include <cfloat>
 
 class ScaleEngine: public QwtScaleEngine
 {
 public:
-	/// Type of the scale
-	enum Type
-	{
-	  Linear,
-	  Log10,
-	  Other
-	};
 
-	ScaleEngine(Type type = Linear,
+	ScaleEngine(GraphOptions::ScaleType type = GraphOptions::Linear,
 		double left_break = -DBL_MAX, double right_break = DBL_MAX);
 	virtual QwtScaleDiv divideScale(double x1, double x2, int maxMajSteps,
 		int maxMinSteps, double stepSize = 0.0) const;
@@ -75,8 +69,8 @@ public:
     bool log10ScaleAfterBreak() const;
     void setLog10ScaleAfterBreak(bool on){d_log10_scale_after = on;};
 
-	ScaleEngine::Type type() const;
-	void setType(ScaleEngine::Type type){d_type = type;};
+	GraphOptions::ScaleType type() const;
+	void setType(GraphOptions::ScaleType type){d_type = type;};
 
 	bool hasBreak() const;
 	void clone(const ScaleEngine *engine);
@@ -85,7 +79,7 @@ public:
 	void drawBreakDecoration(bool draw){d_break_decoration = draw;};
 
 private:
-	Type d_type;
+	GraphOptions::ScaleType d_type;
 	double d_break_left, d_break_right;
 	//! Position of axis break (% of axis length)
 	int d_break_pos;
@@ -101,6 +95,11 @@ private:
 	bool d_break_decoration;
 };
 
+namespace ScaleEngineTraits
+{
+  /// Helper to determine current scale type
+  GraphOptions::ScaleType scaleType(const QwtScaleEngine & scaler);
+}
 class ScaleTransformation: public QwtTransform
 {
 public:

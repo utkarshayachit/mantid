@@ -36,7 +36,10 @@ MantidMDCurve::MantidMDCurve(const MantidMDCurve& c)
   :MantidCurve(createCopyName(c.title().text()), c.m_drawErrorBars, c.m_drawAllErrorBars),
   m_wsName(c.m_wsName)
 {
-  setData(c.data());
+  auto * mdData = dynamic_cast<const MantidQwtIMDWorkspaceData*>(c.data());
+  if(!mdData) throw std::invalid_argument("Unable to copy MantidMDCurve. Unexpected data source type.");
+  setData(new MantidQwtIMDWorkspaceData(*mdData));
+
   observePostDelete();
   connect( this, SIGNAL(resetData(const QString&)), this, SLOT(dataReset(const QString&)) );
   observeAfterReplace();
@@ -67,8 +70,7 @@ void MantidMDCurve::init(Graph* g, bool distr, Graph::CurveType style)
   this->setTitle(m_wsName + "-signal");
 
   const bool log = g->isLog(QwtPlot::yLeft);
-  MantidQwtIMDWorkspaceData data(ws,log);
-  setData(data);
+  setData(new MantidQwtIMDWorkspaceData(ws, log));
 
   int lineWidth = 1;
   MultiLayer* ml = dynamic_cast<MultiLayer*>(g->parent()->parent()->parent());
@@ -110,14 +112,6 @@ MantidMDCurve* MantidMDCurve::clone(const Graph*)const
   return mc;
 }
 
-
-void MantidMDCurve::setData(const QwtData &data)
-{
-  if (!dynamic_cast<const MantidQwtIMDWorkspaceData*>(&data)) 
-    throw std::runtime_error("Only MantidQwtIMDWorkspaceData can be set to a MantidMDCurve");
-  PlotCurve::setData(data);
-}
-
 QRectF MantidMDCurve::boundingRect() const
 {
   return MantidCurve::boundingRect();
@@ -131,7 +125,7 @@ void MantidMDCurve::draw(QPainter *p,
 
   if (m_drawErrorBars)// drawing error bars
   {
-    const MantidQwtIMDWorkspaceData* d = dynamic_cast<const MantidQwtIMDWorkspaceData*>(&data());
+    const MantidQwtIMDWorkspaceData* d = dynamic_cast<const MantidQwtIMDWorkspaceData*>(data());
     if (!d)
     {
       throw std::runtime_error("Only MantidQwtIMDWorkspaceData can be set to a MantidMDCurve");
@@ -161,10 +155,10 @@ void MantidMDCurve::dataReset(const QString& wsName)
   }
 
   if (!mws) return;
-  const MantidQwtIMDWorkspaceData * new_mantidData(NULL);
+  MantidQwtIMDWorkspaceData * new_mantidData(NULL);
   try {
     new_mantidData = mantidData()->copy(mws);
-    setData(*new_mantidData);
+    setData(new_mantidData);
     setStyle(QwtPlotCurve::Lines);
     // Queue this plot to be updated once all MantidQwtIMDWorkspaceData objects for this workspace have been
     emit dataUpdated();
@@ -199,13 +193,13 @@ void MantidMDCurve::afterReplaceHandle(const std::string& wsName, const boost::s
 
 MantidQwtIMDWorkspaceData* MantidMDCurve::mantidData() 
 {
-  MantidQwtIMDWorkspaceData* d = dynamic_cast<MantidQwtIMDWorkspaceData*>(&data());
+  MantidQwtIMDWorkspaceData* d = dynamic_cast<MantidQwtIMDWorkspaceData*>(data());
   return d;
 }
 
 const MantidQwtIMDWorkspaceData* MantidMDCurve::mantidData()const
 {
-  const MantidQwtIMDWorkspaceData* d = dynamic_cast<const MantidQwtIMDWorkspaceData*>(&data());
+  const MantidQwtIMDWorkspaceData* d = dynamic_cast<const MantidQwtIMDWorkspaceData*>(data());
   return d;
 }
 

@@ -28,7 +28,9 @@
  ***************************************************************************/
 #include "ScaleEngine.h"
 
-ScaleTransformation(const ScaleEngine *engine)
+#include <stdexcept>
+
+ScaleTransformation::ScaleTransformation(const ScaleEngine *engine)
   : QwtTransform(), d_engine(engine), d_linear_transform(new QwtNullTransform),
     d_log_transform(new QwtLogTransform)
 {
@@ -45,9 +47,9 @@ double ScaleTransformation::transform( double value ) const
   throw std::runtime_error("Unimplemented ScaleTransformation::transform");
 
 //  // Deals with different parts of the axis being on different scales
-//  ScaleEngine::Type scaleType = d_engine->type();
+//  GraphOptions::ScaleType scaleType = d_engine->type();
 
-//  if ((scaleType != ScaleEngine::Linear) && s <= 0.0)
+//  if ((scaleType != GraphOptions::Linear) && s <= 0.0)
 //  {
 //    double maxScreenCoord = 1e4;
 //    if (p1 < p2)
@@ -94,7 +96,7 @@ double ScaleTransformation::transform( double value ) const
 //      if (s <= lb){
 //          if (d_type == QwtScaleTransformation::Linear)
 //            return pmr + (lb - s)/(lb - s2)*(p2 - pmr);
-//          else if (d_type == ScaleEngine::Log10){
+//          else if (d_type == GraphOptions::Log10){
 //              return pmr + log(lb/s)/log(lb/s2)*(p2 - pmr);
 //            }
 //        }
@@ -111,7 +113,7 @@ double ScaleTransformation::transform( double value ) const
 //  if (s <= lb){
 //      if (d_type == QwtScaleTransformation::Linear)
 //        return p1 + (s - s1)/(lb - s1)*(pml - p1);
-//      else if (d_type == ScaleEngine::Log10)
+//      else if (d_type == GraphOptions::Log10)
 //        return p1 + log(s/s1)/log(lb/s1)*(pml - p1);
 //    }
 
@@ -132,11 +134,11 @@ double ScaleTransformation::invTransform( double value ) const
 
   // Deals with different parts of the axis being on different scales
 
-//  ScaleEngine::Type scaleType = d_engine->type();
+//  GraphOptions::ScaleType scaleType = d_engine->type();
 //  if (!d_engine->hasBreak())
 //  {
 //      QwtTransform *scaleTransform =
-//          (scaleType == ScaleEngine::Linear) ? d_linear_transform : d_log_transform;
+//          (scaleType == GraphOptions::Linear) ? d_linear_transform : d_log_transform;
 //      return scaleTransform->invTransform(value);
 //  }
 
@@ -171,7 +173,7 @@ double ScaleTransformation::invTransform( double value ) const
 //     }
 //     if ((p2 > p1 && p >= pmr) || (p2 < p1 && p <= pmr))
 //     {
-//       if (d_type == ScaleEngine::Log10)
+//       if (d_type == GraphOptions::Log10)
 //         return lb * exp((p - pmr)/(p2 - pmr)*log(s2/lb));
 //       else if (d_type == QwtScaleTransformation::Linear)
 //         return lb + (p - pmr)/(p2 - pmr)*(s2 - lb);
@@ -182,7 +184,7 @@ double ScaleTransformation::invTransform( double value ) const
 //  {
 //    if (d_type == QwtScaleTransformation::Linear)
 //      return s1 + (lb - s1)*(p - p1)/(pml - p1);
-//    else if (d_type == ScaleEngine::Log10)
+//    else if (d_type == GraphOptions::Log10)
 //      return s1 * exp((p - p1)/(pml - p1)*log(lb/s1));
 //  }
 
@@ -209,7 +211,7 @@ QwtTransform *ScaleTransformation::copy() const
  *
  *****************************************************************************/
 
-ScaleEngine::ScaleEngine(ScaleEngine::Type type,double left_break, double right_break): QwtScaleEngine(),
+ScaleEngine::ScaleEngine(GraphOptions::ScaleType type,double left_break, double right_break): QwtScaleEngine(),
 d_type(type),
 d_break_left(left_break),
 d_break_right(right_break),
@@ -260,7 +262,7 @@ double ScaleEngine::stepAfterBreak() const
     return d_step_after;
 }
 
-QwtScaleTransformation::Type ScaleEngine::type() const
+GraphOptions::ScaleType ScaleEngine::type() const
 {
     return d_type;
 }
@@ -299,7 +301,7 @@ void ScaleEngine::clone(const ScaleEngine *engine)
     d_break_width = engine->breakWidth();
 	d_break_decoration = engine->hasBreakDecoration();
 	setAttributes(engine->attributes());
-    setMargins(engine->loMargin(), engine->hiMargin());
+    setMargins(engine->lowerMargin(), engine->upperMargin());
 }
 
 QwtScaleDiv ScaleEngine::divideScale(double x1, double x2, int maxMajSteps,
@@ -307,7 +309,7 @@ QwtScaleDiv ScaleEngine::divideScale(double x1, double x2, int maxMajSteps,
 {
 	QwtScaleEngine *engine;
 	if (!hasBreak()){
-	if (d_type == ScaleEngine::Log10)
+	if (d_type == GraphOptions::Log10)
 	    engine = new QwtLogScaleEngine();
         else
             engine = new QwtLinearScaleEngine();
@@ -329,7 +331,7 @@ QwtScaleDiv ScaleEngine::divideScale(double x1, double x2, int maxMajSteps,
             engine = new QwtLogScaleEngine();
         else
             engine = new QwtLinearScaleEngine();
-    } else if (d_type == ScaleEngine::Log10)
+    } else if (d_type == GraphOptions::Log10)
         engine = new QwtLogScaleEngine();
       else
         engine = new QwtLinearScaleEngine();
@@ -350,7 +352,7 @@ QwtScaleDiv ScaleEngine::divideScale(double x1, double x2, int maxMajSteps,
 
     delete engine;
     if (testAttribute(QwtScaleEngine::Inverted)){
-        if (d_type == ScaleEngine::Log10)
+        if (d_type == GraphOptions::Log10)
             engine = new QwtLogScaleEngine();
         else
             engine = new QwtLinearScaleEngine();
@@ -374,19 +376,19 @@ void ScaleEngine::autoScale (int maxNumSteps, double &x1, double &x2, double &st
 {
 	if (!hasBreak() || testAttribute(QwtScaleEngine::Inverted)){
 		QwtScaleEngine *engine;
-		if (d_type == ScaleEngine::Log10)
+		if (d_type == GraphOptions::Log10)
 			engine = new QwtLogScaleEngine();
 		else
 			engine = new QwtLinearScaleEngine();
 		
 		engine->setAttributes(attributes());
     	engine->setReference(reference());
-    	engine->setMargins(loMargin(), hiMargin());
+        engine->setMargins(lowerMargin(), upperMargin());
 		engine->autoScale(maxNumSteps, x1, x2, stepSize);
 		delete engine;
 	} else {
 		QwtScaleEngine *engine;
-		if (d_type == ScaleEngine::Log10)
+		if (d_type == GraphOptions::Log10)
 			engine = new QwtLogScaleEngine();
 		else
 			engine = new QwtLinearScaleEngine();
@@ -402,4 +404,21 @@ void ScaleEngine::autoScale (int maxNumSteps, double &x1, double &x2, double &st
 		engine->autoScale(maxNumSteps, breakRight, x2, stepSize);
 		delete engine;
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Helpers
+//-----------------------------------------------------------------------------
+namespace ScaleEngineTraits
+{
+  /**
+   * @return A type enumeration giving the scale type
+   * @param scaler A reference to a QwtScaleEngine
+   */
+  GraphOptions::ScaleType scaleType(const QwtScaleEngine & scaler)
+  {
+    auto *se = dynamic_cast<const ScaleEngine*>(&scaler);
+    if(se) return se->type();
+    else return GraphOptions::Other;
+  }
 }
