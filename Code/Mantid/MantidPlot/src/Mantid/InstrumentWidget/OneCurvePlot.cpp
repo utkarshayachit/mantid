@@ -8,6 +8,7 @@
 #include <qwt_plot_canvas.h>
 #include <qwt_compat.h>
 #include <qwt_plot_zoomer.h>
+#include <qwt_picker_machine.h>
 
 #include <QFontMetrics>
 #include <QMouseEvent>
@@ -27,7 +28,9 @@ QwtPlot(parent),m_curve(NULL),m_xUnits("")
   //canvas()->setMouseTracking(true);
   setContextMenuPolicy(Qt::DefaultContextMenu);
   m_zoomer = new QwtPlotZoomer(QwtPlot::xBottom, QwtPlot::yLeft,
-      QwtPicker::DragSelection | QwtPicker::CornerToCorner, QwtPicker::AlwaysOff, canvas());
+                               canvas());
+  m_zoomer->setTrackerMode(QwtPicker::AlwaysOff);
+  m_zoomer->setStateMachine(new QwtPickerDragRectMachine);
   m_zoomer->setRubberBandPen(QPen(Qt::black));
   QList<QColor> colors;
   m_colors << Qt::red<< Qt::green  << Qt::blue << Qt::cyan << Qt::magenta << Qt::yellow << Qt::gray;
@@ -179,10 +182,10 @@ void OneCurvePlot::setYScale(double from, double to)
           curve = m_curve;
         }
         if (!curve) break;
-        int n = curve->dataSize();
+        int n = static_cast<int>(curve->dataSize());
         for(int i = 0; i < n; ++i)
         {
-          double y = curve->y(i);
+          double y = curve->sample(i).y();
           if (y > 0 && y < yPositiveMin)
           {
             yPositiveMin = y;
@@ -212,7 +215,7 @@ void OneCurvePlot::setData(const double* x,const double* y,int dataSize,const st
     m_curve->attach(this);
   }
 
-  m_curve->setData(x,y,dataSize);
+  m_curve->setSamples(x,y,dataSize);
   setXScale(x[0],x[dataSize-1]);
   double from = y[0];
   double to = from;
@@ -288,9 +291,9 @@ void OneCurvePlot::recalcAxisDivs()
   */
 void OneCurvePlot::recalcXAxisDivs()
 {
-  const QwtScaleDiv *div0 = axisScaleDiv(QwtPlot::xBottom);
-  double from = div0->lBound();
-  double to = div0->hBound();
+  const QwtScaleDiv &div0 = axisScaleDiv(QwtPlot::xBottom);
+  double from = div0.lBound();
+  double to = div0.hBound();
   setXScale(from,to);
 }
 
@@ -299,9 +302,9 @@ void OneCurvePlot::recalcXAxisDivs()
   */
 void OneCurvePlot::recalcYAxisDivs()
 {
-  const QwtScaleDiv *div0 = axisScaleDiv(QwtPlot::yLeft);
-  double from = div0->lBound();
-  double to = div0->hBound();
+  const QwtScaleDiv &div0 = axisScaleDiv(QwtPlot::yLeft);
+  double from = div0.lBound();
+  double to = div0.hBound();
   setYScale(from,to);
 }
 
@@ -352,10 +355,10 @@ void OneCurvePlot::setYAxisLabelRotation(double degrees)
   */
 void OneCurvePlot::setYLogScale()
 {
-  const QwtScaleDiv *div = axisScaleDiv(QwtPlot::yLeft);
-  double from = div->lBound();
-  double to = div->hBound();
-  QwtLog10ScaleEngine* logEngine = new QwtLog10ScaleEngine();
+  const QwtScaleDiv &div = axisScaleDiv(QwtPlot::yLeft);
+  double from = div.lBound();
+  double to = div.hBound();
+  QwtLogScaleEngine* logEngine = new QwtLogScaleEngine();
   setAxisScaleEngine(yLeft,logEngine);
   setYScale(from,to);
   recalcYAxisDivs();
@@ -474,7 +477,7 @@ void OneCurvePlot::removeCurve(const QString& label)
 bool OneCurvePlot::isYLogScale()const
 {
   const QwtScaleEngine *engine = axisScaleEngine(yLeft);
-  return dynamic_cast<const QwtLog10ScaleEngine*>(engine) != NULL;
+  return dynamic_cast<const QwtLogScaleEngine*>(engine) != NULL;
 }
 
 /**
@@ -501,7 +504,7 @@ void OneCurvePlot::clearAll()
  */
 void PeakLabel::draw(QPainter *painter, 
         const QwtScaleMap &xMap, const QwtScaleMap &yMap,
-        const QRect &canvasRect) const
+        const QRectF &canvasRect) const
 {
   (void)yMap;
   double peakX;
@@ -518,7 +521,7 @@ void PeakLabel::draw(QPainter *painter,
   {
     peakX = m_marker->getPeak().getTOF();
   }
-  int x = xMap.transform(peakX);
+  int x = static_cast<int>(xMap.transform(peakX));
   int y = static_cast<int>(canvasRect.top() + m_marker->getLabelRect().height());
   painter->drawText(x,y,m_marker->getLabel());
   //std::cerr << x << ' ' << y << ' ' << m_marker->getLabel().toStdString() << std::endl;

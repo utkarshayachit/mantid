@@ -27,7 +27,15 @@ namespace SpectrumView
  *
  *  @param parent Top-level widget for object.
  */
-SpectrumView::SpectrumView(SpectrumDataSource *dataSource, QWidget *parent) :
+  SpectrumView::SpectrumView(QWidget *parent) :
+    QMainWindow(parent, 0),
+    WorkspaceObserver(),
+    m_ui(new Ui::SpectrumViewer())
+  {
+    m_ui->setupUi(this);
+  }
+
+  SpectrumView::SpectrumView(SpectrumDataSource *dataSource, QWidget *parent) :
   QMainWindow(parent, 0),
   WorkspaceObserver(),
   m_ui(new Ui::SpectrumViewer())

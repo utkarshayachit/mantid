@@ -2745,7 +2745,7 @@ void MantidUI::importNumSeriesLog(const QString &wsName, const QString &logName,
   {
     QwtPlotCurve *c = g->curve(iFilterCurve);
     // Set the right axis as Y axis for the filter curve.
-    c->setAxis(2,1);
+    c->setAxes(2,1);
     // Set style #3 (HorizontalSteps) for curve 1
     // Set scale of right Y-axis (#3) from 0 to 1
     g->setCurveStyle(iFilterCurve,3);

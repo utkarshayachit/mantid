@@ -384,8 +384,8 @@ class QwtSymbol /PyName = PlotSymbol/
 #include <qwt_symbol.h>
 %End
 public:
-  enum Style
-  {
+enum Style
+{
     NoSymbol = -1,
     Ellipse,
     Rect,
@@ -402,10 +402,12 @@ public:
     Star1,
     Star2,
     Hexagon,
-
-    StyleCnt
-  };
-
+    Path,
+    Pixmap,
+    Graphic,
+    SvgDocument,
+    UserStyle = 1000
+};
   QwtSymbol();
   QwtSymbol(Style st, const QBrush &bd, const QPen &pn, const QSize &s);
 
@@ -699,7 +701,7 @@ public:
   void setGrayScale();
   void setIndexedColors();
 
-  void setCurveSymbol(int, const QwtSymbol&);
+  void setCurveSymbol(int, QwtSymbol*);
   void setCurvePen(int, const QPen&);
   void setCurveBrush(int, const QBrush&);
   void setCurveSkipSymbolsCount(int, int);
@@ -832,7 +834,7 @@ public:
     {
       QwtPlotItem* pItem;
       pItem = sipCpp->plotItem(a0);
-      pItem->setAxis(a1 + 2, a2);
+      pItem->setAxes(a1 + 2, a2);
       sipCpp->setAutoScale();
     }
 %End

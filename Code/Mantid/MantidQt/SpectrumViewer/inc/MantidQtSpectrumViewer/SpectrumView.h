@@ -65,6 +65,9 @@ class EXPORT_OPT_MANTIDQT_SPECTRUMVIEWER SpectrumView : public QMainWindow, publ
 public:
 
   /// Construct an SpectrumView to display data from the specified data source
+  SpectrumView(QWidget *parent = 0);
+
+  /// Construct an SpectrumView to display data from the specified data source
   SpectrumView(SpectrumDataSource* dataSource = 0, QWidget *parent = 0);
 
   ~SpectrumView();

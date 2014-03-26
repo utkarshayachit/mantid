@@ -10,6 +10,7 @@
 #include <QApplication>
 #include <qwt_scale_widget.h>
 #include <qwt_scale_engine.h>
+#include <qwt_transform.h>
 
 /**
   * Constructor.
@@ -80,13 +81,13 @@ void ColorMapWidget::setupColorBarScaling(const MantidColorMap& colorMap)
   GraphOptions::ScaleType type = colorMap.getScaleType();
   if( type == GraphOptions::Linear )
   {
+    m_scaleWidget->setTransformation(new QwtNullTransform);
     QwtLinearScaleEngine linScaler;
-    m_scaleWidget->setScaleDiv(linScaler.transformation(), linScaler.divideScale(minValue, maxValue,  20, 5));
-    m_scaleWidget->setColorMap(QwtInterval(minValue, maxValue),colorMap);
+    m_scaleWidget->setScaleDiv(linScaler.divideScale(minValue, maxValue,  20, 5));
+    m_scaleWidget->setColorMap(QwtInterval(minValue, maxValue), ColorMapHelper::clone(colorMap));
   }
   else
  {
-    QwtLog10ScaleEngine logScaler;    
     double logmin(minValue);
     if( logmin <= 0.0 )
     {
@@ -102,8 +103,10 @@ void ColorMapWidget::setupColorBarScaling(const MantidColorMap& colorMap)
       setMaxValue(maxValue);
       m_maxValueBox->blockSignals(false);
     }
-    m_scaleWidget->setScaleDiv(logScaler.transformation(), logScaler.divideScale(logmin, maxValue, 20, 5));
-    m_scaleWidget->setColorMap(QwtInterval(logmin, maxValue), colorMap);
+    m_scaleWidget->setTransformation(new QwtLogTransform);
+    QwtLogScaleEngine logScaler;
+    m_scaleWidget->setScaleDiv(logScaler.divideScale(logmin, maxValue, 20, 5));
+    m_scaleWidget->setColorMap(QwtInterval(logmin, maxValue),ColorMapHelper::clone(colorMap));
   }
   m_scaleOptions->blockSignals(true);
   m_scaleOptions->setCurrentIndex(m_scaleOptions->findData(type));
@@ -203,18 +206,20 @@ void ColorMapWidget::updateScale()
   GraphOptions::ScaleType type = (GraphOptions::ScaleType)m_scaleOptions->itemData(m_scaleOptions->currentIndex()).toUInt();
   if( type == GraphOptions::Linear )
   {
+    m_scaleWidget->setTransformation(new QwtNullTransform);
     QwtLinearScaleEngine linScaler;
-    m_scaleWidget->setScaleDiv(linScaler.transformation(), linScaler.divideScale(minValue, maxValue,  20, 5));
+    m_scaleWidget->setScaleDiv(linScaler.divideScale(minValue, maxValue,  20, 5));
   }
   else
  {
-    QwtLog10ScaleEngine logScaler;    
     double logmin(minValue);
     if( logmin <= 0.0 )
     {
       logmin = m_minPositiveValue;
     }
-    m_scaleWidget->setScaleDiv(logScaler.transformation(), logScaler.divideScale(logmin, maxValue, 20, 5));
+    m_scaleWidget->setTransformation(new QwtLogTransform);
+    QwtLogScaleEngine logScaler;
+    m_scaleWidget->setScaleDiv(logScaler.divideScale(logmin, maxValue, 20, 5));
   }
 }
 

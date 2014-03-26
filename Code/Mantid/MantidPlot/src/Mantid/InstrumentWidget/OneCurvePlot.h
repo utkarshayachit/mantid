@@ -75,7 +75,7 @@ public:
       {}
   void draw(QPainter *painter, 
         const QwtScaleMap &xMap, const QwtScaleMap &yMap,
-        const QRect &canvasRect) const;
+        const QRectF &canvasRect) const;
 private:
   const PeakMarker2D* m_marker;
   const OneCurvePlot* m_plot;

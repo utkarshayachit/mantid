@@ -43,12 +43,16 @@
 
 PlotCurve::PlotCurve(const QString& name) : QwtPlotCurve(name),
     d_type(0), d_x_offset(0.0), d_y_offset(0.0), d_side_lines(false), d_skip_symbols(1), m_isDistribution(false)
-{}
+{
+  setSymbol(new QwtSymbol);
+}
 
 PlotCurve::PlotCurve(const PlotCurve& c) : QObject(), QwtPlotCurve(c.title().text()),
     d_type(c.d_type), d_x_offset(c.d_x_offset), d_y_offset(c.d_y_offset), d_side_lines(c.d_side_lines),
     d_skip_symbols(c.d_skip_symbols), m_isDistribution(c.m_isDistribution)
-{}
+{
+  setSymbol(new QwtSymbol);
+}
 
 QString PlotCurve::saveCurveLayout()
 {

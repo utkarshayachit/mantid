@@ -44,10 +44,11 @@ ScaleTransformation::~ScaleTransformation()
 
 double ScaleTransformation::transform( double value ) const
 {
-  throw std::runtime_error("Unimplemented ScaleTransformation::transform");
+  throw std::runtime_error("ScaleTransformation::transform - scale breaks not implemented!. See qwt/playground/scaleengine");
+  // Deals with different parts of the axis being on different scales
+  GraphOptions::ScaleType scaleType = d_engine->type();
 
-//  // Deals with different parts of the axis being on different scales
-//  GraphOptions::ScaleType scaleType = d_engine->type();
+  return (scaleType == GraphOptions::Linear) ? d_linear_transform->transform(value) : d_log_transform->transform(value);
 
 //  if ((scaleType != GraphOptions::Linear) && s <= 0.0)
 //  {
@@ -130,7 +131,13 @@ double ScaleTransformation::transform( double value ) const
 
 double ScaleTransformation::invTransform( double value ) const
 {
-  throw std::runtime_error("Unimplemented ScaleTransformation::invTransform");
+  throw std::runtime_error("ScaleTransformation::transform - scale breaks not implemented!. See qwt/playground/scaleengine");
+
+  // Deals with different parts of the axis being on different scales
+  GraphOptions::ScaleType scaleType = d_engine->type();
+
+  return (scaleType == GraphOptions::Linear) ? d_linear_transform->invTransform(value) : d_log_transform->invTransform(value);
+
 
   // Deals with different parts of the axis being on different scales
 

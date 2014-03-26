@@ -354,7 +354,13 @@ void Spectrogram::setCustomColorMap(const QwtInterval &interval, QwtColorMap *ma
   if (colorAxis)
   {
     colorAxis->setColorMap(interval, ColorMapHelper::clone(*map));
-  }
+    }
+}
+
+void Spectrogram::loadColorMap(QString filename)
+{
+  GraphOptions::ScaleType type = ScaleEngineTraits::scaleType(*plot()->axisScaleEngine(color_axis));
+  setColorMap(new MantidColorMap(filename, type));
 }
 
 void Spectrogram::setColorMapPen(bool on)

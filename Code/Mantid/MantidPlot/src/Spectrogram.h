@@ -84,9 +84,9 @@ public:
 
   void setGrayScale();
   void setDefaultColorMap();
-
   void setCustomColorMap(QwtColorMap *map);
   void setCustomColorMap(const QwtInterval & interval, QwtColorMap *map);
+  void loadColorMap(QString filename);
 
   void updateData(Matrix *m);
 
