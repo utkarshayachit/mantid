@@ -23,7 +23,7 @@ namespace Mantid
 
     DECLARE_CATALOG(ICat4Catalog)
 
-    ICat4Catalog::ICat4Catalog() : m_session() {}
+    ICat4Catalog::ICat4Catalog() : m_session(), m_catalogHelper() {}
 
     /**
      * Authenticate the user against all catalogues in the container.
@@ -89,7 +89,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
       // Will not reach here if user cannot log in (e.g. no session is created).
       return m_session;
@@ -117,7 +117,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
     }
 
@@ -294,7 +294,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
     }
 
@@ -333,7 +333,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
 
       g_log.debug() << "The number of paging results returned in ICat4Catalog::getNumberOfSearchResults is: " << numOfResults << std::endl;
@@ -376,7 +376,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
     }
 
@@ -488,7 +488,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
     }
 
@@ -554,7 +554,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
     }
 
@@ -643,7 +643,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
     }
 
@@ -684,7 +684,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
     }
 
@@ -726,7 +726,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
       return fileLocation;
     }
@@ -815,7 +815,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
 
       return datasetID;
@@ -837,7 +837,7 @@ namespace Mantid
 
       int result = icat.refresh(&request,&response);
       // An error occurred!
-      if (result != 0) throwErrorMessage(icat);
+      if (result != 0) m_catalogHelper.throwErrorMessage(icat);
     }
 
     /**
@@ -856,33 +856,8 @@ namespace Mantid
           NULL      /* if randfile!=NULL: use a file with random data to seed randomness */
       ))
       {
-        throwErrorMessage(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
-    }
-
-    /**
-     * Throws an error message (returned by gsoap) to Mantid upper layer.
-     * @param icat :: ICATPortBindingProxy object.
-     */
-    void ICat4Catalog::throwErrorMessage(ICat4::ICATPortBindingProxy& icat)
-    {
-      char buf[600];
-      const int len = 600;
-      icat.soap_sprint_fault(buf,len);
-      std::string error(buf);
-      std::string begmsg("<message>");
-      std::string endmsg("</message>");
-
-      std::basic_string <char>::size_type start = error.find(begmsg);
-      std::basic_string <char>::size_type end   = error.find(endmsg);
-      std::string exception;
-
-      if(start != std::string::npos && end != std::string::npos)
-      {
-        exception = error.substr(start + begmsg.length(), end - (start + begmsg.length()) );
-      }
-
-      throw std::runtime_error(exception);
     }
 
     /**

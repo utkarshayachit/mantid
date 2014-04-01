@@ -4,6 +4,7 @@
 #include "MantidAPI/ICatalog.h"
 #include "MantidAPI/ICatalogInfoService.h"
 #include "MantidAPI/TableRow.h"
+#include "MantidICat/CatalogHelper.h"
 #include "MantidICat/CatalogSearchParam.h"
 
 namespace Mantid
@@ -70,8 +71,6 @@ namespace Mantid
         virtual void keepAlive();
 
       private:
-        // Ensures human friendly error messages are provided to the user.
-        void throwErrorMessage(ICat4::ICATPortBindingProxy& icat);
         // Defines the SSL authentication scheme.
         void setSSLContext(ICat4::ICATPortBindingProxy& icat);
         // Saves "MyData" query result to output workspace.
@@ -93,6 +92,8 @@ namespace Mantid
 
         // Stores the session details for a specific catalog.
         API::CatalogSession_sptr m_session;
+        // Allows easy access to helper methods.
+        CatalogHelper m_catalogHelper;
 
         /**
          * Template method to save data to table workspace
