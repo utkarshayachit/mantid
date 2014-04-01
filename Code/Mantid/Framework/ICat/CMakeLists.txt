@@ -1,15 +1,16 @@
 set ( SRC_FILES
-	src/CatalogPublish.cpp
 	src/CatalogAlgorithmHelper.cpp
 	src/CatalogDownloadDataFiles.cpp
 	src/CatalogGetDataFiles.cpp
 	src/CatalogGetDataSets.cpp
+	src/CatalogHelper.cpp
 	src/CatalogKeepAlive.cpp
 	src/CatalogListInstruments.cpp
 	src/CatalogListInvestigationTypes.cpp
 	src/CatalogLogin.cpp
 	src/CatalogLogout.cpp
 	src/CatalogMyDataSearch.cpp
+	src/CatalogPublish.cpp
 	src/CatalogSearch.cpp
 	src/CatalogSearchParam.cpp
 	src/GSoap.cpp
@@ -24,17 +25,18 @@ set ( SRC_FILES
 set ( SRC_UNITY_IGNORE_FILES )
 
 set ( INC_FILES
-	inc/MantidICat/CatalogPublish.h
 	inc/MantidICat/CatalogAlgorithmHelper.h
 	inc/MantidICat/CatalogDownloadDataFiles.h
 	inc/MantidICat/CatalogGetDataFiles.h
 	inc/MantidICat/CatalogGetDataSets.h
+	inc/MantidICat/CatalogHelper.h
 	inc/MantidICat/CatalogKeepAlive.h
 	inc/MantidICat/CatalogListInstruments.h
 	inc/MantidICat/CatalogListInvestigationTypes.h
 	inc/MantidICat/CatalogLogin.h
 	inc/MantidICat/CatalogLogout.h
 	inc/MantidICat/CatalogMyDataSearch.h
+	inc/MantidICat/CatalogPublish.h
 	inc/MantidICat/CatalogSearch.h
 	inc/MantidICat/CatalogSearchParam.h
 	inc/MantidICat/ICatExport.h
