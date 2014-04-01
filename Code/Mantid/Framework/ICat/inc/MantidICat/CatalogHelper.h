@@ -49,6 +49,12 @@ namespace Mantid
 
           throw std::runtime_error(exception);
         }
+
+      private:
+        // Convert a file size to human readable file format.
+        std::string bytesToString(int64_t &fileSize);
+        // Helper method that formats a given timestamp.
+        std::string formatDateTime(const time_t &timestamp, const std::string &format);
     };
   }
 }
