@@ -1,8 +1,7 @@
 #ifndef MANTID_ICAT_CATALOGHELPER_H_
 #define MANTID_ICAT_CATALOGHELPER_H_
 
-#include <iostream>
-#include <stdexcept>
+#include "MantidAPI/TableRow.h"
 
 namespace Mantid
 {
@@ -11,6 +10,19 @@ namespace Mantid
     class CatalogHelper
     {
       public:
+
+
+        /**
+         * Save data value to table workspace if it exists, otherwise insert empty string.
+         * @param value :: Pointer to input value.
+         * @param table :: Table row reference.
+         */
+        template<class T>
+        void saveValueToTableWorkspace(T* value, API::TableRow &table)
+        {
+          if(value || value != 0) table << *value;
+          else table << "";
+        }
 
         /**
          * Parse the message returned by ICAT to obtain a user friendly error message.
@@ -37,7 +49,6 @@ namespace Mantid
 
           throw std::runtime_error(exception);
         }
-
     };
   }
 }
