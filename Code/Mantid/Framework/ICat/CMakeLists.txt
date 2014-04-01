@@ -15,7 +15,6 @@ set ( SRC_FILES
 	src/CatalogSearchParam.cpp
 	src/GSoap.cpp
 	src/ICat3/ICat3GSoapGenerated.cpp
-	src/ICat3/ICat3ErrorHandling.cpp
 	src/ICat3/ICat3Catalog.cpp
 	src/ICat3/ICat3Helper.cpp
 	src/ICat4/ICat4GSoapGenerated.cpp
@@ -46,7 +45,6 @@ set ( INC_FILES
 	inc/MantidICat/ICat3/GSoapGenerated/ICat3H.h
 	inc/MantidICat/ICat3/GSoapGenerated/ICat3ICATPortBindingProxy.h
 	inc/MantidICat/ICat3/GSoapGenerated/ICat3Stub.h
-	inc/MantidICat/ICat3/ICat3ErrorHandling.h
 	inc/MantidICat/ICat3/ICat3Catalog.h
 	inc/MantidICat/ICat3/ICat3Helper.h
 	inc/MantidICat/ICat4/GSoapGenerated/ICat4H.h

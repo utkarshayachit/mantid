@@ -4,7 +4,6 @@
     GCC_DIAG_OFF(literal-suffix)
 #endif
 #include "MantidICat/ICat3/ICat3Helper.h"
-#include "MantidICat/ICat3/ICat3ErrorHandling.h"
 #include "MantidKernel/Logger.h"
 #include <iomanip>
 #include <time.h>
@@ -24,7 +23,7 @@ namespace Mantid
       Kernel::Logger g_log("CICatHelper");
     }
 
-    CICatHelper::CICatHelper() : m_session() {}
+    CICatHelper::CICatHelper() : m_session(), m_catalogHelper() {}
 
     /* This method calls ICat API searchbydavanced and do the basic run search
      * @param icat :: Proxy object for ICat
@@ -40,7 +39,7 @@ namespace Mantid
       if(ret_advsearch!=0)
       {
 
-        CErrorHandling::throwErrorMessages(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
       clock_t end=clock();
       float diff = float(end -start)/CLOCKS_PER_SEC;
@@ -134,7 +133,7 @@ namespace Mantid
       }
       else
       {
-        CErrorHandling::throwErrorMessages(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
     }
 
@@ -247,7 +246,7 @@ namespace Mantid
       }
       else
       {
-        CErrorHandling::throwErrorMessages(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
     }
 
@@ -325,7 +324,7 @@ namespace Mantid
       }
       else
       {
-        CErrorHandling::throwErrorMessages(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
     }
 
@@ -355,7 +354,7 @@ namespace Mantid
       }
       else
       {
-        CErrorHandling::throwErrorMessages(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
     }
 
@@ -402,7 +401,7 @@ namespace Mantid
       int ret=icat.getMyInvestigationsIncludes(&request,&response);
       if(ret!=0)
       {
-        CErrorHandling::throwErrorMessages(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
       if(response.return_.empty())
       {
@@ -474,7 +473,7 @@ namespace Mantid
       if(result != 0)
       {
         //replace with mantid error routine
-        CErrorHandling::throwErrorMessages(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
       if(response.return_.empty())
       {
@@ -606,7 +605,7 @@ namespace Mantid
       }
       else
       {
-        CErrorHandling::throwErrorMessages(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
 
       g_log.debug() << "CICatHelper::getNumberOfSearchResults -> Number of results returned is: { " << numOfResults << " }" << std::endl;
@@ -678,7 +677,7 @@ namespace Mantid
       }
       else
       {
-        CErrorHandling::throwErrorMessages(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
       return downloadURL;
     }
@@ -737,7 +736,7 @@ namespace Mantid
         NULL      /* if randfile!=NULL: use a file with random data to seed randomness */
         ))
       {
-        CErrorHandling::throwErrorMessages(icat);
+        m_catalogHelper.throwErrorMessage(icat);
       }
     }
   }

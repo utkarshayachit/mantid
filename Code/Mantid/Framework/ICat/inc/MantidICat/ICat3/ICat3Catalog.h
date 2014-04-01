@@ -3,7 +3,6 @@
 
 #include "MantidAPI/ICatalog.h"
 #include "MantidAPI/ICatalogInfoService.h"
-#include "MantidICat/ICat3/ICat3ErrorHandling.h"
 #include "MantidICat/ICat3/ICat3Helper.h"
 #include "MantidICat/CatalogSearchParam.h"
 

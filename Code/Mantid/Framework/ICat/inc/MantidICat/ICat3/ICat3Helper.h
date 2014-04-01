@@ -3,6 +3,7 @@
 
 
 #include "MantidICat/ICat3/GSoapGenerated/ICat3ICATPortBindingProxy.h"
+#include "MantidICat/CatalogHelper.h"
 #include "MantidICat/CatalogSearchParam.h"
 #include "MantidAPI/CatalogSession.h"
 #include "MantidAPI/ITableWorkspace.h"
@@ -131,6 +132,8 @@ namespace Mantid
       }
       // Stores the session details for a specific catalog.
       API::CatalogSession_sptr m_session;
+      // Allows easy access to helper methods.
+      CatalogHelper m_catalogHelper;
     };
 
 
