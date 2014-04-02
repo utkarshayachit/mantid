@@ -6,6 +6,12 @@ namespace Mantid
   namespace ICat
   {
     /**
+     * Attach a session to the catalog helper as each
+     * catalog will make use of the same session and helper.
+     */
+    CatalogHelper::CatalogHelper() : session() {}
+
+    /**
      * Convert a file size to human readable file format.
      * @param fileSize :: The size in bytes of the file.
      */

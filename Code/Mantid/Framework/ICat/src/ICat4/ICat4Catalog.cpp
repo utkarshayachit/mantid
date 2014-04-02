@@ -23,7 +23,7 @@ namespace Mantid
 
     DECLARE_CATALOG(ICat4Catalog)
 
-    ICat4Catalog::ICat4Catalog() : m_session(), m_catalogHelper() {}
+    ICat4Catalog::ICat4Catalog() : m_catalogHelper() {}
 
     /**
      * Authenticate the user against all catalogues in the container.
@@ -35,13 +35,10 @@ namespace Mantid
     API::CatalogSession_sptr ICat4Catalog::login(const std::string& username,const std::string& password,
         const std::string& endpoint, const std::string& facility)
     {
-      // Created the session object here in order to set the endpoint, which is used in setICATProxySettings.
-      // We can then manually set the sessionID later if it exists.
-      m_session = boost::make_shared<API::CatalogSession>("",facility,endpoint);
-
-      // Securely set, including soap-endpoint.
       ICat4::ICATPortBindingProxy icat;
-      setICATProxySettings(icat);
+
+      icat.soap_endpoint = endpoint.c_str();
+      setSSLContext(icat);
 
       // Used to authenticate the user.
       ns1__login login;
@@ -85,14 +82,16 @@ namespace Mantid
 
       if (result == 0)
       {
-        m_session->setSessionId(*(loginResponse.return_));
+        // Create the session object as authentication was a success.
+        m_catalogHelper.session = boost::make_shared<API::CatalogSession>(
+            *(loginResponse.return_),facility,endpoint);
       }
       else
       {
         m_catalogHelper.throwErrorMessage(icat);
       }
       // Will not reach here if user cannot log in (e.g. no session is created).
-      return m_session;
+      return m_catalogHelper.session;
     }
 
     /**
@@ -106,14 +105,14 @@ namespace Mantid
       ns1__logout request;
       ns1__logoutResponse response;
 
-      std::string sessionID = m_session->getSessionId();
+      std::string sessionID = m_catalogHelper.session->getSessionId();
       request.sessionId = &sessionID;
 
       int result = icat.logout(&request,&response);
 
       if(result == 0)
       {
-        m_session->setSessionId("");
+        m_catalogHelper.session->setSessionId("");
       }
       else
       {
@@ -282,7 +281,7 @@ namespace Mantid
       ns1__search request;
       ns1__searchResponse response;
 
-      std::string sessionID = m_session->getSessionId();
+      std::string sessionID = m_catalogHelper.session->getSessionId();
       request.sessionId = &sessionID;
       request.query = &query;
 
@@ -317,7 +316,7 @@ namespace Mantid
       query.insert(0, "SELECT COUNT(DISTINCT inves)");
       request.query         = &query;
 
-      std::string sessionID = m_session->getSessionId();
+      std::string sessionID = m_catalogHelper.session->getSessionId();
       request.sessionId = &sessionID;
 
       g_log.debug() << "The paging search query in ICat4Catalog::getNumberOfSearchResults is: \n" << query << std::endl;
@@ -354,9 +353,9 @@ namespace Mantid
       ns1__searchResponse response;
 
       // Prevents any calls to myData from hanging due to sending a request to icat without a session ID.
-      if (m_session->getSessionId().empty()) return;
+      if (m_catalogHelper.session->getSessionId().empty()) return;
 
-      std::string sessionID = m_session->getSessionId();
+      std::string sessionID = m_catalogHelper.session->getSessionId();
       request.sessionId = &sessionID;
 
       std::string query = "SELECT DISTINCT inves "
@@ -449,7 +448,7 @@ namespace Mantid
           {
             savetoTableWorkspace(&emptyCell, table);
           }
-          std::string sessionID = m_session->getSessionId();
+          std::string sessionID = m_catalogHelper.session->getSessionId();
           savetoTableWorkspace(&sessionID, table);
         }
         else
@@ -475,7 +474,7 @@ namespace Mantid
       std::string query = "Datafile <-> Dataset <-> Investigation[name = '" + investigationId + "']";
       request.query     = &query;
 
-      std::string sessionID = m_session->getSessionId();
+      std::string sessionID = m_catalogHelper.session->getSessionId();
       request.sessionId = &sessionID;
 
       g_log.debug() << "ICat4Catalog::getDataSets -> { " << query << " }" << std::endl;
@@ -541,7 +540,7 @@ namespace Mantid
       std::string query = "Datafile <-> Dataset <-> Investigation[name = '" + investigationId + "']";
       request.query     = &query;
 
-      std::string sessionID = m_session->getSessionId();
+      std::string sessionID = m_catalogHelper.session->getSessionId();
       request.sessionId = &sessionID;
 
       g_log.debug() << "The query for ICat4Catalog::getDataSets is:\n" << query << std::endl;
@@ -575,7 +574,7 @@ namespace Mantid
       std::string query = "Instrument.fullName ORDER BY fullName";
       request.query     = &query;
 
-      std::string sessionID = m_session->getSessionId();
+      std::string sessionID = m_catalogHelper.session->getSessionId();
       request.sessionId = &sessionID;
 
       int result = icat.search(&request, &response);
@@ -616,7 +615,7 @@ namespace Mantid
       std::string query = "InvestigationType.name ORDER BY name";
       request.query     = &query;
 
-      std::string sessionID = m_session->getSessionId();
+      std::string sessionID = m_catalogHelper.session->getSessionId();
       request.sessionId = &sessionID;
 
       int result = icat.search(&request, &response);
@@ -659,7 +658,7 @@ namespace Mantid
       request.query      = &query;
       request.primaryKey = fileID;
 
-      std::string sessionID = m_session->getSessionId();
+      std::string sessionID = m_catalogHelper.session->getSessionId();
       request.sessionId = &sessionID;
 
       int result = icat.get(&request, &response);
@@ -693,10 +692,10 @@ namespace Mantid
     const std::string ICat4Catalog::getDownloadURL(const long long & fileID)
     {
       // Obtain the URL from the Facilities.xml file.
-      std::string url = ConfigService::Instance().getFacility(m_session->getFacility()).catalogInfo().externalDownloadURL();
+      std::string url = ConfigService::Instance().getFacility(m_catalogHelper.session->getFacility()).catalogInfo().externalDownloadURL();
 
       // Set the REST features of the URL.
-      std::string session  = "sessionId="    + m_session->getSessionId();
+      std::string session  = "sessionId="    + m_catalogHelper.session->getSessionId();
       std::string datafile = "&datafileIds=" + boost::lexical_cast<std::string>(fileID);
       std::string outname  = "&outname="     + boost::lexical_cast<std::string>(fileID);
 
@@ -717,10 +716,10 @@ namespace Mantid
         const std::string &investigationID, const std::string &createFileName, const std::string &dataFileDescription)
     {
       // Obtain the URL from the Facilities.xml file.
-      std::string url = ConfigService::Instance().getFacility(m_session->getFacility()).catalogInfo().externalDownloadURL();
+      std::string url = ConfigService::Instance().getFacility(m_catalogHelper.session->getFacility()).catalogInfo().externalDownloadURL();
 
       // Set the elements of the URL.
-      std::string session   = "sessionId="  + m_session->getSessionId();
+      std::string session   = "sessionId="  + m_catalogHelper.session->getSessionId();
       std::string name      = "&name="      + createFileName;
       std::string datasetId = "&datasetId=" + boost::lexical_cast<std::string>(getDatasetId(investigationID));
       std::string description = "&description=" + dataFileDescription;
@@ -747,7 +746,7 @@ namespace Mantid
 
       std::string query = "Dataset <-> Investigation[name = '" + investigationID + "']";
       request.query     = &query;
-      std::string sessionID = m_session->getSessionId();
+      std::string sessionID = m_catalogHelper.session->getSessionId();
       request.sessionId = &sessionID;
 
       g_log.debug() << "The query performed to obtain a dataset from an investigation" <<
@@ -786,7 +785,7 @@ namespace Mantid
       ns1__refresh request;
       ns1__refreshResponse response;
 
-      std::string sessionID = m_session->getSessionId();
+      std::string sessionID = m_catalogHelper.session->getSessionId();
       request.sessionId = &sessionID;
 
       int result = icat.refresh(&request,&response);
@@ -853,9 +852,9 @@ namespace Mantid
     {
       // The soapEndPoint is only set when the user logs into the catalog.
       // If it's not set the correct error is returned (invalid sessionID) from the ICAT server.
-      if (m_session->getSoapEndpoint().empty()) return;
+      if (m_catalogHelper.session->getSoapEndpoint().empty()) return;
       // Set the soap-endpoint of the catalog we want to use.
-      icat.soap_endpoint = m_session->getSoapEndpoint().c_str();
+      icat.soap_endpoint = m_catalogHelper.session->getSoapEndpoint().c_str();
       // Sets SSL authentication scheme
       setSSLContext(icat);
     }

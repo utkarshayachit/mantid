@@ -1,6 +1,7 @@
 #ifndef MANTID_ICAT_CATALOGHELPER_H_
 #define MANTID_ICAT_CATALOGHELPER_H_
 
+#include "MantidAPI/CatalogSession.h"
 #include "MantidAPI/ITableWorkspace.h"
 #include "MantidAPI/TableRow.h"
 
@@ -11,6 +12,8 @@ namespace Mantid
     class CatalogHelper
     {
       public:
+
+        CatalogHelper();
 
         /**
          * Save data value to table workspace if it exists, otherwise insert empty string.
@@ -35,7 +38,6 @@ namespace Mantid
         {
           if (outputws->getColumnNames().empty())
           {
-            // Add rows headers to the output workspace.
             outputws->addColumn("str","Name");
             outputws->addColumn("str","Location");
             outputws->addColumn("str","Create Time");
@@ -109,6 +111,9 @@ namespace Mantid
           }
           return data;
         }
+
+        // Stores the session details for a specific catalog.
+        API::CatalogSession_sptr session;
 
       private:
         // Convert a file size to human readable file format.
