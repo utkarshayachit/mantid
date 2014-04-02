@@ -12,7 +12,6 @@ namespace Mantid
     {
       public:
 
-
         /**
          * Save data value to table workspace if it exists, otherwise insert empty string.
          * @param value :: Pointer to input value.
@@ -90,6 +89,25 @@ namespace Mantid
           }
 
           throw std::runtime_error(exception);
+        }
+
+        /**
+         * Casts the container's content types from A to B.
+         * @param container :: The container holding objects of type A.
+         * @return A vector containing objects of type B.
+         */
+        template <typename A, class B>
+        std::vector<B> castContainerType(A& container,B&)
+        {
+          std::vector<B> data;
+
+          for(auto iter = container.begin(); iter != container.end(); ++iter)
+          {
+            B desiredType = dynamic_cast<B>(*iter);
+            if (desiredType) data.push_back(desiredType);
+            else throw std::runtime_error("An error occurred casting vector types.");
+          }
+          return data;
         }
 
       private:
