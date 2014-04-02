@@ -408,44 +408,11 @@ namespace Mantid
 
       if (result == 0)
       {
-        saveDataSets(response.return_, outputws);
+        m_catalogHelper.saveDataSets(response.return_, outputws);
       }
       else
       {
         m_catalogHelper.throwErrorMessage(icat);
-      }
-    }
-
-    /**
-     * Loops through the response vector and saves the datasets details to a table workspace.
-     * @param response :: A vector containing the results of the search query.
-     * @param outputws :: Shared pointer to output workspace.
-     */
-    void ICat4Catalog::saveDataSets(std::vector<xsd__anyType*> response, API::ITableWorkspace_sptr& outputws)
-    {
-      if (outputws->getColumnNames().empty())
-      {
-        // Add rows headers to the output workspace.
-        outputws->addColumn("str","Name");
-        outputws->addColumn("str","Status");
-        outputws->addColumn("str","Type");
-        outputws->addColumn("str","Description");
-        outputws->addColumn("str","Sample Id");
-      }
-
-      std::string temp("");
-
-      std::vector<xsd__anyType*>::const_iterator iter;
-      for(iter = response.begin(); iter != response.end(); ++iter)
-      {
-        API::TableRow table = outputws->appendRow();
-        // These are just temporary values in order for the GUI to not die.
-        // These along with related GUI aspects will be removed in another ticket.
-        savetoTableWorkspace(&temp, table);
-        savetoTableWorkspace(&temp, table);
-        savetoTableWorkspace(&temp, table);
-        savetoTableWorkspace(&temp, table);
-        savetoTableWorkspace(&temp, table);
       }
     }
 

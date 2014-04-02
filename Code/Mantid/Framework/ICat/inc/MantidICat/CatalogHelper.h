@@ -184,6 +184,38 @@ namespace Mantid
           }
         }
 
+        /**
+         * Saves information of datasets to a workspace.
+         * @param datasets :: The holder containing datasets.
+         * @param outputws :: The workspace to write the datasets information to.
+         */
+        template <typename T>
+        void saveDataSets(T& datasets, API::ITableWorkspace_sptr& outputws)
+        {
+          if (outputws->getColumnNames().empty())
+          {
+            // Add rows headers to the output workspace.
+            outputws->addColumn("str","Name");
+            outputws->addColumn("str","Description");
+            outputws->addColumn("str","Start date");
+            outputws->addColumn("str","End date");
+            outputws->addColumn("str","DOI");
+          }
+
+          std::string temp("");
+
+          for(auto iter = datasets.begin(); iter != datasets.end(); ++iter)
+          {
+            API::TableRow table = outputws->appendRow();
+
+            saveValueToTableWorkspace(&temp, table);
+            saveValueToTableWorkspace(&temp, table);
+            saveValueToTableWorkspace(&temp, table);
+            saveValueToTableWorkspace(&temp, table);
+            saveValueToTableWorkspace(&temp, table);
+          }
+        }
+
         // Stores the session details for a specific catalog.
         API::CatalogSession_sptr session;
 
