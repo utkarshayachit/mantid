@@ -18,16 +18,32 @@ namespace Mantid
         // Helper method that formats a given timestamp.
         std::string formatDateTime(const time_t &timestamp, const std::string &format);
 
+        // Stores the session details for a specific catalog.
+        API::CatalogSession_sptr session;
+
+      private:
+        // Convert a file size to human readable file format.
+        std::string bytesToString(int64_t &fileSize);
+
+      public:
+
         /**
-         * Save data value to table workspace if it exists, otherwise insert empty string.
-         * @param value :: Pointer to input value.
-         * @param table :: Table row reference.
+         * Casts the container's content types from A to B.
+         * @param container :: The container holding objects of type A.
+         * @return A vector containing objects of type B.
          */
-        template<class T>
-        void saveValueToTableWorkspace(T* value, API::TableRow &table)
+        template <typename A, class B>
+        std::vector<B> castContainerType(A& container,B&)
         {
-          if(value || value != 0) table << *value;
-          else table << "";
+          std::vector<B> data;
+
+          for(auto iter = container.begin(); iter != container.end(); ++iter)
+          {
+            B desiredType = dynamic_cast<B>(*iter);
+            if (desiredType) data.push_back(desiredType);
+            else throw std::runtime_error("An error occurred casting vector types.");
+          }
+          return data;
         }
 
         /**
@@ -71,48 +87,35 @@ namespace Mantid
         }
 
         /**
-         * Parse the message returned by ICAT to obtain a user friendly error message.
-         * @param icatProxy :: The PortBindingProxy of the ICAT instance.
+         * Saves information of datasets to a workspace.
+         * @param datasets :: The holder containing datasets.
+         * @param outputws :: The workspace to write the datasets information to.
          */
-        template <class T>
-        void throwErrorMessage(T& icatProxy)
+        template <typename T>
+        void saveDataSets(T& datasets, API::ITableWorkspace_sptr& outputws)
         {
-          char buf[600];
-          icatProxy.soap_sprint_fault(buf,600);
-          std::string error(buf);
-
-          std::string begmsg("<message>");
-          std::string endmsg("</message>");
-
-          auto start = error.find(begmsg);
-          auto end   = error.find(endmsg);
-          std::string exception;
-
-          if(start != std::string::npos && end != std::string::npos)
+          if (outputws->getColumnNames().empty())
           {
-            exception = error.substr(start + begmsg.length(), end - (start + begmsg.length()));
+            // Add rows headers to the output workspace.
+            outputws->addColumn("str","Name");
+            outputws->addColumn("str","Description");
+            outputws->addColumn("str","Start date");
+            outputws->addColumn("str","End date");
+            outputws->addColumn("str","DOI");
           }
 
-          throw std::runtime_error(exception);
-        }
+          std::string temp("");
 
-        /**
-         * Casts the container's content types from A to B.
-         * @param container :: The container holding objects of type A.
-         * @return A vector containing objects of type B.
-         */
-        template <typename A, class B>
-        std::vector<B> castContainerType(A& container,B&)
-        {
-          std::vector<B> data;
-
-          for(auto iter = container.begin(); iter != container.end(); ++iter)
+          for(auto iter = datasets.begin(); iter != datasets.end(); ++iter)
           {
-            B desiredType = dynamic_cast<B>(*iter);
-            if (desiredType) data.push_back(desiredType);
-            else throw std::runtime_error("An error occurred casting vector types.");
+            API::TableRow table = outputws->appendRow();
+
+            saveValueToTableWorkspace(&temp, table);
+            saveValueToTableWorkspace(&temp, table);
+            saveValueToTableWorkspace(&temp, table);
+            saveValueToTableWorkspace(&temp, table);
+            saveValueToTableWorkspace(&temp, table);
           }
-          return data;
         }
 
         /**
@@ -185,43 +188,43 @@ namespace Mantid
         }
 
         /**
-         * Saves information of datasets to a workspace.
-         * @param datasets :: The holder containing datasets.
-         * @param outputws :: The workspace to write the datasets information to.
+         * Save data value to table workspace if it exists, otherwise insert empty string.
+         * @param value :: Pointer to input value.
+         * @param table :: Table row reference.
          */
-        template <typename T>
-        void saveDataSets(T& datasets, API::ITableWorkspace_sptr& outputws)
+        template<class T>
+        void saveValueToTableWorkspace(T* value, API::TableRow &table)
         {
-          if (outputws->getColumnNames().empty())
-          {
-            // Add rows headers to the output workspace.
-            outputws->addColumn("str","Name");
-            outputws->addColumn("str","Description");
-            outputws->addColumn("str","Start date");
-            outputws->addColumn("str","End date");
-            outputws->addColumn("str","DOI");
-          }
-
-          std::string temp("");
-
-          for(auto iter = datasets.begin(); iter != datasets.end(); ++iter)
-          {
-            API::TableRow table = outputws->appendRow();
-
-            saveValueToTableWorkspace(&temp, table);
-            saveValueToTableWorkspace(&temp, table);
-            saveValueToTableWorkspace(&temp, table);
-            saveValueToTableWorkspace(&temp, table);
-            saveValueToTableWorkspace(&temp, table);
-          }
+          if(value || value != 0) table << *value;
+          else table << "";
         }
 
-        // Stores the session details for a specific catalog.
-        API::CatalogSession_sptr session;
+        /**
+         * Parse the message returned by ICAT to obtain a user friendly error message.
+         * @param icatProxy :: The PortBindingProxy of the ICAT instance.
+         */
+        template <class T>
+        void throwErrorMessage(T& icatProxy)
+        {
+          char buf[600];
+          icatProxy.soap_sprint_fault(buf,600);
+          std::string error(buf);
 
-      private:
-        // Convert a file size to human readable file format.
-        std::string bytesToString(int64_t &fileSize);
+          std::string begmsg("<message>");
+          std::string endmsg("</message>");
+
+          auto start = error.find(begmsg);
+          auto end   = error.find(endmsg);
+          std::string exception;
+
+          if(start != std::string::npos && end != std::string::npos)
+          {
+            exception = error.substr(start + begmsg.length(), end - (start + begmsg.length()));
+          }
+
+          throw std::runtime_error(exception);
+        }
+
     };
   }
 }
