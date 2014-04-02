@@ -550,59 +550,13 @@ namespace Mantid
 
       if (result == 0)
       {
-        saveDataFiles(response.return_, outputws);
+        ns1__datafile* datafile;
+        auto datafiles = m_catalogHelper.castContainerType(response.return_,datafile);
+        m_catalogHelper.saveDataFiles(datafiles,outputws);
       }
       else
       {
         m_catalogHelper.throwErrorMessage(icat);
-      }
-    }
-
-    /**
-     * Saves result from "getDataFiles" to workspace.
-     * @param response :: result response from the catalog.
-     * @param outputws :: shared pointer to datasets
-     */
-    void ICat4Catalog::saveDataFiles(std::vector<xsd__anyType*> response, API::ITableWorkspace_sptr& outputws)
-    {
-      if (outputws->getColumnNames().empty())
-      {
-        // Add rows headers to the output workspace.
-        outputws->addColumn("str","Name");
-        outputws->addColumn("str","Location");
-        outputws->addColumn("str","Create Time");
-        outputws->addColumn("long64","Id");
-        outputws->addColumn("long64","File size(bytes)");
-        outputws->addColumn("str","File size");
-        outputws->addColumn("str","Description");
-      }
-
-      std::vector<xsd__anyType*>::const_iterator iter;
-      for(iter = response.begin(); iter != response.end(); ++iter)
-      {
-        ns1__datafile * datafile = dynamic_cast<ns1__datafile*>(*iter);
-        if (datafile)
-        {
-          API::TableRow table = outputws->appendRow();
-          // Now add the relevant investigation data to the table.
-          savetoTableWorkspace(datafile->name, table);
-          savetoTableWorkspace(datafile->location, table);
-
-          std::string createDate = formatDateTime(*datafile->createTime, "%Y-%m-%d %H:%M:%S");
-          savetoTableWorkspace(&createDate, table);
-
-          savetoTableWorkspace(datafile->id, table);
-          savetoTableWorkspace(datafile->fileSize, table);
-
-          std::string fileSize = bytesToString(*datafile->fileSize);
-          savetoTableWorkspace(&fileSize, table);
-
-          if (datafile->description) savetoTableWorkspace(datafile->description, table);
-        }
-        else
-        {
-          throw std::runtime_error("ICat4Catalog::saveDataFiles expected a datafile. Please contact the Mantid development team.");
-        }
       }
     }
 

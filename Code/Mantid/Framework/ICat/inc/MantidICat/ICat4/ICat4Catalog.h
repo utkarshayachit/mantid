@@ -77,8 +77,6 @@ namespace Mantid
         void saveInvestigations(std::vector<ICat4::xsd__anyType*> response, API::ITableWorkspace_sptr& outputws);
         // Creates a search query string based on inputs provided by the user.
         std::string buildSearchQuery(const CatalogSearchParam& inputs);
-        // Saves "DataFiles" result to output workspace.
-        void saveDataFiles(std::vector<ICat4::xsd__anyType*> response, API::ITableWorkspace_sptr& outputws);
         // Saves "DataSets" information to the output workspace.
         void saveDataSets(std::vector<ICat4::xsd__anyType*> response, API::ITableWorkspace_sptr& outputws);
         // Convert a file size to human readable file format.
