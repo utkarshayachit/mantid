@@ -73,14 +73,14 @@ namespace Mantid
             const std::string &investigationID, const std::string &createFileName, const std::string &dataFileDescription);
 
       private:
-        // Defines the SSL authentication scheme.
-        void setSSLContext(ICat4::ICATPortBindingProxy& icat);
         // Creates a search query string based on inputs provided by the user.
         std::string buildSearchQuery(const CatalogSearchParam& inputs);
         // Search the archive & obtain the dataset ID based on the investigationID.
         int64_t getDatasetId(const std::string &investigationID);
         // Sets the soap-endpoint & SSL context for the given ICAT proxy.
         void setICATProxySettings(ICat4::ICATPortBindingProxy& icat);
+        // Defines the SSL authentication scheme.
+        void setSSLContext(ICat4::ICATPortBindingProxy& icat);
 
         // Allows easy access to helper methods.
         CatalogHelper m_catalogHelper;

@@ -121,140 +121,6 @@ namespace Mantid
     }
 
     /**
-     * Creates a search query string based on inputs provided by the user.
-     * @param inputs :: reference to a class contains search inputs.
-     * @return a query string constructed from user input.
-     */
-    std::string ICat4Catalog::buildSearchQuery(const CatalogSearchParam& inputs)
-    {
-      // Contain the related where and join clauses for the search query based on user-input.
-      std::vector<std::string> whereClause, joinClause;
-
-      // Format the timestamps in order to compare them.
-      std::string startDate = m_catalogHelper.formatDateTime(inputs.getStartDate(), "%Y-%m-%d %H:%M:%S");
-      std::string endDate   = m_catalogHelper.formatDateTime(inputs.getEndDate() + ((23*60*60) + (59*60) + 59), "%Y-%m-%d %H:%M:%S");
-
-      // Investigation startDate if endDate is not selected
-      if (inputs.getStartDate() != 0 && inputs.getEndDate() == 0)
-      {
-        whereClause.push_back("inves.startDate >= '" + startDate + "'");
-      }
-
-      // Investigation endDate if startdate is not selected
-      if (inputs.getEndDate() != 0 && inputs.getStartDate() == 0)
-      {
-        whereClause.push_back("inves.endDate <= '" + endDate + "'");
-      }
-
-      // Investigation Start and end date if both selected
-      if(inputs.getStartDate() != 0 && inputs.getEndDate() != 0)
-      {
-        whereClause.push_back("inves.startDate BETWEEN '" + startDate + "' AND '" + endDate + "'");
-      }
-
-      // Investigation name (title)
-      if(!inputs.getInvestigationName().empty())
-      {
-        whereClause.push_back("inves.title LIKE '%" + inputs.getInvestigationName() + "%'");
-      }
-
-      // Investigation id
-      if(!inputs.getInvestigationId().empty())
-      {
-        whereClause.push_back("inves.name = '" + inputs.getInvestigationId() + "'");
-      }
-
-      // Investigation type
-      if(!inputs.getInvestigationType().empty())
-      {
-        joinClause.push_back("JOIN inves.type itype");
-        whereClause.push_back("itype.name = '" + inputs.getInvestigationType() + "'");
-      }
-
-      // Instrument name
-      if(!inputs.getInstrument().empty())
-      {
-        joinClause.push_back("JOIN inves.investigationInstruments invInst");
-        joinClause.push_back("JOIN invInst.instrument inst");
-        whereClause.push_back("inst.fullName = '" + inputs.getInstrument() + "'");
-      }
-
-      // Keywords
-      if(!inputs.getKeywords().empty())
-      {
-        joinClause.push_back("JOIN inves.keywords keywords");
-        whereClause.push_back("keywords.name IN ('" + inputs.getKeywords() + "')");
-      }
-
-      // Sample name
-      if(!inputs.getSampleName().empty())
-      {
-        joinClause.push_back("JOIN inves.samples sample");
-        whereClause.push_back("sample.name LIKE '%" + inputs.getSampleName() + "%'");
-      }
-
-      // If the user has selected the "My data only" button.
-      // (E.g. they want to display or search through all the data they have access to.
-      if (inputs.getMyData())
-      {
-        joinClause.push_back("JOIN inves.investigationUsers users");
-        joinClause.push_back("JOIN users.user user");
-        whereClause.push_back("user.name = :user");
-      }
-
-      // Investigators complete name.
-      if (!inputs.getInvestigatorSurName().empty())
-      {
-        // We join another investigationUsers & user tables as we need two aliases.
-        joinClause.push_back("JOIN inves.investigationUsers usrs");
-        joinClause.push_back("JOIN usrs.user usr");
-        whereClause.push_back("usr.fullName LIKE '%" + inputs.getInvestigatorSurName() + "%'");
-      }
-
-      // Similar to above. We check if either has been input,
-      // join the related table and add the specific WHERE clause.
-      if(!inputs.getDatafileName().empty() || (inputs.getRunStart() > 0 && inputs.getRunEnd() > 0))
-      {
-        joinClause.push_back("JOIN inves.datasets dataset");
-        joinClause.push_back("JOIN dataset.datafiles datafile");
-
-        if (!inputs.getDatafileName().empty())
-        {
-          whereClause.push_back("datafile.name LIKE '%" + inputs.getDatafileName() + "%'");
-        }
-
-        if (inputs.getRunStart() > 0 && inputs.getRunEnd() > 0)
-        {
-          joinClause.push_back("JOIN datafile.parameters datafileparameters");
-          joinClause.push_back("JOIN datafileparameters.type dtype");
-          whereClause.push_back("dtype.name='run_number' AND datafileparameters.numericValue BETWEEN "
-              + Strings::toString(inputs.getRunStart()) + " AND " + Strings::toString(inputs.getRunEnd()) + "");
-        }
-      }
-
-      std::string query;
-
-      // This prevents the user searching the entire archive (E.g. there is no "default" query).
-      if (!whereClause.empty() || !joinClause.empty())
-      {
-        std::string from, join, where, orderBy, includes;
-
-        from     = " FROM Investigation inves ";
-        join     = Strings::join(joinClause.begin(), joinClause.end(), " ");
-        where    = Strings::join(whereClause.begin(), whereClause.end(), " AND ");
-        orderBy  = " ORDER BY inves.id DESC";
-        includes = " INCLUDE inves.facility, inves.investigationInstruments.instrument, inves.parameters";
-
-        // As we joined all WHERE clause with AND we need to include the WHERE at the start of the where segment.
-        where.insert(0, " WHERE ");
-        // Build the query from the result.
-        query = from + join + where + orderBy + includes;
-      }
-
-      return (query);
-    }
-
-    /**
      * Searches for the relevant data based on user input.
      * @param inputs   :: reference to a class contains search inputs
      * @param outputws :: shared pointer to search results workspace
@@ -534,6 +400,25 @@ namespace Mantid
     }
 
     /**
+     * Keep the current session alive.
+     */
+    void ICat4Catalog::keepAlive()
+    {
+      ICat4::ICATPortBindingProxy icat;
+      setICATProxySettings(icat);
+
+      ns1__refresh request;
+      ns1__refreshResponse response;
+
+      std::string sessionID = m_catalogHelper.session->getSessionId();
+      request.sessionId = &sessionID;
+
+      int result = icat.refresh(&request,&response);
+      // An error occurred!
+      if (result != 0) m_catalogHelper.throwErrorMessage(icat);
+    }
+
+    /**
      * Gets the file location string from the archives.
      * @param fileID :: The id of the file to search for.
      * @return The location of the datafile stored on the archives.
@@ -622,6 +507,139 @@ namespace Mantid
       return url;
     }
 
+    /**
+     * Creates a search query string based on inputs provided by the user.
+     * @param inputs :: reference to a class contains search inputs.
+     * @return a query string constructed from user input.
+     */
+    std::string ICat4Catalog::buildSearchQuery(const CatalogSearchParam& inputs)
+    {
+      // Contain the related where and join clauses for the search query based on user-input.
+      std::vector<std::string> whereClause, joinClause;
+
+      // Format the timestamps in order to compare them.
+      std::string startDate = m_catalogHelper.formatDateTime(inputs.getStartDate(), "%Y-%m-%d %H:%M:%S");
+      std::string endDate   = m_catalogHelper.formatDateTime(inputs.getEndDate() + ((23*60*60) + (59*60) + 59), "%Y-%m-%d %H:%M:%S");
+
+      // Investigation startDate if endDate is not selected
+      if (inputs.getStartDate() != 0 && inputs.getEndDate() == 0)
+      {
+        whereClause.push_back("inves.startDate >= '" + startDate + "'");
+      }
+
+      // Investigation endDate if startdate is not selected
+      if (inputs.getEndDate() != 0 && inputs.getStartDate() == 0)
+      {
+        whereClause.push_back("inves.endDate <= '" + endDate + "'");
+      }
+
+      // Investigation Start and end date if both selected
+      if(inputs.getStartDate() != 0 && inputs.getEndDate() != 0)
+      {
+        whereClause.push_back("inves.startDate BETWEEN '" + startDate + "' AND '" + endDate + "'");
+      }
+
+      // Investigation name (title)
+      if(!inputs.getInvestigationName().empty())
+      {
+        whereClause.push_back("inves.title LIKE '%" + inputs.getInvestigationName() + "%'");
+      }
+
+      // Investigation id
+      if(!inputs.getInvestigationId().empty())
+      {
+        whereClause.push_back("inves.name = '" + inputs.getInvestigationId() + "'");
+      }
+
+      // Investigation type
+      if(!inputs.getInvestigationType().empty())
+      {
+        joinClause.push_back("JOIN inves.type itype");
+        whereClause.push_back("itype.name = '" + inputs.getInvestigationType() + "'");
+      }
+
+      // Instrument name
+      if(!inputs.getInstrument().empty())
+      {
+        joinClause.push_back("JOIN inves.investigationInstruments invInst");
+        joinClause.push_back("JOIN invInst.instrument inst");
+        whereClause.push_back("inst.fullName = '" + inputs.getInstrument() + "'");
+      }
+
+      // Keywords
+      if(!inputs.getKeywords().empty())
+      {
+        joinClause.push_back("JOIN inves.keywords keywords");
+        whereClause.push_back("keywords.name IN ('" + inputs.getKeywords() + "')");
+      }
+
+      // Sample name
+      if(!inputs.getSampleName().empty())
+      {
+        joinClause.push_back("JOIN inves.samples sample");
+        whereClause.push_back("sample.name LIKE '%" + inputs.getSampleName() + "%'");
+      }
+
+      // If the user has selected the "My data only" button.
+      // (E.g. they want to display or search through all the data they have access to.
+      if (inputs.getMyData())
+      {
+        joinClause.push_back("JOIN inves.investigationUsers users");
+        joinClause.push_back("JOIN users.user user");
+        whereClause.push_back("user.name = :user");
+      }
+
+      // Investigators complete name.
+      if (!inputs.getInvestigatorSurName().empty())
+      {
+        // We join another investigationUsers & user tables as we need two aliases.
+        joinClause.push_back("JOIN inves.investigationUsers usrs");
+        joinClause.push_back("JOIN usrs.user usr");
+        whereClause.push_back("usr.fullName LIKE '%" + inputs.getInvestigatorSurName() + "%'");
+      }
+
+      // Similar to above. We check if either has been input,
+      // join the related table and add the specific WHERE clause.
+      if(!inputs.getDatafileName().empty() || (inputs.getRunStart() > 0 && inputs.getRunEnd() > 0))
+      {
+        joinClause.push_back("JOIN inves.datasets dataset");
+        joinClause.push_back("JOIN dataset.datafiles datafile");
+
+        if (!inputs.getDatafileName().empty())
+        {
+          whereClause.push_back("datafile.name LIKE '%" + inputs.getDatafileName() + "%'");
+        }
+
+        if (inputs.getRunStart() > 0 && inputs.getRunEnd() > 0)
+        {
+          joinClause.push_back("JOIN datafile.parameters datafileparameters");
+          joinClause.push_back("JOIN datafileparameters.type dtype");
+          whereClause.push_back("dtype.name='run_number' AND datafileparameters.numericValue BETWEEN "
+              + Strings::toString(inputs.getRunStart()) + " AND " + Strings::toString(inputs.getRunEnd()) + "");
+        }
+      }
+
+      std::string query;
+
+      // This prevents the user searching the entire archive (E.g. there is no "default" query).
+      if (!whereClause.empty() || !joinClause.empty())
+      {
+        std::string from, join, where, orderBy, includes;
+
+        from     = " FROM Investigation inves ";
+        join     = Strings::join(joinClause.begin(), joinClause.end(), " ");
+        where    = Strings::join(whereClause.begin(), whereClause.end(), " AND ");
+        orderBy  = " ORDER BY inves.id DESC";
+        includes = " INCLUDE inves.facility, inves.investigationInstruments.instrument, inves.parameters";
+
+        // As we joined all WHERE clause with AND we need to include the WHERE at the start of the where segment.
+        where.insert(0, " WHERE ");
+        // Build the query from the result.
+        query = from + join + where + orderBy + includes;
+      }
+
+      return (query);
+    }
 
     /**
      * Search the archive & obtain the dataset ID for a specific investigation.
@@ -667,22 +685,17 @@ namespace Mantid
     }
 
     /**
-     * Keep the current session alive.
+     * Sets the soap-endpoint & SSL context for the given ICAT proxy.
      */
-    void ICat4Catalog::keepAlive()
+    void ICat4Catalog::setICATProxySettings(ICat4::ICATPortBindingProxy& icat)
     {
-      ICat4::ICATPortBindingProxy icat;
-      setICATProxySettings(icat);
-
-      ns1__refresh request;
-      ns1__refreshResponse response;
-
-      std::string sessionID = m_catalogHelper.session->getSessionId();
-      request.sessionId = &sessionID;
-
-      int result = icat.refresh(&request,&response);
-      // An error occurred!
-      if (result != 0) m_catalogHelper.throwErrorMessage(icat);
+      // The soapEndPoint is only set when the user logs into the catalog.
+      // If it's not set the correct error is returned (invalid sessionID) from the ICAT server.
+      if (m_catalogHelper.session->getSoapEndpoint().empty()) return;
+      // Set the soap-endpoint of the catalog we want to use.
+      icat.soap_endpoint = m_catalogHelper.session->getSoapEndpoint().c_str();
+      // Sets SSL authentication scheme
+      setSSLContext(icat);
     }
 
     /**
@@ -705,18 +718,5 @@ namespace Mantid
       }
     }
 
-    /**
-     * Sets the soap-endpoint & SSL context for the given ICAT proxy.
-     */
-    void ICat4Catalog::setICATProxySettings(ICat4::ICATPortBindingProxy& icat)
-    {
-      // The soapEndPoint is only set when the user logs into the catalog.
-      // If it's not set the correct error is returned (invalid sessionID) from the ICAT server.
-      if (m_catalogHelper.session->getSoapEndpoint().empty()) return;
-      // Set the soap-endpoint of the catalog we want to use.
-      icat.soap_endpoint = m_catalogHelper.session->getSoapEndpoint().c_str();
-      // Sets SSL authentication scheme
-      setSSLContext(icat);
-    }
   }
 }
