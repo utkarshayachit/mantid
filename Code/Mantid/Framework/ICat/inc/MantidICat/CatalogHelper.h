@@ -112,6 +112,75 @@ namespace Mantid
           return data;
         }
 
+        /**
+         * Obtains information for investigations in the container.
+         * @param investigations :: The holder containing investigations.
+         * @param outputws :: Shared pointer to output workspace.
+         */
+        template <typename T>
+        void saveInvestigations(T& investigations, API::ITableWorkspace_sptr& outputws)
+        {
+          if (outputws->getColumnNames().empty())
+          {
+            outputws->addColumn("str","Investigation id");
+            outputws->addColumn("str","Facility");
+            outputws->addColumn("str","Title");
+            outputws->addColumn("str","Instrument");
+            outputws->addColumn("str","Run range");
+            outputws->addColumn("str","Start date");
+            outputws->addColumn("str","End date");
+            outputws->addColumn("str","SessionID");
+          }
+
+          for(auto iter = investigations.begin(); iter != investigations.end(); ++iter)
+          {
+            API::TableRow table = outputws->appendRow();
+            // Used to insert an empty string into the cell if value does not exist.
+            std::string emptyCell("");
+
+            // Now add the relevant investigation data to the table (They always exist).
+            saveValueToTableWorkspace((*iter)->name, table);
+            saveValueToTableWorkspace((*iter)->facility->name, table);
+            saveValueToTableWorkspace((*iter)->title, table);
+            saveValueToTableWorkspace((*iter)->investigationInstruments.at(0)->instrument->name, table);
+
+            // Verify that the run parameters vector exist prior to doing anything.
+            // Since some investigations may not have run parameters.
+            if (!(*iter)->parameters.empty())
+            {
+              saveValueToTableWorkspace((*iter)->parameters[0]->stringValue, table);
+            }
+            else
+            {
+             saveValueToTableWorkspace(&emptyCell, table);
+            }
+
+            // Again, we need to check first if start and end date exist prior to insertion.
+            if ((*iter)->startDate)
+            {
+             std::string startDate = formatDateTime(*(*iter)->startDate, "%Y-%m-%d");
+             saveValueToTableWorkspace(&startDate, table);
+            }
+            else
+            {
+             saveValueToTableWorkspace(&emptyCell, table);
+            }
+
+            if ((*iter)->endDate)
+            {
+             std::string endDate = formatDateTime(*(*iter)->endDate, "%Y-%m-%d");
+             saveValueToTableWorkspace(&endDate, table);
+            }
+            else
+            {
+             saveValueToTableWorkspace(&emptyCell, table);
+            }
+
+            std::string sessionID = session->getSessionId();
+            saveValueToTableWorkspace(&sessionID, table);
+          }
+        }
+
         // Stores the session details for a specific catalog.
         API::CatalogSession_sptr session;
 
