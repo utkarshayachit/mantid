@@ -84,24 +84,6 @@ namespace Mantid
 
         // Allows easy access to helper methods.
         CatalogHelper m_catalogHelper;
-
-        /**
-         * Template method to save data to table workspace
-         * @param input :: Pointer to input value.
-         * @param table :: Table row reference.
-         */
-        template<class T>
-        void savetoTableWorkspace(T* input,Mantid::API::TableRow &table)
-        {
-          if(input != 0)
-          {
-            table << *input;
-          }
-          else
-          {
-            table << "";
-          }
-        }
     };
   }
 }
