@@ -73,16 +73,10 @@ namespace Mantid
       private:
         // Defines the SSL authentication scheme.
         void setSSLContext(ICat4::ICATPortBindingProxy& icat);
-        // Saves "MyData" query result to output workspace.
-        void saveInvestigations(std::vector<ICat4::xsd__anyType*> response, API::ITableWorkspace_sptr& outputws);
         // Creates a search query string based on inputs provided by the user.
         std::string buildSearchQuery(const CatalogSearchParam& inputs);
         // Saves "DataSets" information to the output workspace.
         void saveDataSets(std::vector<ICat4::xsd__anyType*> response, API::ITableWorkspace_sptr& outputws);
-        // Convert a file size to human readable file format.
-        std::string bytesToString(int64_t &fileSize);
-        // Helper method that formats a given timestamp.
-        std::string formatDateTime(const time_t &timestamp, const std::string &format);
         // Search the archive & obtain the dataset ID based on the investigationID.
         int64_t getDatasetId(const std::string &investigationID);
         // Sets the soap-endpoint & SSL context for the given ICAT proxy.

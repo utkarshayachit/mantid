@@ -15,6 +15,9 @@ namespace Mantid
 
         CatalogHelper();
 
+        // Helper method that formats a given timestamp.
+        std::string formatDateTime(const time_t &timestamp, const std::string &format);
+
         /**
          * Save data value to table workspace if it exists, otherwise insert empty string.
          * @param value :: Pointer to input value.
@@ -187,8 +190,6 @@ namespace Mantid
       private:
         // Convert a file size to human readable file format.
         std::string bytesToString(int64_t &fileSize);
-        // Helper method that formats a given timestamp.
-        std::string formatDateTime(const time_t &timestamp, const std::string &format);
     };
   }
 }

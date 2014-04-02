@@ -131,8 +131,8 @@ namespace Mantid
       std::vector<std::string> whereClause, joinClause;
 
       // Format the timestamps in order to compare them.
-      std::string startDate = formatDateTime(inputs.getStartDate(), "%Y-%m-%d %H:%M:%S");
-      std::string endDate   = formatDateTime(inputs.getEndDate() + ((23*60*60) + (59*60) + 59), "%Y-%m-%d %H:%M:%S");
+      std::string startDate = m_catalogHelper.formatDateTime(inputs.getStartDate(), "%Y-%m-%d %H:%M:%S");
+      std::string endDate   = m_catalogHelper.formatDateTime(inputs.getEndDate() + ((23*60*60) + (59*60) + 59), "%Y-%m-%d %H:%M:%S");
 
       // Investigation startDate if endDate is not selected
       if (inputs.getStartDate() != 0 && inputs.getEndDate() == 0)
@@ -380,85 +380,6 @@ namespace Mantid
       else
       {
         m_catalogHelper.throwErrorMessage(icat);
-      }
-    }
-
-    /**
-     * Saves investigations to a table workspace.
-     * @param response :: A vector containing the results of the search query.
-     * @param outputws :: Shared pointer to output workspace.
-     */
-    void ICat4Catalog::saveInvestigations(std::vector<xsd__anyType*> response, API::ITableWorkspace_sptr& outputws)
-    {
-      if (outputws->getColumnNames().empty())
-      {
-        // Add rows headers to the output workspace.
-        outputws->addColumn("str","Investigation id");
-        outputws->addColumn("str","Facility");
-        outputws->addColumn("str","Title");
-        outputws->addColumn("str","Instrument");
-        outputws->addColumn("str","Run range");
-        outputws->addColumn("str","Start date");
-        outputws->addColumn("str","End date");
-        outputws->addColumn("str","SessionID");
-      }
-
-      // Add data to each row in the output workspace.
-      std::vector<xsd__anyType*>::const_iterator iter;
-      for(iter = response.begin(); iter != response.end(); ++iter)
-      {
-        // Cast from xsd__anyType to subclass (xsd__string).
-        ns1__investigation * investigation = dynamic_cast<ns1__investigation*>(*iter);
-        if (investigation)
-        {
-          API::TableRow table = outputws->appendRow();
-          // Used to insert an empty string into the cell if value does not exist.
-          std::string emptyCell("");
-
-          // Now add the relevant investigation data to the table (They always exist).
-          savetoTableWorkspace(investigation->name, table);
-          savetoTableWorkspace(investigation->facility->name, table);
-          savetoTableWorkspace(investigation->title, table);
-          savetoTableWorkspace(investigation->investigationInstruments.at(0)->instrument->name, table);
-
-          // Verify that the run parameters vector exist prior to doing anything.
-          // Since some investigations may not have run parameters.
-          if (!investigation->parameters.empty())
-          {
-            savetoTableWorkspace(investigation->parameters[0]->stringValue, table);
-          }
-          else
-          {
-            savetoTableWorkspace(&emptyCell, table);
-          }
-
-          // Again, we need to check first if start and end date exist prior to insertion.
-          if (investigation->startDate)
-          {
-            std::string startDate = formatDateTime(*investigation->startDate, "%Y-%m-%d");
-            savetoTableWorkspace(&startDate, table);
-          }
-          else
-          {
-            savetoTableWorkspace(&emptyCell, table);
-          }
-
-          if (investigation->endDate)
-          {
-            std::string endDate = formatDateTime(*investigation->endDate, "%Y-%m-%d");
-            savetoTableWorkspace(&endDate, table);
-          }
-          else
-          {
-            savetoTableWorkspace(&emptyCell, table);
-          }
-          std::string sessionID = m_catalogHelper.session->getSessionId();
-          savetoTableWorkspace(&sessionID, table);
-        }
-        else
-        {
-          throw std::runtime_error("ICat4Catalog::saveInvestigations expected an investigation. Please contact the Mantid development team.");
-        }
       }
     }
 
@@ -815,38 +736,6 @@ namespace Mantid
       {
         m_catalogHelper.throwErrorMessage(icat);
       }
-    }
-
-    /**
-     * Convert a file size to human readable file format.
-     * @param fileSize :: The size in bytes of the file.
-     */
-    std::string ICat4Catalog::bytesToString(int64_t &fileSize)
-    {
-      const char* args[] = {"B", "KB", "MB", "GB"};
-      std::vector<std::string> units(args, args + 4);
-
-      unsigned order = 0;
-
-      while (fileSize >= 1024 && order + 1 < units.size())
-      {
-        order++;
-        fileSize = fileSize / 1024;
-      }
-
-      return boost::lexical_cast<std::string>(fileSize) + units.at(order);
-    }
-
-    /**
-     * Formats a given timestamp to human readable datetime.
-     * @param timestamp :: Unix timestamp.
-     * @param format    :: The desired format to output.
-     * @return string   :: Formatted Unix timestamp.
-     */
-    std::string ICat4Catalog::formatDateTime(const time_t &timestamp, const std::string &format)
-    {
-      auto dateTime = DateAndTime(boost::posix_time::from_time_t(timestamp));
-      return (dateTime.toFormattedString(format));
     }
 
     /**
