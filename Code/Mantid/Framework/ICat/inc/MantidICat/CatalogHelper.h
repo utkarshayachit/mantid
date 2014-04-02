@@ -1,6 +1,7 @@
 #ifndef MANTID_ICAT_CATALOGHELPER_H_
 #define MANTID_ICAT_CATALOGHELPER_H_
 
+#include "MantidAPI/ITableWorkspace.h"
 #include "MantidAPI/TableRow.h"
 
 namespace Mantid
@@ -22,6 +23,47 @@ namespace Mantid
         {
           if(value || value != 0) table << *value;
           else table << "";
+        }
+
+        /**
+         * Obtains related datafile information from the datafiles container passed in,
+         * and saves information for each datafile to a workspace.
+         * @param datafiles :: The holder containing datafiles.
+         * @param outputws  :: The workspace to write the datafile information to.
+         */
+        template <typename T>
+        void saveDataFiles(T& datafiles, API::ITableWorkspace_sptr& outputws)
+        {
+          if (outputws->getColumnNames().empty())
+          {
+            // Add rows headers to the output workspace.
+            outputws->addColumn("str","Name");
+            outputws->addColumn("str","Location");
+            outputws->addColumn("str","Create Time");
+            outputws->addColumn("long64","Id");
+            outputws->addColumn("long64","File size(bytes)");
+            outputws->addColumn("str","File size");
+            outputws->addColumn("str","Description");
+          }
+
+          for(auto iter = datafiles.begin(); iter != datafiles.end(); ++iter)
+          {
+            API::TableRow table = outputws->appendRow();
+
+            saveValueToTableWorkspace((*iter)->name, table);
+            saveValueToTableWorkspace((*iter)->location, table);
+
+            std::string createDate = formatDateTime(*(*iter)->createTime, "%Y-%m-%d %H:%M:%S");
+            saveValueToTableWorkspace(&createDate, table);
+
+            saveValueToTableWorkspace((*iter)->id, table);
+            saveValueToTableWorkspace((*iter)->fileSize, table);
+
+            std::string fileSize = bytesToString(*(*iter)->fileSize);
+            saveValueToTableWorkspace(&fileSize, table);
+
+            saveValueToTableWorkspace((*iter)->description, table);
+          }
         }
 
         /**
