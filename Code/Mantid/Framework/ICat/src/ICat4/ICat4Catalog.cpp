@@ -289,7 +289,9 @@ namespace Mantid
 
       if (result == 0)
       {
-        saveInvestigations(response.return_, outputws);
+        ns1__investigation* investigation;
+        auto investigations = m_catalogHelper.castContainerType(response.return_,investigation);
+        m_catalogHelper.saveInvestigations(investigations, outputws);
       }
       else
       {
@@ -371,7 +373,9 @@ namespace Mantid
 
       if (result == 0)
       {
-        saveInvestigations(response.return_, outputws);
+        ns1__investigation* investigation;
+        auto investigations = m_catalogHelper.castContainerType(response.return_,investigation);
+        m_catalogHelper.saveInvestigations(investigations, outputws);
       }
       else
       {
