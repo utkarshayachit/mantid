@@ -777,6 +777,16 @@ namespace Mantid
       return url;
     }
 
+    /**
+     * Generate a DOI for a datafile based on the related investigation.
+     * @param investigationID :: The investigation of the datafile to register the DOI for.
+     * @return The DOI that was generated for the datafile.
+     */
+    const std::string ICat4Catalog::registerDatafileDOI(const long long& investigationID)
+    {
+      UNUSED_ARG(investigationID);
+      return "";
+    }
 
     /**
      * Search the archive & obtain the dataset ID for a specific investigation.

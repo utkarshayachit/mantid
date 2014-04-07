@@ -116,6 +116,18 @@ namespace Mantid
       throw std::runtime_error("ICat3Catalog does not support publishing.");
     }
 
+
+    /**
+     * Generate a DOI for a datafile based on the related investigation.
+     * @param investigationID :: The investigation of the datafile to register the DOI for.
+     * @return The DOI that was generated for the datafile.
+     */
+    const std::string ICat3Catalog::registerDatafileDOI(const long long& investigationID)
+    {
+      UNUSED_ARG(investigationID);
+      throw std::runtime_error("ICat3Catalog does not support registrations of DOIs.");
+    }
+
     /**This method method does the search for investigations
      *@param inputs :: reference to a class conatains search inputs
      *@param ws_sptr :: -shared pointer to search results workspace
