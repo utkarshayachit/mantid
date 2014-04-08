@@ -89,7 +89,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        throwSoapError(icat);
       }
       // Will not reach here if user cannot log in (e.g. no session is created).
       return m_session;
@@ -117,7 +117,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        throwSoapError(icat);
       }
     }
 
@@ -294,7 +294,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        throwSoapError(icat);
       }
     }
 
@@ -333,7 +333,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        throwSoapError(icat);
       }
 
       g_log.debug() << "The number of paging results returned in ICat4Catalog::getNumberOfSearchResults is: " << numOfResults << std::endl;
@@ -376,7 +376,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        throwSoapError(icat);
       }
     }
 
@@ -488,7 +488,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        throwSoapError(icat);
       }
     }
 
@@ -554,7 +554,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        throwSoapError(icat);
       }
     }
 
@@ -643,7 +643,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        throwSoapError(icat);
       }
     }
 
@@ -684,7 +684,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        throwSoapError(icat);
       }
     }
 
@@ -726,7 +726,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        throwSoapError(icat);
       }
       return fileLocation;
     }
@@ -823,7 +823,7 @@ namespace Mantid
       }
       else
       {
-        throwErrorMessage(icat);
+        throwSoapError(icat);
       }
 
       return datasetID;
@@ -845,7 +845,7 @@ namespace Mantid
 
       int result = icat.refresh(&request,&response);
       // An error occurred!
-      if (result != 0) throwErrorMessage(icat);
+      if (result != 0) throwSoapError(icat);
     }
 
     /**
@@ -865,7 +865,7 @@ namespace Mantid
           NULL      /* if randfile!=NULL: use a file with random data to seed randomness */
       ))
       {
-        throwErrorMessage(soapProxy);
+        throwSoapError(soapProxy);
       }
     }
 
@@ -874,7 +874,7 @@ namespace Mantid
      * @param soapProxy :: The PortBindingProxy object.
      */
     template<class T>
-    void ICat4Catalog::throwErrorMessage(T& soapProxy)
+    void ICat4Catalog::throwSoapError(T& soapProxy)
     {
       char buf[600];
       const int len = 600;

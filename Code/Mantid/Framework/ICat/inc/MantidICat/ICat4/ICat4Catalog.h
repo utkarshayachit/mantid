@@ -95,7 +95,7 @@ namespace Mantid
 
         // Ensures human friendly error messages are provided to the user.
         template<class T>
-        void throwErrorMessage(T& soapProxy);
+        void throwSoapError(T& soapProxy);
 
         // Defines the SSL authentication scheme.
         template<class T>
