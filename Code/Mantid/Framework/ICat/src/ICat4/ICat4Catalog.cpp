@@ -871,13 +871,14 @@ namespace Mantid
 
     /**
      * Throws an error message (returned by gsoap) to Mantid upper layer.
-     * @param icat :: ICATPortBindingProxy object.
+     * @param soapProxy :: The PortBindingProxy object.
      */
-    void ICat4Catalog::throwErrorMessage(ICat4::ICATPortBindingProxy& icat)
+    template<class T>
+    void ICat4Catalog::throwErrorMessage(T& soapProxy)
     {
       char buf[600];
       const int len = 600;
-      icat.soap_sprint_fault(buf,len);
+      soapProxy.soap_sprint_fault(buf,len);
       std::string error(buf);
       std::string begmsg("<message>");
       std::string endmsg("</message>");
