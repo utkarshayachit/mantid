@@ -119,12 +119,12 @@ namespace Mantid
 
     /**
      * Generate a DOI for a datafile based on the related investigation.
-     * @param investigationID :: The investigation of the datafile to register the DOI for.
+     * @param databaseID :: The database ID of the datafile's investigation to register the DOI for.
      * @return The DOI that was generated for the datafile.
      */
-    const std::string ICat3Catalog::registerDatafileDOI(const long long& investigationID)
+    const std::string ICat3Catalog::registerDatafileDOI(const long long& databaseID)
     {
-      UNUSED_ARG(investigationID);
+      UNUSED_ARG(databaseID);
       throw std::runtime_error("ICat3Catalog does not support registrations of DOIs.");
     }
 

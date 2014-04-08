@@ -70,7 +70,7 @@ namespace Mantid
         virtual const std::string getUploadURL(
             const std::string &investigationID, const std::string &createFileName, const std::string &dataFileDescription);
         /// Generate a DOI for a datafile based on the related investigation.
-        virtual const std::string registerDatafileDOI(const long long& investigationID);
+        virtual const std::string registerDatafileDOI(const long long& databaseID);
 
       private:
         // Ensures human friendly error messages are provided to the user.
