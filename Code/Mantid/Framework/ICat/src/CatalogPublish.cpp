@@ -138,6 +138,9 @@ namespace Mantid
      */
     void CatalogPublish::publish(std::istream& fileContents, const std::string &uploadURL)
     {
+      // Created outside try as we need to throw a runtime later.
+      // Poco::Exception eats the runtime, then throws an I/O exception due to bug noted below.
+      std::string IDSError = "";
       try
       {
         Poco::URI uri(uploadURL);
@@ -166,17 +169,7 @@ namespace Mantid
         // Obtain the status returned by the server to verify if it was a success.
         Poco::Net::HTTPResponse::HTTPStatus HTTPStatus = response.getStatus();
         // The error message returned by the IDS (if one exists).
-        std::string IDSError = CatalogAlgorithmHelper().getIDSError(HTTPStatus, responseStream);
-        // Cancel the algorithm and display the message if it exists.
-        if(!IDSError.empty())
-        {
-          // As an error occurred we must cancel the algorithm.
-          // We cannot throw an exception here otherwise it is caught below as Poco::Exception catches runtimes,
-          // and then the I/O error is thrown as it is generated above first.
-          this->cancel();
-          // Output an appropriate error message from the JSON object returned by the IDS.
-          g_log.error(IDSError);
-        }
+        IDSError = CatalogAlgorithmHelper().getIDSError(HTTPStatus, responseStream);
       }
       catch(Poco::Net::SSLException& error)
       {
@@ -185,6 +178,9 @@ namespace Mantid
       // This is bad, but is needed to catch a POCO I/O error.
       // For more info see comments (of I/O error) in CatalogDownloadDataFiles.cpp
       catch(Poco::Exception&) {}
+
+      // Cancel the algorithm and display the message if it exists.
+      if(!IDSError.empty()) throw std::runtime_error(IDSError);
     }
 
     /**
