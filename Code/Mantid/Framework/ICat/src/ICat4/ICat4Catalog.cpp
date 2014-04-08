@@ -793,14 +793,15 @@ namespace Mantid
       icatDOI.soap_endpoint = ConfigService::Instance().getFacility(m_session->getFacility()).catalogInfo().doiEndPoint().c_str();
       setSSLContext(icatDOI);
 
-      ICatDOI::ns1__registerDatafileDOI request;
-      ICatDOI::ns1__registerDatafileDOIResponse response;
+      ICatDOI::ICatDOI1__registerDatafileDOI request;
+      ICatDOI::ICatDOI1__registerDatafileDOIResponse response;
 
       std::string session = m_session->getSessionId();
       request.arg0 = &session;
       request.arg1 = databaseID;
 
       std::string registeredDOI = "";
+
       int result = icatDOI.registerDatafileDOI(&request,&response);
 
       if (result == 0)
