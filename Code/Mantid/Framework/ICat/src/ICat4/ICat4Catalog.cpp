@@ -850,11 +850,12 @@ namespace Mantid
 
     /**
      * Defines the SSL authentication scheme.
-     * @param icat :: ICATPortBindingProxy object.
+     * @param soapProxy :: The PortBindingProxy object.
      */
-    void ICat4Catalog::setSSLContext(ICat4::ICATPortBindingProxy& icat)
+    template<class T>
+    void ICat4Catalog::setSSLContext(T& soapProxy)
     {
-      if (soap_ssl_client_context(&icat,
+      if (soap_ssl_client_context(&soapProxy,
           SOAP_SSL_CLIENT, /* use SOAP_SSL_DEFAULT in production code */
           NULL,       /* keyfile: required only when client must authenticate to
               server (see SSL docs on how to obtain this file) */
@@ -864,7 +865,7 @@ namespace Mantid
           NULL      /* if randfile!=NULL: use a file with random data to seed randomness */
       ))
       {
-        throwErrorMessage(icat);
+        throwErrorMessage(soapProxy);
       }
     }
 

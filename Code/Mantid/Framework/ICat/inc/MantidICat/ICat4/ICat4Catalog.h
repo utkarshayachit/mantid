@@ -75,8 +75,6 @@ namespace Mantid
       private:
         // Ensures human friendly error messages are provided to the user.
         void throwErrorMessage(ICat4::ICATPortBindingProxy& icat);
-        // Defines the SSL authentication scheme.
-        void setSSLContext(ICat4::ICATPortBindingProxy& icat);
         // Saves "MyData" query result to output workspace.
         void saveInvestigations(std::vector<ICat4::xsd__anyType*> response, API::ITableWorkspace_sptr& outputws);
         // Creates a search query string based on inputs provided by the user.
@@ -96,6 +94,10 @@ namespace Mantid
 
         // Stores the session details for a specific catalog.
         API::CatalogSession_sptr m_session;
+
+        // Defines the SSL authentication scheme.
+        template<class T>
+        void setSSLContext(T& soapProxy);
 
         /**
          * Template method to save data to table workspace
