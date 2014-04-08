@@ -36,7 +36,7 @@ namespace MantidQt
       connect(m_uiForm.runBtn,SIGNAL(clicked()),this,SLOT(accept()));
       connect(m_uiForm.cancelBtn,SIGNAL(clicked()),this,SLOT(reject()));
       connect(m_uiForm.helpBtn,SIGNAL(clicked()),this,SLOT(helpClicked()));
-      connect(m_uiForm.investigationNumberCb,SIGNAL(currentIndexChanged(int)),this,SLOT(setSessionProperty(int)));
+      connect(m_uiForm.investigationNumberCb,SIGNAL(currentIndexChanged(int)),this,SLOT(setAlgorithmProperties(int)));
       connect(m_uiForm.dataSelector,SIGNAL(dataReady(const QString&)),this,SLOT(workspaceSelected(const QString&)));
       // When a file is chosen to be published, set the related "FileName" property of the algorithm.
       connect(m_uiForm.dataSelector,SIGNAL(filesFound()),this,SLOT(fileSelected()));
@@ -82,6 +82,9 @@ namespace MantidQt
           // Set the user role to the sessionID.
           m_uiForm.investigationNumberCb->setItemData(static_cast<int>(row),
             QString::fromStdString(workspace->getRef<std::string>("SessionID",row)),Qt::UserRole);
+          // Set the user role to the DatabaseID (used for registering a DOI).
+          m_uiForm.investigationNumberCb->setItemData(static_cast<int>(row),
+            QString::number(workspace->getRef<int64_t>("DatabaseID",row)),Qt::UserRole + 1);
         }
       }
       else
@@ -127,13 +130,15 @@ namespace MantidQt
     }
 
     /**
-     * Set/Update the sessionID of the `Session` property when
-     * the user selects an investigation from the combo-box.
+     * Set/Update the algorithm properties when a user selects an investigation
+     * to publish to that are not set via the GUI, e.g. Session and DatabaseID.
      */
-    void CatalogPublishDialog::setSessionProperty(int index)
+    void CatalogPublishDialog::setAlgorithmProperties(int index)
     {
       storePropertyValue("Session",
           m_uiForm.investigationNumberCb->itemData(index,Qt::UserRole).toString());
+      storePropertyValue("DatabaseID",
+          m_uiForm.investigationNumberCb->itemData(index,Qt::UserRole + 1).toString());
     }
 
     /**
