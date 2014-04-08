@@ -72,14 +72,15 @@ namespace MantidQt
         // Populate the form with investigations that the user can publish to.
         for (size_t row = 0; row < workspace->rowCount(); row++)
         {
-          m_uiForm.investigationNumberCb->addItem(QString::fromStdString(workspace->cell<std::string>(row, 0)));
+          m_uiForm.investigationNumberCb->addItem(QString::fromStdString(workspace->getRef<std::string>("InvestigationID",row)));
           // Added tooltips to improve usability.
           m_uiForm.investigationNumberCb->setItemData(static_cast<int>(row),
-              QString::fromStdString("The title of the investigation is: \"" + workspace->cell<std::string>(row, 1) +
-                  "\".\nThe instrument of the investigation is: \"" + workspace->cell<std::string>(row, 2)) + "\".",Qt::ToolTipRole);
+            QString::fromStdString("The title of the investigation is: \"" + workspace->getRef<std::string>("Title",row) +
+              "\".\nThe instrument of the investigation is: \"" + workspace->getRef<std::string>("Instrument",row)) + "\".",
+              Qt::ToolTipRole);
           // Set the user role to the sessionID.
           m_uiForm.investigationNumberCb->setItemData(static_cast<int>(row),
-              QString::fromStdString(workspace->cell<std::string>(row, 7)),Qt::UserRole);
+            QString::fromStdString(workspace->getRef<std::string>("SessionID",row)),Qt::UserRole);
         }
       }
       else
