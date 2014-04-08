@@ -137,8 +137,6 @@ namespace Mantid
       if (boost::lexical_cast<bool>(getPropertyValue("GenerateDOI")))
       {
         int64_t investigationID = getProperty("InvestigationID");
-        if (investigationID == 0) throw std::runtime_error("You must provide a valid investigationID.");
-
         std::string generatedDOI = catalogInfoService->registerDatafileDOI(investigationID);
         g_log.notice("The DOI registered for datafile " + Poco::Path(filePath).getFileName() + " was: " + generatedDOI);
       }
