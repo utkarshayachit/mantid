@@ -30,6 +30,7 @@ namespace MantidQt
       tie(m_uiForm.nameInCatalogTxt,"NameInCatalog");
       tie(m_uiForm.investigationNumberCb,"InvestigationNumber");
       tie(m_uiForm.descriptionInput,"DataFileDescription");
+      tie(m_uiForm.makePublic,"GenerateDOI");
 
       // Assign the buttons with the inherited methods.
       connect(m_uiForm.runBtn,SIGNAL(clicked()),this,SLOT(accept()));
