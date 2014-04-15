@@ -103,6 +103,92 @@ namespace Mantid
     }
 
     /**
+     * Return a vector of paths given a comma seperated string of file paths.
+     * @param text :: The comma seperate list of file paths to search for. 
+     * @return The vector of full paths for each file in the list.
+     */
+    std::vector<std::string> FileFinderImpl::getFullPaths(const std::string& text)
+    {
+      // Tokenise on ","
+      std::vector<std::string> filestext; 
+      filestext = boost::split(filestext, text, boost::is_any_of(","));
+      std::vector<std::string> foundFiles;
+
+      // Iterate over tokens.
+      auto it = filestext.begin();
+      for( ; it != filestext.end(); ++it)
+      {
+        boost::algorithm::trim(*it);
+        //check if have a range, and if so get all files in the range.
+        std::vector<std::string> files = getPathsWithRange(*it);
+        
+        if(files.empty())
+        {
+          //just try and find a single run for this token
+          std::string result = getFullPath(*it);
+          Poco::File test(result);
+          if ( ( ! result.empty() ) && test.exists() )
+          {
+            foundFiles.push_back(*it);
+          }
+          else
+          {
+            throw std::invalid_argument("File \"" + (*it) + "\" not found");
+          }
+        }
+        else
+        {
+          std::copy(files.begin(), files.end(), std::back_inserter(foundFiles));
+        }
+      }
+
+      return foundFiles;
+    }
+
+    /**
+     * Return a vector of paths with a range in them
+     *
+     * A range is a sub string with the form "<lower bound>:<upper bound>" e.g. "55127:55129"
+     *
+     * @param filename :: A file name (without path) including extension and including a range of runs.
+     * @return The vector of full paths for each file that exists in the run range parsed from the filename.
+     */
+    std::vector<std::string> FileFinderImpl::getPathsWithRange(const std::string& filename)
+    {
+      std::vector<std::string> file_list;
+
+      //check if we have a range
+      boost::regex ex("\\d+:\\d+");
+      boost::smatch results;
+      if (boost::regex_search(filename, results, ex))
+      {
+        //expand range into vector of run numbers
+        std::vector<int> runNumbers = Kernel::Strings::parseRange(results.str(), ",", ":");
+        std::vector<int>::const_iterator runNumber = runNumbers.begin();
+        
+        //search for each run number in turn
+        for (; runNumber != runNumbers.end(); ++runNumber)
+        {
+          std::string run = boost::lexical_cast<std::string>(*runNumber);          
+          std::string fname = boost::regex_replace(filename, ex, run);
+          std::string file_path = getFullPath(fname);
+          
+          Poco::File test(file_path);
+          if (!file_path.empty() && test.exists())
+          {
+            file_list.push_back(file_path);
+          }
+          else
+          {
+            throw std::invalid_argument("File \"" + (fname) + "\" not found");
+          }
+        }
+      }
+
+      return file_list;
+    }
+
+    /**
      * Return the full path to the file given its name
      * @param filename :: A file name (without path) including extension
      * @return The full path if the file exists and can be found in one of the search locations

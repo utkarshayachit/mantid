@@ -9,6 +9,9 @@ using namespace boost::python;
 void export_FileFinder()
 {
   class_<FileFinderImpl, boost::noncopyable>("FileFinderImpl", no_init)
+    .def("getFullPaths", &FileFinderImpl::getFullPaths,
+         "Return a full path to the given file if it can be found within datasearch.directories paths. "
+         "An empty string is returned otherwise.")
     .def("getFullPath", &FileFinderImpl::getFullPath,
          "Return a full path to the given file if it can be found within datasearch.directories paths. "
          "An empty string is returned otherwise.")

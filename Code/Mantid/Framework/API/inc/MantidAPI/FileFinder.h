@@ -52,6 +52,7 @@ namespace Mantid
     class MANTID_API_DLL FileFinderImpl
     {
     public:
+      std::vector<std::string> getFullPaths(const std::string& text);
       std::string getFullPath(const std::string& filename)const;
       std::string getPath(const std::vector<IArchiveSearch_sptr>& archs, const std::set<std::string>& filename,
                           const std::vector<std::string>& extensions)const;
@@ -83,6 +84,7 @@ namespace Mantid
       std::pair<std::string,std::string> toInstrumentAndNumber(const std::string& hint)const;
       std::string getArchivePath(const std::vector<IArchiveSearch_sptr>& archs, const std::set<std::string>& filenames, const std::vector<std::string>& exts)const;
       std::string toUpper(const std::string &src) const;
+      std::vector<std::string> getPathsWithRange(const std::string& filename);
       /// glob option - set to case sensitive or insensitive
       int m_globOption;
     };
