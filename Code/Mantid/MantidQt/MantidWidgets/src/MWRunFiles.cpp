@@ -99,43 +99,26 @@ void FindFilesThread::run()
     {
       getFilesFromAlgorithm();
     }
-    // Else if we are loading run files, then use findRuns.
-    else if( m_isForRunFiles )
+    else
     {
-      m_filenames = fileSearcher.findRuns(m_text);
+      // If we are loading run files, then use findRuns.
+      if( m_isForRunFiles )
+      {
+        m_filenames = fileSearcher.findRuns(m_text);
+      }
+      // Else try to run a simple parsing on the string, and find the full paths individually.
+      else
+      {
+        m_filenames = fileSearcher.getFullPaths(m_text);
+      }
+
       m_valueForProperty = "";
       for(auto cit = m_filenames.begin(); cit != m_filenames.end(); ++cit)
       {
         m_valueForProperty += QString::fromStdString(*cit) + ",";
       }
       m_valueForProperty.chop(1);
-    }
-    // Else try to run a simple parsing on the string, and find the full paths individually.
-    else
-    {
-      // Tokenise on ","
-      std::vector<std::string> filestext;
-      filestext = boost::split(filestext, m_text, boost::is_any_of(","));
-
-      // Iterate over tokens.
-      auto it = filestext.begin();
-      for( ; it != filestext.end(); ++it)
-      {
-        boost::algorithm::trim(*it);
-        std::string result = fileSearcher.getFullPath(*it);
-        Poco::File test(result);
-        if ( ( ! result.empty() ) && test.exists() )
-        {
-          m_filenames.push_back(*it);
-          m_valueForProperty += QString::fromStdString(*it) + ",";
-        }
-        else
-        {
-          throw std::invalid_argument("File \"" + (*it) + "\" not found");
-        }
-      }
-      m_valueForProperty.chop(1);
-    }
+    } 
   }
   catch(std::exception& exc)
   {
