@@ -133,7 +133,7 @@ namespace Mantid
           }
           else
           {
-            throw std::invalid_argument("File \"" + (*it) + "\" not found");
+            throw Kernel::Exception::NotFoundError("Could not find file", *it);
           }
         }
         else
@@ -180,7 +180,7 @@ namespace Mantid
           }
           else
           {
-            throw std::invalid_argument("File \"" + (fname) + "\" not found");
+            throw Kernel::Exception::NotFoundError("Could not find file", fname);
           }
         }
       }
