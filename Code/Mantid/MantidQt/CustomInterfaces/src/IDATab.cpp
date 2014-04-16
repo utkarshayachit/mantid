@@ -1,5 +1,6 @@
 #include "MantidQtCustomInterfaces/IDATab.h"
 #include "MantidAPI/MatrixWorkspace.h"
+#include "MantidAPI/AlgorithmManager.h"
 #include "MantidAPI/AnalysisDataService.h"
 #include "boost/shared_ptr.hpp"
 
@@ -113,13 +114,17 @@ namespace IDA
   MatrixWorkspace_const_sptr IDATab::runLoadNexus(const QString & filename, const QString & wsname)
   {
     using Mantid::Kernel::Exception::NotFoundError;
-
-    QString pyInput = "LoadNexus(Filename=r'" + filename + "', OutputWorkspace='" + wsname + "')";
-    runPythonCode(pyInput);
-
+    using Mantid::API::AlgorithmManager;
+    
+    auto loadNexus = AlgorithmManager::Instance().create("LoadNexus");
+    loadNexus->setRethrows(true);
+    loadNexus->setPropertyValue("Filename", filename.toStdString());
+    loadNexus->setPropertyValue("OutputWorkspace", wsname.toStdString());
+    
     MatrixWorkspace_const_sptr ws;
     try
     {
+      loadNexus->execute();
       ws = AnalysisDataService::Instance().retrieveWS<const MatrixWorkspace>(wsname.toStdString());
     }
     catch(NotFoundError&)
