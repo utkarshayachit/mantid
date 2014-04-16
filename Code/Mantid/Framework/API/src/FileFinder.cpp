@@ -129,7 +129,7 @@ namespace Mantid
           Poco::File test(result);
           if ( ( ! result.empty() ) && test.exists() )
           {
-            foundFiles.push_back(*it);
+            foundFiles.push_back(result);
           }
           else
           {
