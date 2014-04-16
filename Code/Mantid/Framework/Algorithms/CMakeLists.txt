@@ -224,12 +224,14 @@ set ( SRC_FILES
 	src/WeightingStrategy.cpp
 	src/WorkspaceJoiners.cpp
 	src/XDataConverter.cpp
+	src/ChopEventFilters.cpp
 )
 
 set ( INC_FILES
 	#	inc/MantidAlgorithms/Q1DTOF.h
 	# inc/MantidAlgorithms/CountEventsInPulses.h
 	# inc/MantidAlgorithms/UpdatePeakParameterTable.h
+	inc/MantidAlgorithms/ChopEventFilters.h
 	inc/MantidAlgorithms/AbsorptionCorrection.h
 	inc/MantidAlgorithms/AddLogDerivative.h
 	inc/MantidAlgorithms/AddPeak.h
