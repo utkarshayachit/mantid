@@ -37,7 +37,7 @@ using namespace std;
 
 const double TOL = 1.0E-5;
 
-// DECLARE_ALGORITM(ChopEventFilters)
+DECLARE_ALGORITHM(ChopEventFilters)
 
 ChopEventFilters::ChopEventFilters()
 {
@@ -59,7 +59,7 @@ void ChopEventFilters::initDocs()
  */
 void ChopEventFilters::init()
 {
-    declareProperty(new WorkspaceProeprty<MatrixWorkspace>("InputWorkspace", "", Direction::Input), 
+    declareProperty(new WorkspaceProperty<MatrixWorkspace>("InputWorkspace", "", Direction::Input), 
         "Name of input event filter workspace to be processed.");
     
     declareProperty(new WorkspaceProperty<MatrixWorkspace>("OutputWorkspace", "", Direction::Output),
