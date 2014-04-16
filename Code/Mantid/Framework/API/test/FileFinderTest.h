@@ -10,6 +10,7 @@
 #include <Poco/Path.h>
 #include <Poco/File.h>
 #include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 
 #include <stdio.h>
 #include <fstream>
@@ -349,6 +350,46 @@ public:
 
     fileFinder.setCaseSensitive(startingCaseOption);
 
+  }
+
+  void testFindMultipleFiles()
+  {
+    auto & fileFinder = FileFinder::Instance();
+    std::vector<std::string> files = fileFinder.getFullPaths("MUSR*15189.nxs, MUSR*15190.nxs, MUSR*15191.nxs");
+    TS_ASSERT_EQUALS( files.size(), 3 );
+    TS_ASSERT( boost::algorithm::ends_with(files[0], "MUSR00015189.nxs") );
+    TS_ASSERT( boost::algorithm::ends_with(files[1], "MUSR00015190.nxs") );
+    TS_ASSERT( boost::algorithm::ends_with(files[2], "MUSR00015191.nxs") );
+  }
+
+  void testFindMultipleRangeFiles()
+  {
+    auto & fileFinder = FileFinder::Instance();
+    std::vector<std::string> files = fileFinder.getFullPaths("MUSR*15189:15191.nxs");
+    TS_ASSERT_EQUALS( files.size(), 3 );
+    TS_ASSERT( boost::algorithm::ends_with(files[0], "MUSR00015189.nxs") );
+    TS_ASSERT( boost::algorithm::ends_with(files[1], "MUSR00015190.nxs") );
+    TS_ASSERT( boost::algorithm::ends_with(files[2], "MUSR00015191.nxs") );
+  }
+
+  void testFailToFindMultipleFiles()
+  {
+    auto & fileFinder = FileFinder::Instance();
+    TS_ASSERT_THROWS(fileFinder.getFullPaths("MUSR*15189.nxs, MUSR*15188.nxs, MUSR*15190.nxs, MUSR*15191.nxs"), Exception::NotFoundError);
+  }
+
+  void testFailToFindMultipleRangeFiles()
+  {
+    auto & fileFinder = FileFinder::Instance();
+    TS_ASSERT_THROWS(fileFinder.getFullPaths("MUSR*15188:15190.nxs"), Exception::NotFoundError);
+  }
+
+  void testFindMultipleFilesSingleFile()
+  {
+    auto & fileFinder = FileFinder::Instance();
+    std::vector<std::string> files = fileFinder.getFullPaths("MUSR*15190.nxs");
+    TS_ASSERT_EQUALS( files.size(), 1 );
+    TS_ASSERT( boost::algorithm::ends_with(files.front(), "MUSR00015190.nxs") );
   }
 
 private:
