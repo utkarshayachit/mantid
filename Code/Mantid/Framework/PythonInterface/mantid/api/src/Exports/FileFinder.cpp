@@ -1,4 +1,8 @@
 #include "MantidAPI/FileFinder.h"
+
+#include "MantidPythonInterface/kernel/Converters/WrapWithNumpy.h"
+#include "MantidPythonInterface/kernel/Policies/VectorToNumpy.h"
+
 #include <boost/python/class.hpp>
 #include <boost/python/reference_existing_object.hpp>
 
@@ -6,12 +10,17 @@ using Mantid::API::FileFinder;
 using Mantid::API::FileFinderImpl;
 using namespace boost::python;
 
+namespace Converters = Mantid::PythonInterface::Converters;
+namespace Policies = Mantid::PythonInterface::Policies;
+
 void export_FileFinder()
 {
+  typedef return_value_policy<Policies::VectorToNumpy > return_clone_numpy;
   class_<FileFinderImpl, boost::noncopyable>("FileFinderImpl", no_init)
-    .def("getFullPaths", &FileFinderImpl::getFullPaths,
-         "Return a full path to the given file if it can be found within datasearch.directories paths. "
-         "An empty string is returned otherwise.")
+    .def("getFullPaths", &FileFinderImpl::getFullPaths, return_clone_numpy(),
+         "Find a comma seperated list of file hints."
+         "Return a list of full paths to the given files if they can be found within datasearch.directories paths. "
+         "An empty list is returned otherwise.")
     .def("getFullPath", &FileFinderImpl::getFullPath,
          "Return a full path to the given file if it can be found within datasearch.directories paths. "
          "An empty string is returned otherwise.")
