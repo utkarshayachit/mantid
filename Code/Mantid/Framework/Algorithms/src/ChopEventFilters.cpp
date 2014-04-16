@@ -59,14 +59,11 @@ void ChopEventFilters::initDocs()
  */
 void ChopEventFilters::init()
 {
-    // FIXME Use new workspace property in code. 
-    auto inpwsprop = boost::make_shared<WorkspaceProperty<MatrixWorkspace> >("InputWorkspace", 
-                                                                             "", Direction::Input);
-    declareProperty(inpwsprop, "Name of input event filter workspace to be processed.");
+    declareProperty(new WorkspaceProeprty<MatrixWorkspace>("InputWorkspace", "", Direction::Input), 
+        "Name of input event filter workspace to be processed.");
     
-    auto outpwsprop = boost::make_shared<WorkspaceProperty<MatrixWorkspace> >("OutputWorkspace",
-                                                                              "", Direction::Output);
-    declareProperty(outpwsprop, "Name of the output event filter workspace as a result of processing.");
+    declareProperty(new WorkspaceProperty<MatrixWorkspace>("OutputWorkspace", "", Direction::Output),
+        "Name of the output event filter workspace as a result of processing.");
     
     declareProperty("WorkspaceGroup", EMPTY_INT(), "Workspace group of the evnet filers to be processed.");
     
