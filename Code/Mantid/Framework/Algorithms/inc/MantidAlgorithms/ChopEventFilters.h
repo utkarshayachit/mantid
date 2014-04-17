@@ -7,11 +7,11 @@
 
 namespace Mantid
 {
-    namespace Algorithms
-    {
-        
-        /** 
-         * Add a peak to a PeaksWorkspace.
+namespace Algorithms
+{
+
+  /**
+    * Add a peak to a PeaksWorkspace.
          
          @date 2012-10-16
          
@@ -35,53 +35,52 @@ namespace Mantid
          File change history is stored at: <https://github.com/mantidproject/mantid>
          Code Documentation is available at: <http://doxygen.mantidproject.org>
          */
-        class DLLExport ChopEventFilters  : public API::Algorithm
-        {
-        public:
-            ChopEventFilters();
-            ~ChopEventFilters();
-            
-            /// Algorithm's name for identification 
-            virtual const std::string name() const { return "ChopEventFilters";};
-            /// Algorithm's version for identification 
-            virtual int version() const { return 1;};
-            /// Algorithm's category for identification
-            virtual const std::string category() const { return "Events\\EventFiltering";}
-            
-        private:
-            /// Sets documentation strings for this algorithm
-            virtual void initDocs();
-            /// Initialise the properties
-            void init();
-            /// Run the algorithm
-            void exec();
+  class DLLExport ChopEventFilters  : public API::Algorithm
+  {
+  public:
+    ChopEventFilters();
+    ~ChopEventFilters();
 
-            void processAlgProperties();
-            void chopEventFilterByTime();
-            
-            
-            /// Input (source) time splitters workspace in MatrixWorkspace format
-            API::MatrixWorkspace_const_sptr m_inputWS;
-            
-            /// Output time splitters workspace in MatrixWorkspace format
-            API::MatrixWorkspace_sptr m_outputWS;
-            
-            /// Number of total time slots for chopping
-            int m_numSlots;
-            
-            /// Index of the time slot for output
-            int m_slotIndex;
-            
-            /// Target worskpace group to be chopped
-            int m_wsGroup;
-           
-            std::vector<double> m_outX;
-            std::vector<double> m_outY;
-            
-        };
-        
-        
-    } // namespace Mantid
+    /// Algorithm's name for identification
+    virtual const std::string name() const { return "ChopEventFilters";};
+    /// Algorithm's version for identification
+    virtual int version() const { return 1;};
+    /// Algorithm's category for identification
+    virtual const std::string category() const { return "Events\\EventFiltering";}
+
+  private:
+    /// Sets documentation strings for this algorithm
+    virtual void initDocs();
+    /// Initialise the properties
+    void init();
+    /// Run the algorithm
+    void exec();
+
+    void processAlgProperties();
+    void chopEventFilterByTime();
+
+
+    /// Input (source) time splitters workspace in MatrixWorkspace format
+    API::MatrixWorkspace_const_sptr m_inputWS;
+
+    /// Output time splitters workspace in MatrixWorkspace format
+    API::MatrixWorkspace_sptr m_outputWS;
+
+    /// Number of total time slots for chopping
+    int m_numSlots;
+
+    /// Index of the time slot for output
+    int m_slotIndex;
+
+    /// Target worskpace group to be chopped
+    int m_wsGroup;
+
+    std::vector<double> m_outX;
+    std::vector<double> m_outY;
+
+  };
+
+} // namespace Mantid
 } // namespace Algorithms
 
 

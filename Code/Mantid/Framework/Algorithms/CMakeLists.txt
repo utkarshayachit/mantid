@@ -672,6 +672,7 @@ set ( TEST_FILES
 	WeightingStrategyTest.h
 	WorkspaceCreationHelperTest.h
 	WorkspaceGroupTest.h
+	ChopEventFiltersTest.h
 )
 
 set ( TEST_PY_FILES NormaliseToUnityTest.py )
