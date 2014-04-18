@@ -57,11 +57,60 @@ public:
 
     return;
   }
+  
+  
+  //----------------------------------------------------------------------------------------------
+  /** Test on init and setup
+    */
+  void test_Exec()
+  {
+    // Generate input workspace
+    MatrixWorkspace_sptr splitws = gen_Splitters();
+    AnalysisDataService::Instance().addOrReplace("SplitterWS", splitws);
+
+    // Initialize ChopEventFilters
+    ChopEventFilters ChopEventFilters;
+
+    ChopEventFilters.initialize();
+    TS_ASSERT(ChopEventFilters.isInitialized());
+
+    // Set properties
+    TS_ASSERT_THROWS_NOTHING(ChopEventFilters.setPropertyValue("InputWorkspace", "SplitterWS"));
+    TS_ASSERT_THROWS_NOTHING(ChopEventFilters.setPropertyValue("OutputWorkspace", "Splitter2WS"));
+    TS_ASSERT_THROWS_NOTHING(ChopEventFilters.setPropertyValue("WorkspaceGroup", "2"));
+    TS_ASSERT_THROWS_NOTHING(ChopEventFilters.setProperty("NumberOfSplots", 10));
+    TS_ASSERT_THROWS_NOTHING(ChopEventFilters.setProperty("IndexOfSlot", "3"));
+
+    // Run
+    TS_ASSERT_THROWS_NOTHING(ChopEventFilters.execute());
+    TS_ASSERT(ChopEventFilters.isExecuted());
+
+    // Get hold of new workspace
+    MatrixWorkspace_sptr choppedws = boost::dynamic_pointer_cast<MatrixWorkspace>(
+          AnalysisDataService::Instance().retrieve("Splitter2WS"));
+    TS_ASSERT(choppedws);
+    if (!choppedws) return;
+
+    // Check
+    const MantidVec& vecT = choppedws->readX(0);
+    const MantidVec& vecG = choppedws->readY(0);
+    TS_ASSERT_EQUALS(vecT.size(), 6);
+    TS_ASSERT_EQUALS(vecG.size(), 5);
+    if (vecT.size() != 6 || vecG.size() != 5) return;
+
+    TS_ASSERT_DELTA(vecG[0], 2, 1.0E-10);
+
+    // Clean
+    AnalysisDataService::Instance().remove("SplitterWS");
+    AnalysisDataService::Instance().remove("Splitter2WS");
+
+    return;
+  }
 
   //----------------------------------------------------------------------------------------------
   /** Generate a workspace contains PG3_4866 5-th peak
     */
-  MatrixWorkspace_sptr gen_PG3DiamondData()
+  MatrixWorkspace_sptr gen_Splitters()
   {
     vector<double> vecx, vecy, vece;
 
