@@ -1,26 +1,25 @@
-/* WIKI
- 
- Develop time: P0 (45min) + 
- 
- 
+/*WIKI*
+
+ Develop time: P0 (45min) +
+
+
 == Divide splitter by time ==
 * Required:
  1. WorkspaceGroup (wg)
  2. Number of time slots (N)
  3. Index of time slot (i)
 * Algorithm:
- For each splitter (t_i^(s), t_i^(e)) corresponding to workspace group, wg, 
- a new splitter will be generated as 
+ For each splitter (t_i^(s), t_i^(e)) corresponding to workspace group, wg,
+ a new splitter will be generated as
  T_i^(s) = t_i^(s) + deltaT \cdot i
  T_i^(e) = t_i^(s) + deltaT \cdot (i+1)
  where
  deltaT = (t_i^(e) - t_i^(s))/N
- 
- 
- WIKI*/
+
+
+ *WIKI*/
 
 #include "MantidAlgorithms/ChopEventFilters.h"
-#include "MantidKernel/System.h"
 #include "MantidAPI/WorkspaceProperty.h"
 #include "MantidAPI/WorkspaceValidators.h"
 #include "MantidAPI/WorkspaceFactory.h"
@@ -29,7 +28,6 @@ namespace Mantid
 {
 namespace Algorithms
 {
-
   using namespace Mantid::API;
   using namespace Mantid::Kernel;
 
@@ -39,10 +37,17 @@ namespace Algorithms
 
   DECLARE_ALGORITHM(ChopEventFilters)
 
+
+  //----------------------------------------------------------------------------------------------
+  /** Constructor
+   */
   ChopEventFilters::ChopEventFilters()
   {
   }
-
+    
+  //----------------------------------------------------------------------------------------------
+  /** Destructor
+   */
   ChopEventFilters::~ChopEventFilters()
   {
   }
@@ -61,15 +66,15 @@ namespace Algorithms
   {
     declareProperty(new WorkspaceProperty<MatrixWorkspace>("InputWorkspace", "", Direction::Input),
                     "Name of input event filter workspace to be processed.");
-    
+
     declareProperty(new WorkspaceProperty<MatrixWorkspace>("OutputWorkspace", "", Direction::Output),
                     "Name of the output event filter workspace as a result of processing.");
-    
+
     declareProperty("WorkspaceGroup", EMPTY_INT(), "Workspace group of the evnet filers to be processed.");
-    
+
     // FIXME - Need a validator for integer range
     declareProperty("NumberOfSlots", 2, "Number of time slots for an individual filter to split to. ");
-    
+
     // FIXME - Need a validator for slot index
     declareProperty("IndexOfSlot", EMPTY_INT(), "Index of the time slot to be kept.");
 
@@ -81,10 +86,10 @@ namespace Algorithms
   {
     // Process inputs
     processAlgProperties();
-    
+
     // Calculating splitted
     chopEventFilterByTime();
-    
+
     // Finale
     if (m_outputWS) setProperty("OutputWorkspace", m_outputWS);
     else throw std::runtime_error("Output workspace is a null pointer.");
@@ -97,13 +102,13 @@ namespace Algorithms
   void ChopEventFilters::processAlgProperties()
   {
     m_inputWS = getProperty("InputWorkspace");
-    
+
     m_wsGroup = getProperty("WorkspaceGroup");
     if (isEmpty(m_wsGroup))
       throw std::runtime_error("Workspace must be given.");
-    
+
     m_numSlots = getProperty("NumberOfSlots");
-    
+
     m_slotIndex = getProperty("IndexOfSlot");
     if (m_slotIndex >= m_numSlots)
       throw std::runtime_error("Slot index is out of boundary as number of slots.");
@@ -123,7 +128,7 @@ namespace Algorithms
     {
       throw runtime_error("Input workspace is wrong at x and y's sizes.");
     }
-    
+
     // Find out splitters with matched workspace group
     double invertN = 1./static_cast<double> (m_numSlots);
     double slotindex_d = static_cast<double> (m_slotIndex);
@@ -172,7 +177,7 @@ namespace Algorithms
       }
 
     } /// END(for i)
-    
+
     // Check
     if (m_outX.size() == 0)
     {
@@ -181,7 +186,7 @@ namespace Algorithms
             << m_wsGroup << ", as user specified. ";
       throw runtime_error(errss.str());
     }
-    
+
     // Build output workspace group
     size_t nspec = 1;
     size_t sizey = m_outY.size();
@@ -194,9 +199,12 @@ namespace Algorithms
       dataY[i] = m_outY[i];
     }
     dataX[sizey] = m_outX[sizey];
-    
+
     return;
   }
 
-}
-}
+  
+
+
+} // namespace Algorithms
+} // namespace Mantid

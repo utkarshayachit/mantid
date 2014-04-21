@@ -1,5 +1,5 @@
-#ifndef MANTID_ALGORITHMS_CHOPEVENTFILTERS_H_
-#define MANTID_ALGORITHMS_CHOPEVENTFILTERS_H_
+#ifndef MANTID_ALGORITHMS_CHOPEVENTFILTERSTEST_H_
+#define MANTID_ALGORITHMS_CHOPEVENTFILTERSTEST_H_
 
 #include <cxxtest/TestSuite.h>
 
@@ -12,11 +12,9 @@
 using Mantid::Algorithms::ChopEventFilters;
 
 using namespace Mantid;
+using namespace Mantid::Algorithms;
 using namespace Mantid::API;
 using namespace Mantid::Kernel;
-using namespace Mantid::DataObjects;
-
-using namespace std;
 
 class ChopEventFiltersTest : public CxxTest::TestSuite
 {
@@ -29,6 +27,12 @@ public:
     return new ChopEventFiltersTest();
   }
   static void destroySuite( ChopEventFiltersTest *suite ) { delete suite; }
+
+
+  void test_Something()
+  {
+    TSM_ASSERT( "You forgot to write a test!", 0);
+  }
 
   //----------------------------------------------------------------------------------------------
   /** Test on init and setup
@@ -57,8 +61,8 @@ public:
 
     return;
   }
-  
-  
+
+
   //----------------------------------------------------------------------------------------------
   /** Test on init and setup
     */
@@ -112,7 +116,7 @@ public:
     */
   MatrixWorkspace_sptr gen_Splitters()
   {
-    vector<double> vecx, vecy, vece;
+    std::vector<double> vecx, vecy, vece;
 
     vecx.push_back(10000);    vecy.push_back(1.000000 ); vece.push_back(1.00000E+00);
     vecx.push_back(20000);    vecy.push_back(0.000000 ); vece.push_back(1.00000E+00);
@@ -151,4 +155,4 @@ public:
 };
 
 
-#endif /* MANTID_ALGORITHMS_CHOPEVENTFILTERS_H_ */
+#endif /* MANTID_ALGORITHMS_CHOPEVENTFILTERSTEST_H_ */

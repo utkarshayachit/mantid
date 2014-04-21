@@ -30,6 +30,7 @@ set ( SRC_FILES
 	src/ChangePulsetime.cpp
 	src/CheckWorkspacesMatch.cpp
 	src/ChopData.cpp
+	src/ChopEventFilters.cpp
 	src/ClearMaskFlag.cpp
 	src/CloneWorkspace.cpp
 	src/CommutativeBinaryOperation.cpp
@@ -224,14 +225,12 @@ set ( SRC_FILES
 	src/WeightingStrategy.cpp
 	src/WorkspaceJoiners.cpp
 	src/XDataConverter.cpp
-	src/ChopEventFilters.cpp
 )
 
 set ( INC_FILES
 	#	inc/MantidAlgorithms/Q1DTOF.h
 	# inc/MantidAlgorithms/CountEventsInPulses.h
 	# inc/MantidAlgorithms/UpdatePeakParameterTable.h
-	inc/MantidAlgorithms/ChopEventFilters.h
 	inc/MantidAlgorithms/AbsorptionCorrection.h
 	inc/MantidAlgorithms/AddLogDerivative.h
 	inc/MantidAlgorithms/AddPeak.h
@@ -260,6 +259,7 @@ set ( INC_FILES
 	inc/MantidAlgorithms/ChangePulsetime.h
 	inc/MantidAlgorithms/CheckWorkspacesMatch.h
 	inc/MantidAlgorithms/ChopData.h
+	inc/MantidAlgorithms/ChopEventFilters.h
 	inc/MantidAlgorithms/ClearMaskFlag.h
 	inc/MantidAlgorithms/CloneWorkspace.h
 	inc/MantidAlgorithms/CommutativeBinaryOperation.h
@@ -500,6 +500,7 @@ set ( TEST_FILES
 	ChangePulsetimeTest.h
 	CheckWorkspacesMatchTest.h
 	ChopDataTest.h
+	ChopEventFiltersTest.h
 	ClearMaskFlagTest.h
 	CloneWorkspaceTest.h
 	CommutativeBinaryOperationTest.h
@@ -672,7 +673,6 @@ set ( TEST_FILES
 	WeightingStrategyTest.h
 	WorkspaceCreationHelperTest.h
 	WorkspaceGroupTest.h
-	ChopEventFiltersTest.h
 )
 
 set ( TEST_PY_FILES NormaliseToUnityTest.py )
