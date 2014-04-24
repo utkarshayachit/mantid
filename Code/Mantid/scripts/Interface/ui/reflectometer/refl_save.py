@@ -211,8 +211,6 @@ class Ui_SaveWindow(object):
         QtCore.QObject.connect(self.pushButton_2, QtCore.SIGNAL(_fromUtf8("clicked()")), self.populateList)
         QtCore.QObject.connect(self.lineEdit, QtCore.SIGNAL(_fromUtf8("textChanged()")), self.setPath)
         QtCore.QObject.connect(self.listWidget, QtCore.SIGNAL(_fromUtf8("itemActivated(QListWidgetItem*)")), self.workspaceSelected)
-     #   QtCore.QObject.connect(self.actionSave_table, QtCore.SIGNAL(_fromUtf8("triggered()")), self.saveDialog)
-     #   QtCore.QObject.connect(self.actionLoad_table, QtCore.SIGNAL(_fromUtf8("triggered()")), self.loadDialog)
         QtCore.QMetaObject.connectSlotsByName(SaveWindow)
 
     def retranslateUi(self, SaveWindow):

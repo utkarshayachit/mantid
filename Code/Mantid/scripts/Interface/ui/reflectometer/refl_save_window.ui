@@ -364,14 +364,15 @@
   <tabstop>buttonBrowse</tabstop>
   <tabstop>textPrefix</tabstop>
   <tabstop>listWorkspaces</tabstop>
+  <tabstop>buttonTransfer</tabstop>
   <tabstop>listParameters</tabstop>
   <tabstop>textSpectra</tabstop>
-  <tabstop>comboFormat</tabstop>
   <tabstop>checkTitle</tabstop>
   <tabstop>checkQres</tabstop>
   <tabstop>radioComma</tabstop>
   <tabstop>radioSpace</tabstop>
   <tabstop>radioTab</tabstop>
+  <tabstop>comboFormat</tabstop>
   <tabstop>buttonsMain</tabstop>
  </tabstops>
  <resources/>

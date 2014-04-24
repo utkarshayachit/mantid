@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'D:\mantid\windows\Code\Mantid\scripts\Interface\ui\reflectometer/refl_save_window.ui'
 #
-# Created: Tue Apr 15 14:09:46 2014
+# Created: Tue Apr 15 16:58:18 2014
 #      by: PyQt4 UI code generator 4.8.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -170,15 +170,16 @@ class Ui_SaveDialog(object):
         SaveDialog.setTabOrder(self.textPath, self.buttonBrowse)
         SaveDialog.setTabOrder(self.buttonBrowse, self.textPrefix)
         SaveDialog.setTabOrder(self.textPrefix, self.listWorkspaces)
-        SaveDialog.setTabOrder(self.listWorkspaces, self.listParameters)
+        SaveDialog.setTabOrder(self.listWorkspaces, self.buttonTransfer)
+        SaveDialog.setTabOrder(self.buttonTransfer, self.listParameters)
         SaveDialog.setTabOrder(self.listParameters, self.textSpectra)
-        SaveDialog.setTabOrder(self.textSpectra, self.comboFormat)
-        SaveDialog.setTabOrder(self.comboFormat, self.checkTitle)
+        SaveDialog.setTabOrder(self.textSpectra, self.checkTitle)
         SaveDialog.setTabOrder(self.checkTitle, self.checkQres)
         SaveDialog.setTabOrder(self.checkQres, self.radioComma)
         SaveDialog.setTabOrder(self.radioComma, self.radioSpace)
         SaveDialog.setTabOrder(self.radioSpace, self.radioTab)
-        SaveDialog.setTabOrder(self.radioTab, self.buttonsMain)
+        SaveDialog.setTabOrder(self.radioTab, self.comboFormat)
+        SaveDialog.setTabOrder(self.comboFormat, self.buttonsMain)
 
     def retranslateUi(self, SaveDialog):
         SaveDialog.setWindowTitle(QtGui.QApplication.translate("SaveDialog", "Export Workspaces", None, QtGui.QApplication.UnicodeUTF8))
