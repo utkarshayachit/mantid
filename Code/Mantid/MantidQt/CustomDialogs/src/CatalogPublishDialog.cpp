@@ -3,6 +3,7 @@
 #include "MantidAPI/CatalogFactory.h"
 #include "MantidAPI/CatalogManager.h"
 #include "MantidAPI/ICatalog.h"
+#include "MantidAPI/ICatalogInfoService.h"
 #include "MantidAPI/WorkspaceFactory.h"
 #include "MantidKernel/ConfigService.h"
 #include "MantidKernel/FacilityInfo.h"
@@ -61,7 +62,16 @@ namespace MantidQt
       // We need to catch the exception to prevent a fatal error.
       try
       {
-        if (!session.empty()) Mantid::API::CatalogManager::Instance().getCatalog("")->myData(workspace);
+        if (!session.empty())
+        {
+          // Cast a catalog to a catalogInfoService to access downloading functionality.
+          auto catalogInfoService = boost::dynamic_pointer_cast<Mantid::API::ICatalogInfoService>(
+              Mantid::API::CatalogManager::Instance().getCatalog(session.front()->getSessionId()));
+          // Check if the catalog created supports publishing functionality.
+          if (!catalogInfoService) throw std::runtime_error("The catalog that you are using does not support publishing.");
+          // Populate the workspace with investigations that the user has CREATE access to.
+          workspace = catalogInfoService->getPublishInvestigations();
+        }
       }
       catch(std::runtime_error& e)
       {

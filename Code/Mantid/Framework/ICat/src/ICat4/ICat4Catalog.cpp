@@ -1,5 +1,6 @@
 #include "MantidAPI/CatalogFactory.h"
 #include "MantidAPI/Progress.h"
+#include "MantidAPI/WorkspaceFactory.h"
 #include "MantidICat/ICatDOI/GSoapGenerated/ICatDOIDOIPortBindingProxy.h"
 #include "MantidICat/ICat4/GSoapGenerated/ICat4ICATPortBindingProxy.h"
 #include "MantidICat/ICat4/ICat4Catalog.h"
@@ -773,7 +774,7 @@ namespace Mantid
       // Set the elements of the URL.
       std::string session   = "sessionId="  + m_session->getSessionId();
       std::string name      = "&name="      + createFileName;
-      std::string datasetId = "&datasetId=" + boost::lexical_cast<std::string>(getDatasetId(investigationID));
+      std::string datasetId = "&datasetId=" + boost::lexical_cast<std::string>(getMantidDatasetId(investigationID));
       std::string description = "&description=" + dataFileDescription;
 
       // Add pieces of URL together.
@@ -818,11 +819,68 @@ namespace Mantid
     }
 
     /**
-     * Search the archive & obtain the dataset ID for a specific investigation.
+    * Obtains the investigations that the user can publish
+    * to and saves related information to a workspace.
+    * @return A workspace containing investigation information the user can publish to.
+    */
+    API::ITableWorkspace_sptr ICat4Catalog::getPublishInvestigations()
+    {
+      ICat4::ICATPortBindingProxy icat;
+      setICATProxySettings(icat);
+
+      auto ws = API::WorkspaceFactory::Instance().createTable("TableWorkspace");
+      // Populate the workspace with all the investigations that
+      // the user is an investigator off and has READ access to.
+      myData(ws);
+
+      ns1__isAccessAllowed request;
+      ns1__isAccessAllowedResponse response;
+
+      std::string sessionID = m_session->getSessionId();
+      request.sessionId = &sessionID;
+
+      ns1__accessType_ acessType;
+      acessType.__item = ns1__accessType__CREATE;
+      request.accessType = &acessType.__item;
+
+      // Remove each investigation returned from `myData`
+      // were the user does not have create/write access.
+      for (int row = static_cast<int>(ws->rowCount()) - 1; row >= 0; --row)
+      {
+        ns1__datafile datafile;
+        std::string datafileName = "tempName.nxs";
+        datafile.name = &datafileName;
+
+        // Each investigation can have multiple datasets.
+        // We want to check that the user can publish to the "mantid" dataset
+        // related to the investigations of which they are investigators (via "my data").
+        ns1__dataset dataset;
+        int64_t datasetID = getMantidDatasetId(ws->getRef<std::string>("InvestigationID",row));
+        dataset.id = &datasetID;
+        datafile.dataset = &dataset;
+
+        request.bean = &datafile;
+
+        if (icat.isAccessAllowed(&request,&response) == 0)
+        {
+          if (!response.return_) ws->removeRow(row);
+        }
+        else
+        {
+          throwSoapError(icat);
+        }
+      }
+
+      return ws;
+    }
+
+    /**
+     * Search the archive & obtain the "mantid" dataset ID for a specific investigation if it exists.
+     * If it does not exist, we will attempt to create it.
      * @param investigationID :: Used to obtain the related dataset ID.
      * @return Dataset ID of the provided investigation.
      */
-    int64_t ICat4Catalog::getDatasetId(const std::string &investigationID)
+    int64_t ICat4Catalog::getMantidDatasetId(const std::string &investigationID)
     {
       ICat4::ICATPortBindingProxy icat;
       setICATProxySettings(icat);
@@ -832,11 +890,12 @@ namespace Mantid
 
       std::string query = "Dataset <-> Investigation[name = '" + investigationID + "']";
       request.query     = &query;
+
       std::string sessionID = m_session->getSessionId();
       request.sessionId = &sessionID;
 
-      g_log.debug() << "The query performed to obtain a dataset from an investigation" <<
-          " id in ICat4Catalog::getDatasetIdFromFileName is:\n" << query << std::endl;
+      g_log.debug() << "The query performed to obtain a dataset from an investigation id " <<
+          "in ICat4Catalog::getMantidDatasetId is: " << query << std::endl;
       
       int64_t datasetID = 0;
       
@@ -850,7 +909,11 @@ namespace Mantid
               " (Based on investigation ID: " + investigationID + ")");
         }
         ns1__dataset * dataset = dynamic_cast<ns1__dataset*>(response.return_.at(0));
-        if (dataset && dataset->id) datasetID = *(dataset->id);
+        if (dataset && dataset->id)
+        {
+          datasetID = *(dataset->id);
+          g_log.debug() << "The name of the dataset related to " << investigationID << " is: " << *(dataset->name) << "\n";
+        }
       }
       else
       {

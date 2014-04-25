@@ -71,6 +71,8 @@ namespace Mantid
             const std::string &investigationID, const std::string &createFileName, const std::string &dataFileDescription);
         /// Generate a DOI for a datafile based on the related investigation.
         virtual const std::string registerDatafileDOI(const long long& databaseID);
+        /// Obtains the investigations that the user can publish to and saves related information to a workspace.
+        virtual API::ITableWorkspace_sptr getPublishInvestigations();
 
       private:
         // Saves "MyData" query result to output workspace.
@@ -86,7 +88,7 @@ namespace Mantid
         // Helper method that formats a given timestamp.
         std::string formatDateTime(const time_t &timestamp, const std::string &format);
         // Search the archive & obtain the dataset ID based on the investigationID.
-        int64_t getDatasetId(const std::string &investigationID);
+        int64_t getMantidDatasetId(const std::string &investigationID);
         // Sets the soap-endpoint & SSL context for the given ICAT proxy.
         void setICATProxySettings(ICat4::ICATPortBindingProxy& icat);
 

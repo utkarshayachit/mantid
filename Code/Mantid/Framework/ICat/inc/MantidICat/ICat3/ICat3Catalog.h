@@ -74,6 +74,8 @@ namespace Mantid
           const std::string &investigationID, const std::string &createFileName, const std::string &dataFileDescription);
       /// Generate a DOI for a datafile based on the related investigation.
       virtual const std::string registerDatafileDOI(const long long& databaseID);
+      /// Obtains the investigations that the user can publish to and saves related information to a workspace.
+      virtual API::ITableWorkspace_sptr getPublishInvestigations();
 
     private:
       /// The helper class that accesses ICAT functionality.
