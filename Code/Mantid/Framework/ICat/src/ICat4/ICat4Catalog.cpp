@@ -676,6 +676,25 @@ namespace Mantid
       }
     }
 
+
+    /**
+     * Keep the current session alive.
+     */
+    void ICat4Catalog::keepAlive()
+    {
+      ICat4::ICATPortBindingProxy icat;
+      setICATProxySettings(icat);
+
+      ns1__refresh request;
+      ns1__refreshResponse response;
+
+      std::string sessionID = m_session->getSessionId();
+      request.sessionId = &sessionID;
+
+      // An error occurred!
+      if (icat.refresh(&request,&response) != SOAP_OK) throwSoapError(icat);
+    }
+
     /**
      * Gets the file location string from the archives.
      * @param fileID :: The id of the file to search for.
@@ -898,24 +917,6 @@ namespace Mantid
       }
 
       return datasetID;
-    }
-
-    /**
-     * Keep the current session alive.
-     */
-    void ICat4Catalog::keepAlive()
-    {
-      ICat4::ICATPortBindingProxy icat;
-      setICATProxySettings(icat);
-
-      ns1__refresh request;
-      ns1__refreshResponse response;
-
-      std::string sessionID = m_session->getSessionId();
-      request.sessionId = &sessionID;
-
-      // An error occurred!
-      if (icat.refresh(&request,&response) != SOAP_OK) throwSoapError(icat);
     }
 
     /**
