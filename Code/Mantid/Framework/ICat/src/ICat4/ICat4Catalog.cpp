@@ -946,25 +946,10 @@ namespace Mantid
     template<class T>
     void ICat4Catalog::throwSoapError(T& soapProxy)
     {
-      char buf[600];
-      const int len = 600;
-      soapProxy.soap_sprint_fault(buf,len);
-      std::string error(buf);
-      std::string begmsg("<message>");
-      std::string endmsg("</message>");
-
-      std::basic_string <char>::size_type start = error.find(begmsg);
-      std::basic_string <char>::size_type end   = error.find(endmsg);
-      std::string exception;
-
-      if(start != std::string::npos && end != std::string::npos)
-      {
-        exception = error.substr(start + begmsg.length(), end - (start + begmsg.length()) );
-      }
+      std::string error = soapProxy.soap_fault_string();
       // If no error is returned by ICAT then there is a connection problem.
-      if (exception.empty()) exception = "ICAT appears to be offline. Please check your connection or report this issue.";
-
-      throw std::runtime_error(exception);
+      if (error.empty()) error = "ICAT appears to be offline. Please check your connection or report this issue.";
+      throw std::runtime_error(error);
     }
 
     /**
