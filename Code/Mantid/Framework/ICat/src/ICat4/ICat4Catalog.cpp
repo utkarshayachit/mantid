@@ -83,9 +83,7 @@ namespace Mantid
       entry.value = &passWord;
       entries.push_back(entry);
 
-      int result = icat.login(&login, &loginResponse);
-
-      if (result == 0)
+      if (icat.login(&login, &loginResponse) == SOAP_OK)
       {
         m_session->setSessionId(*(loginResponse.return_));
       }
@@ -111,9 +109,7 @@ namespace Mantid
       std::string sessionID = m_session->getSessionId();
       request.sessionId = &sessionID;
 
-      int result = icat.logout(&request,&response);
-
-      if(result == 0)
+      if(icat.logout(&request,&response) == SOAP_OK)
       {
         m_session->setSessionId("");
       }
@@ -288,9 +284,7 @@ namespace Mantid
       request.sessionId = &sessionID;
       request.query = &query;
 
-      int result = icat.search(&request, &response);
-
-      if (result == 0)
+      if (icat.search(&request, &response) == SOAP_OK)
       {
         saveInvestigations(response.return_, outputws);
       }
@@ -324,11 +318,9 @@ namespace Mantid
 
       g_log.debug() << "The paging search query in ICat4Catalog::getNumberOfSearchResults is: \n" << query << std::endl;
 
-      int result = icat.search(&request, &response);
-
       int64_t numOfResults = 0;
 
-      if (result == 0)
+      if (icat.search(&request, &response) == SOAP_OK)
       {
         xsd__long * numRes = dynamic_cast<xsd__long*>(response.return_.at(0));
         numOfResults = numRes->__item;
@@ -370,9 +362,7 @@ namespace Mantid
         "INCLUDE inves.facility, inves.investigationInstruments.instrument, inves.parameters";
       request.query     = &query;
 
-      int result = icat.search(&request, &response);
-
-      if (result == 0)
+      if (icat.search(&request, &response) == SOAP_OK)
       {
         saveInvestigations(response.return_, outputws);
       }
@@ -484,9 +474,7 @@ namespace Mantid
 
       g_log.debug() << "ICat4Catalog::getDataSets -> { " << query << " }" << std::endl;
 
-      int result = icat.search(&request, &response);
-
-      if (result == 0)
+      if (icat.search(&request, &response) == SOAP_OK)
       {
         saveDataSets(response.return_, outputws);
       }
@@ -550,9 +538,7 @@ namespace Mantid
 
       g_log.debug() << "The query for ICat4Catalog::getDataSets is:\n" << query << std::endl;
 
-      int result = icat.search(&request, &response);
-
-      if (result == 0)
+      if (icat.search(&request, &response) == SOAP_OK)
       {
         saveDataFiles(response.return_, outputws);
       }
@@ -630,9 +616,7 @@ namespace Mantid
       std::string sessionID = m_session->getSessionId();
       request.sessionId = &sessionID;
 
-      int result = icat.search(&request, &response);
-
-      if (result == 0)
+      if (icat.search(&request, &response) == SOAP_OK)
       {
         for(unsigned i = 0; i < response.return_.size(); ++i)
         {
@@ -671,9 +655,7 @@ namespace Mantid
       std::string sessionID = m_session->getSessionId();
       request.sessionId = &sessionID;
 
-      int result = icat.search(&request, &response);
-
-      if (result == 0)
+      if (icat.search(&request, &response) == SOAP_OK)
       {
         for(unsigned i = 0; i < response.return_.size(); ++i)
         {
@@ -714,10 +696,9 @@ namespace Mantid
       std::string sessionID = m_session->getSessionId();
       request.sessionId = &sessionID;
 
-      int result = icat.get(&request, &response);
-
       std::string fileLocation;
-      if (result == 0)
+
+      if (icat.get(&request, &response) == SOAP_OK)
       {
         ns1__datafile * datafile = dynamic_cast<ns1__datafile*>(response.return_);
 
@@ -805,9 +786,7 @@ namespace Mantid
 
       std::string registeredDOI = "";
 
-      int result = icatDOI.registerDatafileDOI(&request,&response);
-
-      if (result == 0)
+      if (icatDOI.registerDatafileDOI(&request,&response) == SOAP_OK)
       {
         registeredDOI = *(response.return_);
       }
@@ -861,7 +840,7 @@ namespace Mantid
 
         request.bean = &datafile;
 
-        if (icat.isAccessAllowed(&request,&response) == 0)
+        if (icat.isAccessAllowed(&request,&response) == SOAP_OK)
         {
           if (!response.return_) ws->removeRow(row);
         }
@@ -899,9 +878,7 @@ namespace Mantid
       
       int64_t datasetID = 0;
       
-      int result = icat.search(&request, &response);
-
-      if (result == 0)
+      if (icat.search(&request, &response) == SOAP_OK)
       {
         if (response.return_.size() <= 0)
         {
@@ -937,9 +914,8 @@ namespace Mantid
       std::string sessionID = m_session->getSessionId();
       request.sessionId = &sessionID;
 
-      int result = icat.refresh(&request,&response);
       // An error occurred!
-      if (result != 0) throwSoapError(icat);
+      if (icat.refresh(&request,&response) != SOAP_OK) throwSoapError(icat);
     }
 
     /**
