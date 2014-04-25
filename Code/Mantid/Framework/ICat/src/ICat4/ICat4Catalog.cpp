@@ -949,6 +949,8 @@ namespace Mantid
       std::string error = soapProxy.soap_fault_string();
       // If no error is returned by ICAT then there is a connection problem.
       if (error.empty()) error = "ICAT appears to be offline. Please check your connection or report this issue.";
+
+      g_log.debug() << "The gSOAP error code returned by ICAT was: " << soapProxy.error << "\n";
       throw std::runtime_error(error);
     }
 
