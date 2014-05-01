@@ -29,11 +29,6 @@ public:
   static void destroySuite( ChopEventFiltersTest *suite ) { delete suite; }
 
 
-  void test_Something()
-  {
-    TSM_ASSERT( "You forgot to write a test!", 0);
-  }
-
   //----------------------------------------------------------------------------------------------
   /** Test on init and setup
     */
@@ -53,7 +48,7 @@ public:
     TS_ASSERT_THROWS_NOTHING(ChopEventFilters.setPropertyValue("InputWorkspace", "SplitterWS"));
     TS_ASSERT_THROWS_NOTHING(ChopEventFilters.setPropertyValue("OutputWorkspace", "Splitter2WS"));
     TS_ASSERT_THROWS_NOTHING(ChopEventFilters.setPropertyValue("WorkspaceGroup", "2"));
-    TS_ASSERT_THROWS_NOTHING(ChopEventFilters.setProperty("NumberOfSplots", 10));
+    TS_ASSERT_THROWS_NOTHING(ChopEventFilters.setProperty("NumberOfSlots", 10));
     TS_ASSERT_THROWS_NOTHING(ChopEventFilters.setProperty("IndexOfSlot", "3"));
 
     // Clean
@@ -82,7 +77,7 @@ public:
     TS_ASSERT_THROWS_NOTHING(ChopEventFilters.setPropertyValue("InputWorkspace", "SplitterWS"));
     TS_ASSERT_THROWS_NOTHING(ChopEventFilters.setPropertyValue("OutputWorkspace", "Splitter2WS"));
     TS_ASSERT_THROWS_NOTHING(ChopEventFilters.setPropertyValue("WorkspaceGroup", "2"));
-    TS_ASSERT_THROWS_NOTHING(ChopEventFilters.setProperty("NumberOfSplots", 10));
+    TS_ASSERT_THROWS_NOTHING(ChopEventFilters.setProperty("NumberOfSlots", 10));
     TS_ASSERT_THROWS_NOTHING(ChopEventFilters.setProperty("IndexOfSlot", "3"));
 
     // Run
