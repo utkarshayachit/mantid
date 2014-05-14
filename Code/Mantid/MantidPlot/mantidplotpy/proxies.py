@@ -824,4 +824,13 @@ class FitBrowserProxy(QtProxyObject):
     def __init__(self, toproxy):
         QtProxyObject.__init__(self,toproxy)
         
+
+#------------------------------------------------------------------------------
+class MdViewerWidgetProxy(QtProxyObject):
+    """
+        Proxy for the MdViewerWidget object. 
+    """
+    def __init__(self, toproxy):
+        QtProxyObject.__init__(self,toproxy)
+
         

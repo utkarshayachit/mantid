@@ -11,8 +11,6 @@
 %Import QtCore/QtCoremod.sip
 %Import QtGui/QtGuimod.sip
 
-%Import mantidqt.sip
-
 /******************************************************************/
 
 namespace Mantid
@@ -36,3 +34,7 @@ public:
 }; // namespace Vates
 }; // namespace Mantid
 
+// Push import of mantidqt.sip to end to avoid Vates namespace being 
+// placed in that module.
+
+%Import mantidqt.sip

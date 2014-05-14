@@ -953,3 +953,24 @@ def __getWorkspaceIndices(source):
     return index_list
 
 #-----------------------------------------------------------------------------
+
+#=============================================================================
+# VSI Methods
+#=============================================================================
+
+def showVSI(source):
+    workspace_names = getWorkspaceNames(source)
+    try:
+        import mantidvsipython
+    except:
+        print "Could not find module mantidvsipython. Cannot open the VatesSimpleInterface."
+        return
+
+    vsi = mantidvsipython.Mantid.Vates.SimpleGui.MdViewerWidget()
+    threadsafe_call(vsi.setupPluginMode)
+    # -- Connect to main window's shut down signal ---
+    QtCore.QObject.connect(_qti.app, QtCore.SIGNAL("shutting_down()"),
+                           vsi, QtCore.SLOT("close()"))
+    
+    threadsafe_call(vsi.show)
+    return proxies.MdViewerWidgetProxy(vsi)
