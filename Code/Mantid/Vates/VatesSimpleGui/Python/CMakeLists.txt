@@ -6,6 +6,8 @@ set( PY_MODULE_NAME mantidvsipython )
 
 include_directories ( ${PYTHON_INCLUDE_PATH} )
 
+set ( MANTIDQT_SIP_DIR ${CMAKE_SOURCE_DIR}/MantidQt/Python )
+
 set ( SIP_SPEC ${CMAKE_CURRENT_SOURCE_DIR}/mantidvsi.sip )
 set ( SIP_SRC_IN ${CMAKE_CURRENT_SOURCE_DIR}/sip_mantidvsi.cpp.in )
 set ( SIP_SRC ${CMAKE_CURRENT_BINARY_DIR}/sip_mantidvsi.cpp )
@@ -38,6 +40,7 @@ set( SRC_UNITY_IGNORE_FILES )
 add_custom_command ( OUTPUT ${SIP_SRC_AUTO}
                      COMMAND ${SIP_EXECUTABLE}
                           -I ${PYQT4_SIP_DIR} ${PYQT4_SIP_FLAGS}
+                          -I ${MANTIDQT_SIP_DIR}
                           -c ${CMAKE_CURRENT_BINARY_DIR} -j1 -w 
                           -e 
                           ${SIP_SPEC}

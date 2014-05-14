@@ -104,7 +104,26 @@ public:
 MantidQt::API::AlgorithmDialog * createDialogFromName(const QString& algorithmName,  bool forScript, QWidget* parent=0);
 };
 
+
+class VatesViewerInterface : QWidget
+{
+%TypeHeaderCode
+#include "MantidQtAPI/VatesViewerInterface.h"
+%End
+public:
+  VatesViewerInterface();
+  void renderWorkspace(QString wsname, int wstype);
+  void setupPluginMode();
+
+  enum WorkspaceType
+  {
+    MDEW,
+    PEAKS,
+    MDHW
+  };
 };
+
+}; // namespace API
 
 namespace MantidWidgets
 {

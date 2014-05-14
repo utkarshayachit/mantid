@@ -11,48 +11,9 @@
 %Import QtCore/QtCoremod.sip
 %Import QtGui/QtGuimod.sip
 
+%Import mantidqt.sip
+
 /******************************************************************/
-/*
-namespace MantidQt
-{
-namespace API
-{
-
-class VatesViewerInterface : public QWidget {
-%TypeHeaderCode
-#include "MantidQtAPI/VatesViewerInterface.h"
-%End
-
-public:
-    VatesViewerInterface();
-};
-
-}; // namespace API
-}; // namespace MantidQt
-
-namespace Mantid
-{
-namespace Vates
-{
-namespace SimpleGui
-{
-namespace MantidQt.API;
-
-class MdViewerWidget : public MantidQt.API.VatesViewerInterface {
-%TypeHeaderCode
-#include "MantidVatesSimpleGuiViewWidgets/MdViewerWidget.h"
-%End
-
-public:
-    MdViewerWidget();
-    void setupPluginMode();
-};
-
-}; // namespace SimpleGui
-}; // namespace Vates
-}; // namespace Mantid
-*/
-
 
 namespace Mantid
 {
@@ -61,14 +22,14 @@ namespace Vates
 namespace SimpleGui
 {
 
-class MdViewerWidget : public QWidget {
+class MdViewerWidget : public MantidQt::API::VatesViewerInterface {
 %TypeHeaderCode
 #include "MantidVatesSimpleGuiViewWidgets/MdViewerWidget.h"
 %End
 
 public:
     MdViewerWidget();
-    void setupPluginMode();
+    //void setupPluginMode();
 };
 
 }; // namespace SimpleGui
