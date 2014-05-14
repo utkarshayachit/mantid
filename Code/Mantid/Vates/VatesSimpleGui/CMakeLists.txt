@@ -10,3 +10,4 @@ add_subdirectory( ViewWidgets )
 include_directories( ViewWidgets/inc )
 
 add_subdirectory( StandAloneExec )
+add_subdirectory( Python )
