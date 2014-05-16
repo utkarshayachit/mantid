@@ -64,7 +64,7 @@ namespace Mantid
       declareProperty("Session","","The session information of the catalog to use.");
       declareProperty("GenerateDOI",true, "Generates a DOI for the datafile being published."
           "Once a DOI is generated the datafile will be made public.");
-      declareProperty<int64_t>("InvestigationID",0,"The database row ID of the investigation that you want to publish to.");
+      declareProperty<int64_t>("DatabaseID",-1,"The database row ID of the investigation that you want to publish to.");
     }
 
     /// Execute the algorithm
@@ -136,7 +136,7 @@ namespace Mantid
       // The file was uploaded successfully. Generate a DOI if requested.
       if (boost::lexical_cast<bool>(getPropertyValue("GenerateDOI")))
       {
-        int64_t investigationID = getProperty("InvestigationID");
+        int64_t investigationID = getProperty("DatabaseID");
         std::string generatedDOI = catalogInfoService->registerDatafileDOI(investigationID);
         g_log.notice("The DOI registered for datafile " + Poco::Path(filePath).getFileName() + " was: " + generatedDOI);
       }
@@ -191,7 +191,10 @@ namespace Mantid
       catch(Poco::Exception&) {}
 
       // Cancel the algorithm and display the message if it exists.
-      if(!IDSError.empty()) throw std::runtime_error(IDSError);
+      if(!IDSError.empty())
+        throw std::runtime_error(IDSError);
+      else
+        g_log.notice() << "Publishing the datafile to the archives was a success.\n";
     }
 
     /**

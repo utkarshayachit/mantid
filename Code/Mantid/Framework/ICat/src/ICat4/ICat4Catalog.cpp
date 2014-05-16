@@ -668,18 +668,21 @@ namespace Mantid
 
       std::string session = m_session->getSessionId();
       request.arg0 = &session;
+      g_log.debug() << "The database ID used inside ICat4Catalog::registerDatafileDOI is: " << databaseID << "\n";
       request.arg1 = databaseID;
 
       std::string registeredDOI = "";
 
       if (icatDOI.registerDatafileDOI(&request,&response) == SOAP_OK)
       {
+        g_log.debug() << "Registering a datafile DOI was a success. The DOI generated was: " << *(response.return_) << "\n";
         registeredDOI = *(response.return_);
       }
       else
       {
         throwSoapError(icatDOI);
       }
+
       return registeredDOI;
     }
 
