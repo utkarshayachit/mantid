@@ -29,7 +29,7 @@ namespace Mantid
   {
 
     // Register the class into the algorithm factory
-    //DECLARE_ALGORITHM(OptimizeExtinctionParameters)
+    DECLARE_ALGORITHM(OptimizeExtinctionParameters)
     
     /// Sets documentation strings for this algorithm
     void OptimizeExtinctionParameters::initDocs()
@@ -67,7 +67,9 @@ namespace Mantid
       else mosaic = gsl_vector_get(v,0);
       if(v->size>1)rcrystallite = gsl_vector_get(v,1);
       Mantid::Algorithms::OptimizeExtinctionParameters u;
-      return u.fitMosaic(mosaic, rcrystallite, inname, corrOption, pointOption, tofParams);
+      double chisq;
+      PeaksWorkspace_sptr peaksW = u.fitMosaic(mosaic, rcrystallite, inname, corrOption, pointOption, tofParams, chisq);
+      return chisq;
     }
   
     //-----------------------------------------------------------------------------------------
@@ -76,7 +78,7 @@ namespace Mantid
     void OptimizeExtinctionParameters::init()
     {
 
-    declareProperty(new WorkspaceProperty<PeaksWorkspace>("InputWorkspace","",Direction::InOut),
+    declareProperty(new WorkspaceProperty<PeaksWorkspace>("InputWorkspace","",Direction::Input),
         "An input PeaksWorkspace with an instrument.");
     std::vector<std::string> corrOptions;
     corrOptions.push_back("Type I Zachariasen" );
@@ -103,7 +105,8 @@ namespace Mantid
     declareProperty("PointGroup", propOptions[0], boost::make_shared<StringListValidator>(propOptions),
       "Which point group applies to this crystal?");
     declareProperty("OutputChi2", 0.0,Direction::Output);
-
+    declareProperty(new WorkspaceProperty<PeaksWorkspace>("OutputWorkspace","",Direction::Output),
+        "An output PeaksWorkspace with extinctions.");
       //Disable default gsl error handler (which is to call abort!)
       gsl_set_error_handler_off();
     }
@@ -177,11 +180,11 @@ namespace Mantid
     
       // Output summary to log file
       std::string reportOfDiffractionEventCalibrateDetectors = gsl_strerror(status);
-      //g_log.debug() << 
+
       if(type.compare(5,2,"II")==0)r_crystallite = gsl_vector_get (s->x, 0);
       else mosaic = gsl_vector_get (s->x, 0);
       if(nopt>1)r_crystallite = gsl_vector_get (s->x, 1);
-      std::cout <<
+      g_log.debug() <<
         " Method used = " << " Simplex" << 
         " Iteration = " << iter << 
         " Status = " << reportOfDiffractionEventCalibrateDetectors << 
@@ -194,6 +197,9 @@ namespace Mantid
       setProperty("Mosaic", mosaic);
       setProperty("RCrystallite", r_crystallite);
       setProperty("OutputChi2", s->fval);
+      double Chisq;
+      PeaksWorkspace_sptr peaksW = fitMosaic(mosaic, r_crystallite, par[0], par[1], par[2], par[3], Chisq);
+      setProperty("OutputWorkspace", peaksW);
 
     }
 
@@ -207,14 +213,15 @@ namespace Mantid
      * @param corrOption
      * @param pointOption
      * @param tofParams
+     * @param Chisq
      * @return
      */
-    double OptimizeExtinctionParameters::fitMosaic(double mosaic, double rcrystallite, std::string inname, std::string corrOption, std::string pointOption, std::string tofParams)
+    PeaksWorkspace_sptr OptimizeExtinctionParameters::fitMosaic(double mosaic, double rcrystallite, std::string inname, std::string corrOption, std::string pointOption, std::string tofParams, double& Chisq)
     {
       PeaksWorkspace_sptr inputW = boost::dynamic_pointer_cast<PeaksWorkspace>
            (AnalysisDataService::Instance().retrieve(inname));
       std::vector<double> tofParam = Kernel::VectorHelper::splitStringIntoVector<double>(tofParams);
-      if (mosaic < 0.0 || rcrystallite < 0.0) return 1e300;
+      if (mosaic < 0.0 || rcrystallite < 0.0) Chisq = 1e300;
 
       API::IAlgorithm_sptr tofextinction = createChildAlgorithm("TOFExtinction",0.0,0.2);
       tofextinction->setProperty("InputWorkspace", inputW);
@@ -231,9 +238,10 @@ namespace Mantid
       sorthkl->setProperty("OutputWorkspace", peaksW);
       sorthkl->setProperty("PointGroup", pointOption);
       sorthkl->executeAsChildAlg();
-      double Chisq = sorthkl->getProperty("OutputChi2");
-      std::cout << mosaic<<"  "<<rcrystallite<<"  "<<Chisq<<"\n";
-      return Chisq;
+      Chisq = sorthkl->getProperty("OutputChi2");
+      peaksW = sorthkl->getProperty("OutputWorkspace");
+      g_log.notice() << " mosaic = " << mosaic<< " rcrystallite = " <<rcrystallite<< " Chisq = " <<Chisq<<"\n";
+      return peaksW;
     }
 
 

@@ -66,6 +66,7 @@ private:
   void init();
   /// Execution code
   void exec();
+  void addLog(API::Run & theRun);
 };
 
 } // namespace Algorithms

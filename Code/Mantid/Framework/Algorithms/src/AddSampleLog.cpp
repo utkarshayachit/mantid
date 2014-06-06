@@ -15,6 +15,7 @@ If the LogText contains a numeric value, the created log will be of integer type
 #include "MantidKernel/Strings.h"
 #include "MantidKernel/TimeSeriesProperty.h"
 #include "MantidKernel/PropertyWithValue.h"
+#include "MantidDataObjects/PeaksWorkspace.h"
 #include <string>
 
 namespace Mantid
@@ -34,10 +35,11 @@ void AddSampleLog::initDocs()
 
 using namespace Kernel;
 using namespace API;
+using namespace DataObjects;
 
 void AddSampleLog::init()
 {
-  declareProperty(new WorkspaceProperty<>("Workspace","",Direction::InOut),
+  declareProperty(new WorkspaceProperty<Workspace>("Workspace","",Direction::InOut),
     "Workspace to add the log entry to");
   declareProperty("LogName", "", boost::make_shared<MandatoryValidator<std::string> >(),
     "The name that will identify the log entry");
@@ -57,67 +59,78 @@ void AddSampleLog::init()
 void AddSampleLog::exec()
 {
   // A pointer to the workspace to add a log to
-  MatrixWorkspace_sptr wSpace = getProperty("Workspace");
-  // we're going to edit the workspaces run details so get a non-const reference to it
-  Run &theRun = wSpace->mutableRun();
-
-  // get the data that the user wants to add
-  std::string propName = getProperty("LogName");
-  std::string propValue = getProperty("LogText");
-  std::string propType = getPropertyValue("LogType");
-
-  // Remove any existing log
-  if (theRun.hasProperty(propName))
+  Workspace_sptr inputWorkspace = getProperty("Workspace");
+  MatrixWorkspace_sptr matrixWS = boost::dynamic_pointer_cast<MatrixWorkspace>(inputWorkspace);
+  PeaksWorkspace_sptr peaksWS = boost::dynamic_pointer_cast<PeaksWorkspace>(inputWorkspace);
+  if (matrixWS)
   {
-    theRun.removeLogData(propName);
+	  Run & theRun = matrixWS->mutableRun();
+	  addLog(theRun);
   }
-
-  if (propType == "String")
+  else if (peaksWS)
   {
-    theRun.addLogData(new PropertyWithValue<std::string>(propName, propValue));
-    return;
-  }
-
-  bool valueIsInt(false);
-  int intVal;
-  double dblVal;
-  if ( Strings::convert(propValue, intVal) )
-  {
-    valueIsInt = true;
-  }
-  else if ( !Strings::convert(propValue, dblVal) )
-  {
-    throw std::invalid_argument("Error interpreting string '" + propValue + "' as a number.");
-  }
-
-  if (propType == "Number")
-  {
-    if (valueIsInt) theRun.addLogData(new PropertyWithValue<int>(propName, intVal));
-    else theRun.addLogData(new PropertyWithValue<double>(propName, dblVal));
-  }
-  else if (propType == "Number Series")
-  {
-    Kernel::DateAndTime startTime;
-    try {
-      startTime = theRun.startTime();
-    } catch (std::runtime_error&) {
-      // Swallow the error - startTime will just be 0
-    }
-
-    if (valueIsInt)
-    {
-      auto tsp = new TimeSeriesProperty<int>(propName);
-      tsp->addValue(startTime, intVal);
-      theRun.addLogData(tsp);
-    }
-    else
-    {
-      auto tsp = new TimeSeriesProperty<double>(propName);
-      tsp->addValue(startTime, dblVal);
-      theRun.addLogData(tsp);
-    }
+	  Run & theRun = peaksWS->mutableRun();
+	  addLog(theRun);
   }
 }
+void AddSampleLog::addLog(Run & theRun)
+{
+	// get the data that the user wants to add
+	std::string propName = getProperty("LogName");
+	std::string propValue = getProperty("LogText");
+	std::string propType = getPropertyValue("LogType");
 
+	// Remove any existing log
+	if (theRun.hasProperty(propName))
+	{
+		theRun.removeLogData(propName);
+	}
+
+	if (propType == "String")
+	{
+		theRun.addLogData(new PropertyWithValue<std::string>(propName, propValue));
+		return;
+	}
+
+	bool valueIsInt(false);
+	int intVal;
+	double dblVal;
+	if ( Strings::convert(propValue, intVal) )
+	{
+		valueIsInt = true;
+	}
+	else if ( !Strings::convert(propValue, dblVal) )
+	{
+		throw std::invalid_argument("Error interpreting string '" + propValue + "' as a number.");
+	}
+
+	if (propType == "Number")
+	{
+		if (valueIsInt) theRun.addLogData(new PropertyWithValue<int>(propName, intVal));
+		else theRun.addLogData(new PropertyWithValue<double>(propName, dblVal));
+	}
+	else if (propType == "Number Series")
+	{
+		Kernel::DateAndTime startTime;
+		try {
+		  startTime = theRun.startTime();
+		} catch (std::runtime_error&) {
+		  // Swallow the error - startTime will just be 0
+		}
+
+		if (valueIsInt)
+		{
+		  auto tsp = new TimeSeriesProperty<int>(propName);
+		  tsp->addValue(startTime, intVal);
+		  theRun.addLogData(tsp);
+		}
+		else
+		{
+		  auto tsp = new TimeSeriesProperty<double>(propName);
+		  tsp->addValue(startTime, dblVal);
+		  theRun.addLogData(tsp);
+		}
+	}
+}
 } // namespace Algorithms
 } // namespace Mantid

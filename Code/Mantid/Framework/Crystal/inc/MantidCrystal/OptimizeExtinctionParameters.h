@@ -4,6 +4,7 @@
 #include "MantidAPI/Algorithm.h"
 #include "MantidKernel/System.h"
 #include "MantidDataObjects/OffsetsWorkspace.h"
+#include "MantidDataObjects/PeaksWorkspace.h"
 #include "MantidGeometry/Crystal/PointGroup.h"
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_multifit_nlin.h>
@@ -54,7 +55,7 @@ public:
   /// Algorithm's category for identification overriding a virtual method
   virtual const std::string category() const { return "Crystal"; }
   /// Call TOFExtinction as a Child Algorithm to get statistics of the peaks
-  double fitMosaic(double mosaic, double rcrystallite, std::string inname, std::string corrOption, std::string pointOption, std::string tofParams);
+  DataObjects::PeaksWorkspace_sptr fitMosaic(double mosaic, double rcrystallite, std::string inname, std::string corrOption, std::string pointOption, std::string tofParams, double& Chisq);
 
 private:
    /// Point Groups possible
