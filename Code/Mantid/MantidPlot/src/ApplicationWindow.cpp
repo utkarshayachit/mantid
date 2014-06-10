@@ -11513,7 +11513,7 @@ Graph* ApplicationWindow::openGraph(ApplicationWindow* app, MultiLayer *plot,
         try {
           if ( curvelst.size() < 7 ) // This was the case prior to 29 February, 2012
           {
-            PlotCurve *c = new MantidMatrixCurve(curvelst[1],ag,curvelst[3].toInt(),curvelst[4].toInt());
+            PlotCurve *c = new MantidMatrixCurve(curvelst[1],ag,curvelst[3].toInt(),MantidMatrixCurve::Spectrum, curvelst[4].toInt());
             // Deal with the brief period (Dec 29,2011-Feb 29, 2012) when any skip symbols count was just
             // stuck as an integer on the end of the of the line
             if ( curvelst.size() == 6 && !curvelst[5].isEmpty() ) c->setSkipSymbolsCount(curvelst[5].toInt());
@@ -11521,7 +11521,7 @@ Graph* ApplicationWindow::openGraph(ApplicationWindow* app, MultiLayer *plot,
           else
           {
             // Anything saved with a version after 29 February 2012 comes here
-            PlotCurve *c = new MantidMatrixCurve(curvelst[1],ag,curvelst[3].toInt(),curvelst[4].toInt(),
+            PlotCurve *c = new MantidMatrixCurve(curvelst[1],ag,curvelst[3].toInt(), MantidMatrixCurve::Spectrum, curvelst[4].toInt(),
                                                  curvelst[5].toInt());
             ag->setCurveType(curveID,curvelst[6].toInt());
             // Fill in the curve settings and apply them to the created curve
@@ -16438,6 +16438,7 @@ void ApplicationWindow::executeScriptFile(const QString & filename, const Script
     code += in.readLine() + "\n";
   }
   Script *runner = scriptingEnv()->newScript(filename, this, Script::NonInteractive);
+  connect(runner, SIGNAL(finished(const QString &)), this, SLOT(onScriptExecuteSuccess(const QString &)));
   connect(runner, SIGNAL(error(const QString &, const QString &, int)), this, SLOT(onScriptExecuteError(const QString &, const QString &, int)));
   runner->redirectStdOut(false);
   scriptingEnv()->redirectStdOut(false);
@@ -16457,6 +16458,18 @@ void ApplicationWindow::executeScriptFile(const QString & filename, const Script
     runner->execute(code);
   }
   delete runner;
+}
+
+/**
+ * This is the slot for handing script exits when it returns successfully
+ *
+ * @param lineNumber The line number in the script that caused the error.
+ */
+void ApplicationWindow::onScriptExecuteSuccess(const QString & message)
+{
+  g_log.notice() << message.toStdString() << "\n";
+  this->setExitCode(0);
+  this->exitWithPresetCode();
 }
 
 /**
@@ -17992,4 +18005,7 @@ void ApplicationWindow::about2Start(){
     update_script_repo->setLoggingOffset(1);
     mantidUI->executeAlgorithmAsync(update_script_repo);
   }
+
+  // Make sure we see all of the startup messages
+  resultsLog->scrollToTop();
 }

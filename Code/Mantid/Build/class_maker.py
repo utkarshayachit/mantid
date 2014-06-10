@@ -30,9 +30,9 @@ def write_header(subproject, classname, filename, args):
     virtual const std::string name() const;
     virtual int version() const;
     virtual const std::string category() const;
+    virtual const std::string summary() const;
 
   private:
-    virtual void initDocs();
     void init();
     void exec();
 
@@ -118,6 +118,9 @@ def write_source(subproject, classname, filename, args):
     f = open(filename, 'w')
     
     algorithm_top = """
+  using Mantid::Kernel::Direction;
+  using Mantid::API::WorkspaceProperty;
+
   // Register the algorithm into the AlgorithmFactory
   DECLARE_ALGORITHM(%s)
   
@@ -125,8 +128,7 @@ def write_source(subproject, classname, filename, args):
 
     algorithm_source = """
   //----------------------------------------------------------------------------------------------
-  /// Algorithm's name for identification. @see Algorithm::name
-  const std::string %s::name() const { return "%s";};
+
   
   /// Algorithm's version for identification. @see Algorithm::version
   int %s::version() const { return 1;};
@@ -134,13 +136,8 @@ def write_source(subproject, classname, filename, args):
   /// Algorithm's category for identification. @see Algorithm::category
   const std::string %s::category() const { return TODO: FILL IN A CATEGORY;}
 
-  //----------------------------------------------------------------------------------------------
-  /// Sets documentation strings for this algorithm
-  void %s::initDocs()
-  {
-    this->setWikiSummary("TODO: Enter a quick description of your algorithm.");
-    this->setOptionalMessage("TODO: Enter a quick description of your algorithm.");
-  }
+  /// Algorithm's summary for use in the GUI and help. @see Algorithm::summary
+  const std::string %s::summary() const { return TODO: FILL IN A SUMMARY;};
 
   //----------------------------------------------------------------------------------------------
   /** Initialize the algorithm's properties.
@@ -258,6 +255,7 @@ def write_test(subproject, classname, filename, args):
 #include "Mantid%s/%s%s.h"
 
 using Mantid::%s::%s;
+using namespace Mantid::API;
 
 class %sTest : public CxxTest::TestSuite
 {

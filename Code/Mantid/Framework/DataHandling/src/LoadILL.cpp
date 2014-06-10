@@ -1,15 +1,3 @@
-/*WIKI* 
-
-Loads an ILL TOF NeXus file into a [[Workspace2D]] with the given name.
-
-This loader calculates the elastic peak position (EPP) on the fly.
-In cases where the dispersion peak might be higher than the EPP, it is good practice to load a Vanadium file.
-
-The property FilenameVanadium is optional. If it is present the EPP will be loaded from the Vanadium data.
-
-To date this algorithm only supports: IN4, IN5 and IN6
-
-*WIKI*/
 //---------------------------------------------------
 // Includes
 //---------------------------------------------------
@@ -51,13 +39,6 @@ namespace Mantid
         << c.nxclass;
     }
 
-    /// Sets documentation strings for this algorithm
-    void LoadILL::initDocs() 
-    {
-      this->setWikiSummary("Loads a ILL nexus file. ");
-      this->setOptionalMessage("Loads a ILL nexus file.");
-    }
-
     /**
     * Return the confidence with with this algorithm can load the file
     * @param descriptor A descriptor for the file
@@ -69,7 +50,9 @@ namespace Mantid
       // fields existent only at the ILL
       if (descriptor.pathExists("/entry0/wavelength")
         && descriptor.pathExists("/entry0/experiment_identifier")
-        && descriptor.pathExists("/entry0/mode")) {
+        && descriptor.pathExists("/entry0/mode")
+        && !descriptor.pathExists("/entry0/dataSD") // This one is for LoadILLIndirect
+        ) {
           return 80;
       } 
       else 
