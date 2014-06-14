@@ -8,7 +8,6 @@ set ( SRC_FILES src/CatalogPublishDialog.cpp
                 src/LoadDAEDialog.cpp
                 src/LoadInstrumentDialog.cpp               
                 src/LoadRawDialog.cpp
-                src/LOQScriptInputDialog.cpp
                 src/MantidGLWidget.cpp
                 src/PlotAsymmetryByLogValueDialog.cpp
                 src/SampleShapeHelpers.cpp
@@ -29,7 +28,6 @@ set ( MOC_FILES inc/MantidQtCustomDialogs/CatalogPublishDialog.h
                 inc/MantidQtCustomDialogs/LoadDAEDialog.h
                 inc/MantidQtCustomDialogs/LoadInstrumentDialog.h               
                 inc/MantidQtCustomDialogs/LoadRawDialog.h
-                inc/MantidQtCustomDialogs/LOQScriptInputDialog.h
                 inc/MantidQtCustomDialogs/MantidGLWidget.h
                 inc/MantidQtCustomDialogs/PlotAsymmetryByLogValueDialog.h
                 inc/MantidQtCustomDialogs/SampleShapeHelpers.h
@@ -46,7 +44,6 @@ set ( UI_FILES inc/MantidQtCustomDialogs/CatalogPublishDialog.ui
                inc/MantidQtCustomDialogs/CreateSampleShapeDialog.ui
                inc/MantidQtCustomDialogs/ConvertTableToMatrixWorkspaceDialog.ui
                inc/MantidQtCustomDialogs/DiagScriptInputDialog.ui
-               inc/MantidQtCustomDialogs/LOQScriptInputDialog.ui
                inc/MantidQtCustomDialogs/PlotAsymmetryByLogValueDialog.ui
                inc/MantidQtCustomDialogs/LoadDialog.ui
                inc/MantidQtCustomDialogs/LoadInstrumentDialog.ui              
