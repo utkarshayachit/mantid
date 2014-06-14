@@ -5,7 +5,6 @@ set ( SRC_FILES src/CatalogPublishDialog.cpp
                 src/FitDialog.cpp
                 src/LoadDialog.cpp
                 src/LoadAsciiDialog.cpp
-                src/LoadDAEDialog.cpp
                 src/LoadInstrumentDialog.cpp               
                 src/LoadRawDialog.cpp
                 src/MantidGLWidget.cpp
@@ -25,7 +24,6 @@ set ( MOC_FILES inc/MantidQtCustomDialogs/CatalogPublishDialog.h
                 inc/MantidQtCustomDialogs/FitDialog.h
                 inc/MantidQtCustomDialogs/LoadDialog.h
                 inc/MantidQtCustomDialogs/LoadAsciiDialog.h
-                inc/MantidQtCustomDialogs/LoadDAEDialog.h
                 inc/MantidQtCustomDialogs/LoadInstrumentDialog.h               
                 inc/MantidQtCustomDialogs/LoadRawDialog.h
                 inc/MantidQtCustomDialogs/MantidGLWidget.h
