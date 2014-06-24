@@ -31,8 +31,8 @@ Each row corresponds to a detector whose type is indicated in the
 ``code`` column. The algorithm will only modify values in colums ``l2``,
 ``theta`` and ``phi`` and only if the value in the ``code`` column is 3,
 which indicates a PSD gas tube. For more details about the detector dot
-data file see
-`LoadDetectorInfo#File\_format <LoadDetectorInfo#File_format>`__.
+data file see the File format section of
+`LoadDetectorInfo <LoadDetectorInfo.html>`__.
 
 Usage
 -----
