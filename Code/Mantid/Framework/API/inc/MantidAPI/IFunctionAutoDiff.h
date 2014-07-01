@@ -55,11 +55,11 @@ public:
     }
 
     virtual void set(size_t iY, size_t iP, double value) {
-        m_jacobian[iY + iP * m_nParams] = value;
+        m_jacobian[iY + iP * m_nValues] = value;
     }
 
     virtual double get(size_t iY, size_t iP) {
-        return m_jacobian[iY + iP * m_nParams];
+        return m_jacobian[iY + iP * m_nValues];
     }
 
     void setValid() {
@@ -82,8 +82,43 @@ protected:
     bool m_isValid;
 };
 
+class AutoDiffParameters
+{
+public:
+    AutoDiffParameters(const IFunction *fromFunction)
+        : m_names(), m_parameters()
+    {
+        size_t np = fromFunction->nParams();
 
-class DLLExport IFunctionAutoDiff : virtual public IFunction, virtual public ParamFunction
+        m_parameters.resize(np);
+
+        for(size_t i = 0; i < np; ++i) {
+            m_names[fromFunction->parameterName(i)] = i;
+            m_parameters[i].set_value(fromFunction->getParameter(i));
+        }
+    }
+
+    size_t size() const { return m_parameters.size(); }
+
+    adept::adouble &operator[](size_t i) { return m_parameters[i]; }
+
+    adept::adouble getParameter(size_t i) const
+    {
+        return m_parameters[i];
+    }
+
+    adept::adouble getParameter(std::string &name) const
+    {
+        return m_parameters[m_names.at(name)];
+    }
+
+private:
+    std::map<std::string, size_t> m_names;
+    std::vector<adept::adouble> m_parameters;
+};
+
+
+class DLLExport IFunctionAutoDiff : virtual public IFunction
 {
 public:
     IFunctionAutoDiff();
@@ -92,25 +127,9 @@ public:
     void function(const FunctionDomain &domain, FunctionValues &values) const;
     void functionDeriv(const FunctionDomain &domain, Jacobian &jacobian);
 
-    virtual void functionAutoDiff(std::vector<adept::adouble> &x, std::vector<adept::adouble> &y, std::vector<adept::adouble> &parameters) const = 0;
+    void functionWrapper(const FunctionDomain &domain, FunctionValues &values, AutoDiffJacobian *jacobian) const;
 
-    virtual void setParameter(size_t i, const double &value, bool explicitlySet) {
-        ParamFunction::setParameter(i, value, explicitlySet);
-
-        m_jacobian->setInvalid();
-    }
-
-    virtual void setParameter(const std::string& name, const double &value, bool explicitlySet) {
-        ParamFunction::setParameter(name, value, explicitlySet);
-
-        m_jacobian->setInvalid();
-    }
-
-protected:
-    std::vector<adept::adouble> getAdeptParameters() const;
-
-    adept::Stack *m_stack;
-    AutoDiffJacobian *m_jacobian;
+    virtual void functionAutoDiff(std::vector<adept::adouble> &x, std::vector<adept::adouble> &y, const AutoDiffParameters &parameters) const = 0;
 };
 
 
