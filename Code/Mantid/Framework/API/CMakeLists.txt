@@ -52,7 +52,7 @@ set ( SRC_FILES
 	src/IFunction.cpp
 	src/IFunction1D.cpp
 	src/IFunction1DSpectrum.cpp
-	src/IFunctionAutoDiff.cpp
+        src/IFunction1DAutoDiff.cpp
 	src/IFunctionMD.cpp
 	src/IFunctionMW.cpp
 	src/ILiveListener.cpp
@@ -200,7 +200,7 @@ set ( INC_FILES
 	inc/MantidAPI/IFunction.h
 	inc/MantidAPI/IFunction1D.h
 	inc/MantidAPI/IFunction1DSpectrum.h
-	inc/MantidAPI/IFunctionAutoDiff.h
+        inc/MantidAPI/IFunction1DAutoDiff.h
 	inc/MantidAPI/IFunctionMD.h
 	inc/MantidAPI/IFunctionMW.h
 	inc/MantidAPI/IFunctionWithLocation.h
@@ -323,7 +323,7 @@ set ( TEST_FILES
 	IEventListTest.h
 	IFunction1DSpectrumTest.h
 	IFunction1DTest.h
-	IFunctionAutoDiffTest.h
+        IFunction1DAutoDiffTest.h
 	IFunctionMDTest.h
 	ILiveListenerTest.h
 	IMDWorkspaceTest.h

@@ -3,8 +3,8 @@
 
 #include "MantidKernel/System.h"
 #include "MantidAPI/IFunction.h"
+#include "MantidAPI/FunctionDomain1D.h"
 #include "MantidAPI/Jacobian.h"
-#include "MantidAPI/ParamFunction.h"
 
 #include <adept.h>
 
@@ -13,9 +13,14 @@ namespace Mantid
 namespace API
 {
 
-/** IFunctionAutoDiff : TODO: DESCRIPTION
+/** IFunction1DAutoDiff :
 
-    Copyright &copy; 2014 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+    Implementation of IFunction that provides "Automatic differentiation" for 1D domains.
+
+      @author Michael Wedel, Paul Scherrer Institut - SINQ
+      @date 02/07/2014
+
+    Copyright © 2014 PSI-MSS
 
     This file is part of Mantid.
 
@@ -35,14 +40,14 @@ namespace API
     File change history is stored at: <https://github.com/mantidproject/mantid>
     Code Documentation is available at: <http://doxygen.mantidproject.org>
   */
-class AutoDiffJacobian : public Jacobian
+class AutoDiffJacobianAdapter : public Jacobian
 {
 public:
-    AutoDiffJacobian() : Jacobian(),
+    AutoDiffJacobianAdapter() : Jacobian(),
         m_nParams(0), m_nValues(0), m_jacobian(), m_isValid(false)
     { }
 
-    virtual ~AutoDiffJacobian() { }
+    virtual ~AutoDiffJacobianAdapter() { }
 
     void setSize(size_t nParams, size_t nValues) {
         m_nParams = nParams;
@@ -54,27 +59,31 @@ public:
         return &m_jacobian[0];
     }
 
+    inline double getRaw(size_t iY, size_t iP) const {
+        return m_jacobian[index(iY, iP)];
+    }
+
     virtual void set(size_t iY, size_t iP, double value) {
-        m_jacobian[iY + iP * m_nValues] = value;
+        m_jacobian[index(iY, iP)] = value;
     }
 
     virtual double get(size_t iY, size_t iP) {
-        return m_jacobian[iY + iP * m_nValues];
+        return getRaw(iY, iP);
     }
 
-    void setValid() {
-        m_isValid = true;
-    }
-
-    void setInvalid() {
-        m_isValid = false;
-    }
-
-    bool isValid() {
-        return m_isValid;
+    void copyValuesToJacobian(Jacobian &jacobian) {
+        for(size_t y = 0; y < m_nValues; ++y) {
+            for(size_t p = 0; p < m_nParams; ++p) {
+                jacobian.set(y, p, getRaw(y, p));
+            }
+        }
     }
 
 protected:
+    inline size_t index(size_t iY, size_t iP) const {
+        return iY + iP * m_nValues;
+    }
+
     size_t m_nParams;
     size_t m_nValues;
     std::vector<double> m_jacobian;
@@ -82,10 +91,12 @@ protected:
     bool m_isValid;
 };
 
-class AutoDiffParameters
+
+
+class DLLExport AutoDiffParameterAdapter
 {
 public:
-    AutoDiffParameters(const IFunction *fromFunction)
+    AutoDiffParameterAdapter(const IFunction *fromFunction)
         : m_names(), m_parameters()
     {
         size_t np = fromFunction->nParams();
@@ -93,8 +104,8 @@ public:
         m_parameters.resize(np);
 
         for(size_t i = 0; i < np; ++i) {
-            m_names[fromFunction->parameterName(i)] = i;
             m_parameters[i].set_value(fromFunction->getParameter(i));
+            m_names[fromFunction->parameterName(i)] = i;
         }
     }
 
@@ -102,13 +113,14 @@ public:
 
     adept::adouble &operator[](size_t i) { return m_parameters[i]; }
 
-    adept::adouble getParameter(size_t i) const
+    const adept::adouble &getParameter(size_t i) const
     {
         return m_parameters[i];
     }
 
-    adept::adouble getParameter(std::string &name) const
+    const adept::adouble &getParameter(std::string name) const
     {
+
         return m_parameters[m_names.at(name)];
     }
 
@@ -118,18 +130,18 @@ private:
 };
 
 
-class DLLExport IFunctionAutoDiff : virtual public IFunction
+class DLLExport IFunction1DAutoDiff : virtual public IFunction
 {
 public:
-    IFunctionAutoDiff();
-    virtual ~IFunctionAutoDiff();
+    IFunction1DAutoDiff();
+    virtual ~IFunction1DAutoDiff();
 
     void function(const FunctionDomain &domain, FunctionValues &values) const;
     void functionDeriv(const FunctionDomain &domain, Jacobian &jacobian);
 
-    void functionWrapper(const FunctionDomain &domain, FunctionValues &values, AutoDiffJacobian *jacobian) const;
+    void functionWrapper(const FunctionDomain &domain, FunctionValues &values, AutoDiffJacobianAdapter *jacobian = 0) const;
 
-    virtual void functionAutoDiff(std::vector<adept::adouble> &x, std::vector<adept::adouble> &y, const AutoDiffParameters &parameters) const = 0;
+    virtual void function1DAutoDiff(const FunctionDomain1D &domain, std::vector<adept::adouble> &y, const AutoDiffParameterAdapter &parameters) const = 0;
 };
 
 
