@@ -4,6 +4,7 @@ set ( SRC_FILES
 	# src/ChebyshevPolynomialBackground.cpp
 	src/Abragam.cpp
 	src/AugmentedLagrangianOptimizer.cpp
+	src/AutoDiffTestAlg.cpp
 	src/BFGS_Minimizer.cpp
 	src/BSpline.cpp
 	src/BackToBackExponential.cpp
@@ -45,6 +46,7 @@ set ( SRC_FILES
 	src/GausDecay.cpp
 	src/GausOsc.cpp
 	src/Gaussian.cpp
+	src/GaussianAutoDiff.cpp
 	src/GaussianComptonProfile.cpp
 	src/GramCharlierComptonProfile.cpp
 	src/IkedaCarpenterPV.cpp
@@ -105,6 +107,7 @@ set ( INC_FILES
 	# inc/MantidCurveFitting/ChebyshevPolynomialBackground.h
 	inc/MantidCurveFitting/Abragam.h
 	inc/MantidCurveFitting/AugmentedLagrangianOptimizer.h
+	inc/MantidCurveFitting/AutoDiffTestAlg.h
 	inc/MantidCurveFitting/BFGS_Minimizer.h
 	inc/MantidCurveFitting/BSpline.h
 	inc/MantidCurveFitting/BackToBackExponential.h
@@ -149,6 +152,7 @@ set ( INC_FILES
 	inc/MantidCurveFitting/GausDecay.h
 	inc/MantidCurveFitting/GausOsc.h
 	inc/MantidCurveFitting/Gaussian.h
+	inc/MantidCurveFitting/GaussianAutoDiff.h
 	inc/MantidCurveFitting/GaussianComptonProfile.h
 	inc/MantidCurveFitting/GramCharlierComptonProfile.h
 	inc/MantidCurveFitting/IkedaCarpenterPV.h
@@ -208,6 +212,7 @@ set ( TEST_FILES
 	#SCDPanelErrorsTest.h
 	AbragamTest.h
 	AugmentedLagrangianOptimizerTest.h
+	AutoDiffTestAlgTest.h
 	BFGSTest.h
 	BSplineTest.h
 	BackToBackExponentialTest.h
@@ -242,6 +247,7 @@ set ( TEST_FILES
 	GSLMatrixTest.h
 	GausDecayTest.h
 	GausOscTest.h
+	GaussianAutoDiffTest.h
 	GaussianComptonProfileTest.h
 	GaussianTest.h
 	GramCharlierComptonProfileTest.h
