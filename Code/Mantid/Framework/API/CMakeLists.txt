@@ -387,6 +387,8 @@ if ( WIN32 )
   set ( WINSOCK ws2_32 )
 endif ()
 
+find_library(ADEPT NAMES adept)
+
 # Add a precompiled header where they are supported
 enable_precompiled_headers( inc/MantidAPI/PrecompiledHeader.h SRC_FILES )
 # Add the target for this directory
@@ -397,7 +399,7 @@ set_target_properties ( API PROPERTIES OUTPUT_NAME MantidAPI
 # Add to the 'Framework' group in VS
 set_property ( TARGET API PROPERTY FOLDER "MantidFramework" )
 
-target_link_libraries ( API ${MANTIDLIBS} ${WINSOCK} ${NEXUS_LIBRARIES} )
+target_link_libraries ( API ${MANTIDLIBS} ${WINSOCK} ${NEXUS_LIBRARIES} adept )
 
 # Add the unit tests directory
 add_subdirectory ( test )
