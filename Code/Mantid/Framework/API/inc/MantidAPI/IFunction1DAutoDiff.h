@@ -149,7 +149,7 @@ protected:
     size_t safeIndex(size_t iY, size_t iP) const {
         size_t i = index(iY, iP);
 
-        if(i < m_jacobian.size()) {
+        if(i >= m_jacobian.size()) {
             throw std::out_of_range("Index is not valid for this Jacobian.");
         }
 
