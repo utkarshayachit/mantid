@@ -86,8 +86,22 @@ namespace Mantid
       void initIndexInputs();
       /// Init common wavelength inputs
       void initWavelengthInputs();
-      /// Init common stitching inputs
+      /// Init common stitching inputs (for transmission runs)
       void initStitchingInputs();
+      /// Init common transmission inputs
+      void initTransmissionWorkspaceInputs();
+      /// Init polarization correction inputs
+      void initPolarizationCorrectionInputs();
+
+      std::string pNRLabel() const;
+      std::string pALabel() const;
+      std::string crhoLabel() const;
+      std::string cppLabel() const;
+      std::string cAlphaLabel() const;
+      std::string cApLabel() const;
+      std::string noPolarizationCorrectionMode() const;
+      std::vector<std::string> modes() const;
+
 
     private:
 

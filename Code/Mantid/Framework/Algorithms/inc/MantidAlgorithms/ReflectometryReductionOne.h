@@ -89,6 +89,8 @@ namespace Mantid
       /// Verify spectrum maps
       void verifySpectrumMaps(API::MatrixWorkspace_const_sptr ws1, API::MatrixWorkspace_const_sptr ws2, const bool severe = false);
 
+      /// Perform polarization correction
+      API::MatrixWorkspace_sptr polarizationCorrection(API::MatrixWorkspace_sptr detectorWS);
     };
 
   } // namespace Algorithms

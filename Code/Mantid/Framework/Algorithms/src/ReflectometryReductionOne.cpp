@@ -72,6 +72,46 @@ namespace Mantid
 
         return keys;
       }
+
+      const std::string pNRLabel()
+      {
+        return "PNR";
+      }
+
+      const std::string pALabel()
+      {
+        return "PA";
+      }
+
+      const std::string crhoLabel()
+      {
+        return "CRho";
+      }
+
+      const std::string cppLabel()
+      {
+        return "CPp";
+      }
+
+      const std::string cAlphaLabel()
+      {
+        return "CAlpha";
+      }
+
+      const std::string cApLabel()
+      {
+        return "CAp";
+      }
+
+      std::vector<std::string> modes()
+      {
+        std::vector<std::string> modes;
+        modes.push_back(pALabel());
+        modes.push_back(pNRLabel());
+        return modes;
+      }
+
+      typedef std::vector<double> VecDouble;
     }
     /* End of ananomous namespace */
 
@@ -165,37 +205,12 @@ namespace Mantid
       declareProperty(new PropertyWithValue<bool>("CorrectDetectorPositions", true, Direction::Input),
           "Correct detector positions using ThetaIn (if given)");
 
-      declareProperty(
-          new WorkspaceProperty<MatrixWorkspace>("FirstTransmissionRun", "", Direction::Input,
-              PropertyMode::Optional),
-          "First transmission run, or the low wavelength transmission run if SecondTransmissionRun is also provided.");
-      declareProperty(
-          new WorkspaceProperty<MatrixWorkspace>("SecondTransmissionRun", "", Direction::Input,
-              PropertyMode::Optional, inputValidator->clone()),
-          "Second, high wavelength transmission run. Optional. Causes the FirstTransmissionRun to be treated as the low wavelength transmission run.");
-
-      this->initStitchingInputs();
-
       declareProperty(new PropertyWithValue<bool>("StrictSpectrumChecking", true, Direction::Input),
           "Enforces spectrum number checking prior to normalisation");
 
-      setPropertyGroup("FirstTransmissionRun", "Transmission");
-      setPropertyGroup("SecondTransmissionRun", "Transmission");
-      setPropertyGroup("Params", "Transmission");
-      setPropertyGroup("StartOverlap", "Transmission");
-      setPropertyGroup("EndOverlap", "Transmission");
+      this->initTransmissionWorkspaceInputs();
 
-      // Only do transmission corrections when point detector.
-      setPropertySettings("FirstTransmissionRun",
-          new Kernel::EnabledWhenProperty("AnalysisMode", IS_EQUAL_TO, "PointDetectorAnalysis"));
-      setPropertySettings("SecondTransmissionRun",
-          new Kernel::EnabledWhenProperty("AnalysisMode", IS_EQUAL_TO, "PointDetectorAnalysis"));
-      setPropertySettings("Params",
-          new Kernel::EnabledWhenProperty("AnalysisMode", IS_EQUAL_TO, "PointDetectorAnalysis"));
-      setPropertySettings("StartOverlap",
-          new Kernel::EnabledWhenProperty("AnalysisMode", IS_EQUAL_TO, "PointDetectorAnalysis"));
-      setPropertySettings("EndOverlap",
-          new Kernel::EnabledWhenProperty("AnalysisMode", IS_EQUAL_TO, "PointDetectorAnalysis"));
+      this->initPolarizationCorrectionInputs();
 
       // Only use region of direct beam when in multi-detector analysis mode.
       setPropertySettings("RegionOfDirectBeam",
@@ -373,6 +388,44 @@ namespace Mantid
       return outWS;
     }
 
+    /**
+     * Perform polarization corrections using PolariazationCorrection child algorithm
+     *
+     * Only do so if the user has selected the option.
+     * @param detectorWS
+     * @return corrected detectorWS or the original workspace if no correction chosen.
+     */
+    MatrixWorkspace_sptr ReflectometryReductionOne::polarizationCorrection(
+        MatrixWorkspace_sptr detectorWS)
+    {
+      const std::string polarizationAnalysis = this->getProperty("PolarizationAnalysis");
+      if (polarizationAnalysis != noPolarizationCorrectionMode())
+      {
+        auto correctionAlgorithm = this->createChildAlgorithm("PolarizationCorrection");
+
+        const std::string polarizationAnalysis = this->getProperty("PolarizationAnalysis");
+        const VecDouble c_rho = getProperty(crhoLabel());
+        const VecDouble c_alpha = getProperty(cAlphaLabel());
+        const VecDouble c_pp = getProperty(cppLabel());
+        const VecDouble c_ap = getProperty(cApLabel());
+
+        correctionAlgorithm->setProperty("PolarizationAnalysis", polarizationAnalysis);
+        correctionAlgorithm->setProperty("InputWorkspace", detectorWS);
+        correctionAlgorithm->setProperty(crhoLabel(), c_rho);
+        correctionAlgorithm->setProperty(cAlphaLabel(), c_alpha);
+        correctionAlgorithm->setProperty(cppLabel(), c_pp);
+        correctionAlgorithm->setProperty(cApLabel(), c_ap);
+        correctionAlgorithm->execute();
+        MatrixWorkspace_sptr corrected = correctionAlgorithm->getProperty("OutputWorkspace");
+        return corrected;
+      }
+      else
+      {
+        return detectorWS; // No correction
+      }
+
+    }
+
     //----------------------------------------------------------------------------------------------
     /** Execute the algorithm.
      */
@@ -422,6 +475,9 @@ namespace Mantid
           wavelengthInterval, monitorBackgroundWavelengthInterval, wavelengthStep);
       auto detectorWS = inLam.get<0>();
       auto monitorWS = inLam.get<1>();
+
+      // Perform polarization correction if required.
+      this->polarizationCorrection(detectorWS);
 
       MatrixWorkspace_sptr IvsLam; // Output workspace
       MatrixWorkspace_sptr IvsQ; // Output workspace

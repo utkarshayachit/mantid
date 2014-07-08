@@ -3,6 +3,8 @@
 #include "MantidKernel/ArrayProperty.h"
 #include "MantidKernel/RebinParamsValidator.h"
 #include "MantidKernel/BoundedValidator.h"
+#include "MantidKernel/ListValidator.h"
+#include "MantidKernel/EnabledWhenProperty.h"
 #include "MantidAlgorithms/ReflectometryWorkflowBase.h"
 
 #include <boost/assign/list_of.hpp>
@@ -26,6 +28,8 @@ namespace Mantid
       {
         return value < 0;
       }
+
+      typedef std::vector<double> VecDouble;
     }
 
     //----------------------------------------------------------------------------------------------
@@ -123,6 +127,76 @@ namespace Mantid
       declareProperty(new PropertyWithValue<double>("EndOverlap", Mantid::EMPTY_DBL(), Direction::Input),
           "End wavelength (angstroms) for stitching transmission runs together");
 
+    }
+
+    /**
+     * Init transmission workspace inputs
+     */
+    void ReflectometryWorkflowBase::initTransmissionWorkspaceInputs()
+    {
+
+      boost::shared_ptr<CompositeValidator> inputValidator = boost::make_shared<CompositeValidator>();
+      inputValidator->add(boost::make_shared<WorkspaceUnitValidator>("TOF"));
+
+      declareProperty(
+          new WorkspaceProperty<MatrixWorkspace>("FirstTransmissionRun", "", Direction::Input,
+              PropertyMode::Optional),
+          "First transmission run, or the low wavelength transmission run if SecondTransmissionRun is also provided.");
+      declareProperty(
+          new WorkspaceProperty<MatrixWorkspace>("SecondTransmissionRun", "", Direction::Input,
+              PropertyMode::Optional, inputValidator),
+          "Second, high wavelength transmission run. Optional. Causes the FirstTransmissionRun to be treated as the low wavelength transmission run.");
+
+      this->initStitchingInputs();
+
+      setPropertyGroup("FirstTransmissionRun", "Transmission Corrections");
+      setPropertyGroup("SecondTransmissionRun", "Transmission Corrections");
+      setPropertyGroup("Params", "Transmission Corrections");
+      setPropertyGroup("StartOverlap", "Transmission Corrections");
+      setPropertyGroup("EndOverlap", "Transmission Corrections");
+    }
+
+    void ReflectometryWorkflowBase::initPolarizationCorrectionInputs()
+    {
+      VecDouble emptyVec;
+
+      auto propOptions = modes();
+      declareProperty("PolarizationAnalysis", noPolarizationCorrectionMode(),
+          boost::make_shared<StringListValidator>(propOptions), "What Polarization mode will be used?\n"
+              "None: No correction\n"
+              "PNR: Polarized Neutron Reflectivity mode\n"
+              "PA: Full Polarization Analysis PNR-PA");
+
+      declareProperty(new ArrayProperty<double>(cppLabel(), Direction::Input),
+          "Effective polarizing power of the polarizing system. Expressed as a ratio 0 < Pp < 1");
+
+      declareProperty(new ArrayProperty<double>(cApLabel(), Direction::Input),
+          "Effective polarizing power of the analyzing system. Expressed as a ratio 0 < Ap < 1");
+
+      declareProperty(new ArrayProperty<double>(crhoLabel(), Direction::Input),
+          "Ratio of efficiencies of polarizer spin-down to polarizer spin-up. This is characteristic of the polarizer flipper. Values are constants for each term in a polynomial expression.");
+
+      declareProperty(new ArrayProperty<double>(cAlphaLabel(), Direction::Input),
+          "Ratio of efficiencies of analyzer spin-down to analyzer spin-up. This is characteristic of the analyzer flipper. Values are factors for each term in a polynomial expression.");
+
+      setPropertyGroup("PolarizationAnalysis", "Polarization Corrections");
+      setPropertyGroup(cppLabel(), "Polarization Corrections");
+      setPropertyGroup(cApLabel(), "Polarization Corrections");
+      setPropertyGroup(crhoLabel(), "Polarization Corrections");
+      setPropertyGroup(cAlphaLabel(), "Polarization Corrections");
+
+      setPropertySettings(cppLabel(),
+          new Kernel::EnabledWhenProperty("PolarizationAnalysis", IS_NOT_EQUAL_TO,
+              noPolarizationCorrectionMode()));
+      setPropertySettings(cApLabel(),
+          new Kernel::EnabledWhenProperty("PolarizationAnalysis", IS_NOT_EQUAL_TO,
+              noPolarizationCorrectionMode()));
+      setPropertySettings(crhoLabel(),
+          new Kernel::EnabledWhenProperty("PolarizationAnalysis", IS_NOT_EQUAL_TO,
+              noPolarizationCorrectionMode()));
+      setPropertySettings(cAlphaLabel(),
+          new Kernel::EnabledWhenProperty("PolarizationAnalysis", IS_NOT_EQUAL_TO,
+              noPolarizationCorrectionMode()));
     }
 
     /**
@@ -469,6 +543,50 @@ namespace Mantid
       monitorWS = rebinToWorkspaceAlg->getProperty("OutputWorkspace");
 
       return DetectorMonitorWorkspacePair(detectorWS, monitorWS);
+    }
+
+    std::string ReflectometryWorkflowBase::pNRLabel() const
+    {
+      return "PNR";
+    }
+
+    std::string ReflectometryWorkflowBase::pALabel() const
+    {
+      return "PA";
+    }
+
+    std::string ReflectometryWorkflowBase::crhoLabel() const
+    {
+      return "CRho";
+    }
+
+    std::string ReflectometryWorkflowBase::cppLabel() const
+    {
+      return "CPp";
+    }
+
+    std::string ReflectometryWorkflowBase::cAlphaLabel() const
+    {
+      return "CAlpha";
+    }
+
+    std::string ReflectometryWorkflowBase::cApLabel() const
+    {
+      return "CAp";
+    }
+
+    std::string ReflectometryWorkflowBase::noPolarizationCorrectionMode() const
+    {
+      return "None";
+    }
+
+    std::vector<std::string> ReflectometryWorkflowBase::modes() const
+    {
+      std::vector<std::string> modes;
+      modes.push_back(noPolarizationCorrectionMode());
+      modes.push_back(pALabel());
+      modes.push_back(pNRLabel());
+      return modes;
     }
 
   } // namespace Algorithms

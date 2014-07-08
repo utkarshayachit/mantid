@@ -3,8 +3,9 @@
 
 #include "MantidKernel/System.h"
 #include "MantidAPI/Algorithm.h"
-#include "MantidAPI/DataProcessorAlgorithm.h"
+#include "MantidAlgorithms/ReflectometryWorkflowBase.h"
 #include <boost/optional.hpp>
+#include <vector>
 
 namespace Mantid
 {
@@ -33,7 +34,7 @@ namespace Mantid
     File change history is stored at: <https://github.com/mantidproject/mantid>
     Code Documentation is available at: <http://doxygen.mantidproject.org>
     */
-    class DLLExport ReflectometryReductionOneAuto  : public API::DataProcessorAlgorithm
+    class DLLExport ReflectometryReductionOneAuto  : public ReflectometryWorkflowBase
     {
     public:
       ReflectometryReductionOneAuto();
@@ -48,10 +49,19 @@ namespace Mantid
       void init();
       void exec();
       template
-        <typename T>
-        boost::optional<T> isSet(std::string propName) const;
+      <typename T>
+      boost::optional<T> isSet(std::string propName) const;
 
-      double checkForDefault(std::string propName, Mantid::Geometry::Instrument_const_sptr instrument, std::string idf_name="") const;
+      template
+      <typename T>
+      T usePropertyValueOrIDF(std::string propName, Mantid::Geometry::Instrument_const_sptr instrument, std::string idf_name="") const;
+
+      template
+      <typename T>
+      std::vector<T> usePropertyValueOrIDFVec(std::string propName, Mantid::Geometry::Instrument_const_sptr instrument, std::string idf_name="") const;
+
+
+
     };
 
 
