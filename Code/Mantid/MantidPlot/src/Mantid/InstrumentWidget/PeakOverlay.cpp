@@ -5,6 +5,7 @@
 
 #include <QPainter>
 #include <QList>
+#include <QMessageBox>
 #include <cmath>
 #include <algorithm>
 #include <stdexcept>
@@ -307,7 +308,18 @@ void PeakOverlay::afterReplaceHandle(const std::string& wsName,
   {
     auto style = isEmpty() ? getDefaultStyle(0) : m_det2marker.begin().value()->getStyle();
     clear();
-    createMarkers( style );
+    try
+    {
+      createMarkers( style );
+    }
+    catch(std::exception& e)
+    {
+      QMessageBox::critical(NULL,"MantidPlot - Error", QString("Cannot display peak markers:\n%1").arg(e.what()));
+    }
+    catch(...)
+    {
+      QMessageBox::critical(NULL,"MantidPlot - Error", QString("Cannot display peak markers because of an error."));
+    }
     m_surface->requestRedraw(true);
   }
 }

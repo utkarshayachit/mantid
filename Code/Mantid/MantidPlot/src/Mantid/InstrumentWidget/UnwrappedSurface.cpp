@@ -86,6 +86,7 @@ UnwrappedSurface::UnwrappedSurface(const InstrumentActor* rootActor):
     connect(moveController,SIGNAL(setSelectionRect(QRect)),this,SLOT(setSelectionRect(QRect)));
     connect(moveController,SIGNAL(zoom()),this,SLOT(zoom()));
     connect(moveController,SIGNAL(unzoom()),this,SLOT(unzoom()));
+    connect(this,SIGNAL(requestDisplayErrorMessage(QString)),this,SLOT(displayErrorMessage(QString)),Qt::QueuedConnection);
 }
 
 /**
@@ -551,10 +552,17 @@ void UnwrappedSurface::createPeakShapes(const QRect& window)const
         PeakMarker2D::Style style = peakShapes.getDefaultStyle(m_peakShapesStyle);
         m_peakShapesStyle++;
         peakShapes.setWindow(getSurfaceBounds(),window);
-        peakShapes.createMarkers( style );
+        try
+        {
+          peakShapes.createMarkers( style );
+        }
+        catch(...)
+        {
+          QApplication::restoreOverrideCursor();
+          throw;
+        }
         QApplication::restoreOverrideCursor();
     }
-    m_startPeakShapes = false;
     setPeakVisibility();
 }
 
@@ -597,7 +605,19 @@ void UnwrappedSurface::drawSimpleToImage(QImage* image,bool picking)const
 
   if (m_startPeakShapes)
   {
-    createPeakShapes(image->rect());
+    try
+    {
+      createPeakShapes(image->rect());
+    }
+    catch(std::exception& e)
+    {
+      emit requestDisplayErrorMessage( QString("Cannot display peak markers:\n%1").arg(e.what()) );
+    }
+    catch(...)
+    {
+      emit requestDisplayErrorMessage( QString("Cannot display peak markers because of an error.") );
+    }
+    m_startPeakShapes = false;
   }
 
   for(size_t i=0;i<m_unwrappedDetectors.size();++i)
@@ -784,3 +804,11 @@ void UnwrappedSurface::calcSize(UnwrappedDetector& udet)
 
 }
 
+/**
+  * Display an error message box.
+  * @param msg :: A message to display.
+  */
+void UnwrappedSurface::displayErrorMessage(QString msg) const
+{
+  QMessageBox::critical(NULL,"MantidPlot - Error", msg);
+}

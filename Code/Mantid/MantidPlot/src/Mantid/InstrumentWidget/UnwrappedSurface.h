@@ -126,6 +126,13 @@ protected slots:
   void zoom();
   /// Unzoom view to the previous zoom area or to full view
   void unzoom();
+  /// Display an error message box
+  void displayErrorMessage(QString msg) const;
+
+signals:
+
+  /// Emit to display error message in the next event loop
+  void requestDisplayErrorMessage(QString msg) const;
 
 protected:
 

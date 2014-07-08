@@ -731,7 +731,15 @@ void InstrumentWindowPickTab::addPeak(double x,double y)
 
   try
   {
-      Mantid::API::IPeaksWorkspace_sptr tw = m_instrWindow->getSurface()->getEditPeaksWorkspace();
+      auto surface = boost::dynamic_pointer_cast<UnwrappedSurface>( m_instrWindow->getSurface() );
+      if ( !surface )
+      {
+        QMessageBox::warning(this,"MantidPlot - Warning","Peaks can only be added in an \"unwrapped\" (2D) view.\n"
+          "Please switch to a 2D view from Render tab.");
+        return;
+      }
+
+      Mantid::API::IPeaksWorkspace_sptr tw = surface->getEditPeaksWorkspace();
       InstrumentActor* instrActor = m_instrWindow->getInstrumentActor();
       Mantid::API::MatrixWorkspace_const_sptr ws = instrActor->getWorkspace();
       std::string peakTableName;
@@ -763,11 +771,7 @@ void InstrumentWindowPickTab::addPeak(double x,double y)
                   return;
               }
           }
-          auto surface = boost::dynamic_pointer_cast<UnwrappedSurface>( m_instrWindow->getSurface() );
-          if ( surface )
-          {
-              surface->setPeaksWorkspace(boost::dynamic_pointer_cast<Mantid::API::IPeaksWorkspace>(tw));
-          }
+          surface->setPeaksWorkspace(boost::dynamic_pointer_cast<Mantid::API::IPeaksWorkspace>(tw));
       }
 
       // Run the AddPeak algorithm
