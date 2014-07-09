@@ -3,6 +3,7 @@
 
 #include "MantidKernel/System.h"
 #include "MantidAPI/MatrixWorkspace.h"
+#include "MantidAPI/MultiPeriodGroupAlgorithm.h"
 #include "MantidGeometry/Instrument.h"
 #include "MantidGeometry/IComponent.h"
 #include "MantidGeometry/IDetector.h"

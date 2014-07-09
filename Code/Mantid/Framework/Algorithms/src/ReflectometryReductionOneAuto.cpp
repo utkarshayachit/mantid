@@ -269,7 +269,9 @@ namespace Mantid
         const std::vector<double> calpha = this->usePropertyValueOrIDFVec<double>(cAlphaLabel(), instrument, "calpha");
         const std::vector<double> cAp = this->usePropertyValueOrIDFVec<double>(cApLabel(), instrument, "cAp");
         const std::vector<double> cPp = this->usePropertyValueOrIDFVec<double>(cppLabel(), instrument, "cPp");
+        const std::string polarizationMode = this->getProperty("PolarizationAnalysis");
 
+        refRedOne->setProperty("PolarizationAnalysis", polarizationMode);
         refRedOne->setProperty(crhoLabel(), crho);
         refRedOne->setProperty(cAlphaLabel(), calpha);
         refRedOne->setProperty(cApLabel(), cAp);
@@ -338,14 +340,24 @@ namespace Mantid
       auto algProperty = this->getPointerToProperty(propName);
       if (algProperty->isDefault())
       {
-        auto defaults = instrument->getNumberParameter(idf_name);
-        if (defaults.size() == 0)
+        auto strDefaults = instrument->getStringParameter(idf_name);
+        if (strDefaults.size() == 0)
         {
           throw std::runtime_error(
               "No data could be retrieved from the parameters as the argument wasn't provided and cold not be fetched from instrument parameters. Property name: "
                   + propName + " IDF parameter name: " + idf_name);
         }
-        return defaults;
+
+        std::vector<std::string> strs;
+        boost::split(strs,strDefaults[0],boost::is_any_of(","));
+        std::vector<double> numbers;
+        for(auto it = strs.begin(); it != strs.end(); ++it)
+        {
+          const std::string str = *it;
+          numbers.push_back(boost::lexical_cast<T>(str));
+        }
+        return numbers;
+
       }
       else
       {
