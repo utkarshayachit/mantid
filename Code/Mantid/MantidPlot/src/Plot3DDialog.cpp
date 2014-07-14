@@ -159,6 +159,7 @@ void Plot3DDialog::initAxesPage()
     QGridLayout *gl1 = new QGridLayout();
     gl1->addWidget(new QLabel(tr("Title")), 0, 0);
 	boxLabel = new QTextEdit();
+	boxLabel->setTextFormat(Qt::PlainText);
 	boxLabel->setMaximumHeight(60);
     gl1->addWidget(boxLabel, 0, 1);
     gl1->addWidget(new QLabel(tr("Axis Font")), 1, 0);
@@ -212,6 +213,7 @@ void Plot3DDialog::initTitlePage()
 	
 	QVBoxLayout* vl = new QVBoxLayout();
 	boxTitle = new QTextEdit();
+	boxTitle->setTextFormat(Qt::PlainText);
 	boxTitle->setMaximumHeight(80);
 	vl->addWidget(boxTitle);
 	
