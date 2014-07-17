@@ -114,8 +114,6 @@ public:
   // Creates a MultiLayer graph and plots this MantidMatrix as a Spectrogram
   MultiLayer* plotGraph2D(Graph::CurveType type);
 
-  void setBinGraph(MultiLayer* ml, Table* t=0);
-
   bool setSelectedRows();
   bool setSelectedColumns();
   const QList<int>& getSelectedRows() const;
@@ -262,7 +260,6 @@ protected:
 
   // MDI windows created by this MantidMatrix
   QVector<MultiLayer*> m_plots2D;
-  QMap< MultiLayer*,Table* > m_plots1D;
 
   //MantidMatrixFunction m_funct;
   int m_column_width;

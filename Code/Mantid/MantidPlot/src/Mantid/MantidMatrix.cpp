@@ -718,19 +718,6 @@ Spectrogram* MantidMatrix::plotSpectrogram(Graph* plot, ApplicationWindow* app, 
   return spgrm;
 }
 
-void MantidMatrix::setBinGraph(MultiLayer *ml, Table* t)
-{
-  MantidUI::setUpBinGraph(ml,name(),workspace());
-  connect(ml, SIGNAL(closedWindow(MdiSubWindow*)), this, SLOT(dependantClosed(MdiSubWindow*)));
-  if (t)
-  {
-    m_plots1D[ml] = t;
-    connect(t, SIGNAL(closedWindow(MdiSubWindow*)), this, SLOT(dependantClosed(MdiSubWindow*)));
-  }
-  else
-    m_plots2D<<ml;
-}
-
 /// Returns a list of the selected rows
 const QList<int>& MantidMatrix::getSelectedRows() const
 {
@@ -787,39 +774,16 @@ bool MantidMatrix::setSelectedColumns()
 
 void MantidMatrix::dependantClosed(MdiSubWindow* w)
 {
-  if( w->isA("Table") )
-  {
-    QMap<MultiLayer*,Table*>::iterator itr;
-    for( itr = m_plots1D.begin(); itr != m_plots1D.end(); ++itr )
-    {
-      if( itr.value() == dynamic_cast<Table*>(w) )
-      {
-        m_plots1D.erase(itr);
-        break;
-      }
-    }
-  }
-  else if (w->isA("MultiLayer"))
+  if (w->isA("MultiLayer"))
   {
     int i = m_plots2D.indexOf(dynamic_cast<MultiLayer*>(w));
-    if (i >= 0)m_plots2D.remove(i);
-    else
-    {QMap<MultiLayer*,Table*>::iterator i = m_plots1D.find(dynamic_cast<MultiLayer*>(w));
-    if (i != m_plots1D.end())
-    {
-      if (i.value() != 0)
-      {
-        i.value()->confirmClose(false);
-        i.value()->close();
-      }
-      m_plots1D.erase(i);
-    }
-    }
+    if (i >= 0)
+      m_plots2D.remove(i);
   }
 }
 
 /**
-Repaints all 1D and 2D plots attached to this MantidMatrix
+Repaints all 2D plots attached to this MantidMatrix
 */
 void MantidMatrix::repaintAll()
 {
@@ -830,49 +794,6 @@ void MantidMatrix::repaintAll()
   for( QVector<MultiLayer*>::iterator vItr = m_plots2D.begin(); vItr != vEnd; ++vItr )
   {
     (*vItr)->activeGraph()->replot();
-  }
-
-  // Updates the 1D plots by modifying the attached tables
-  QMap<MultiLayer*,Table*>::iterator mEnd = m_plots1D.end();
-  for(QMap<MultiLayer*,Table*>::iterator mItr = m_plots1D.begin(); mItr != mEnd;  ++mItr)
-  {
-    Table* t = mItr.value();
-    if ( !t ) continue;
-    int charsToRemove = t->name().size() + 1;
-    int nTableCols(t->numCols());
-    for(int col = 1; col < nTableCols; ++col)
-    {
-      QString colName = t->colName(col).remove(0,charsToRemove);
-      if( colName.isEmpty() ) break;
-      //Need to determine whether the table was created from plotting a spectrum
-      //or a time bin. A spectrum has a Y column name YS and a bin YB
-      QString ident = colName.left(2);
-      colName.remove(0,2); //This now contains the number in the MantidMatrix
-      int matrixNumber = colName.toInt();
-      if( matrixNumber < 0 ) break;
-      bool errs = (ident[0] == QChar('E')) ? true : false;
-      if( ident[1] == QChar('S') )
-      {
-        if( matrixNumber >= numRows() ) break;
-        int endCount = numCols();
-        for(int j = 0; j < endCount; ++j)
-        {
-          if( errs ) t->setCell(j, col, dataE(matrixNumber, j));
-          else t->setCell(j, col, dataY(matrixNumber, j));
-        }
-      }
-      else
-      {
-        if( matrixNumber >= numCols() ) break;
-        int endCount = numRows();
-        for(int j = 0; j < endCount; ++j)
-        {
-          if( errs ) t->setCell(j, col, dataE(j, matrixNumber));
-          else t->setCell(j, col, dataY(j, matrixNumber));
-        }
-      }
-    }
-    t->notifyChanges();
   }
 }
 
@@ -934,7 +855,6 @@ void MantidMatrix::changeWorkspace(Mantid::API::MatrixWorkspace_sptr ws)
   invalidateBoundingRect();
 
   repaintAll();
-
 }
 
 void MantidMatrix::closeDependants()
@@ -945,14 +865,6 @@ void MantidMatrix::closeDependants()
     ml->confirmClose(false);
     ml->close();// this calls slot dependantClosed() which removes the pointer from m_plots2D
   }
-
-  while(m_plots1D.size())
-  {
-    MultiLayer* ml = m_plots1D.begin().key();
-    ml->confirmClose(false);
-    ml->close();// this calls slot dependantClosed() which removes the pointer from m_plots1D
-  }
-
 }
 
 void MantidMatrix::setNumberFormat(const QChar& f,int prec, bool all)
