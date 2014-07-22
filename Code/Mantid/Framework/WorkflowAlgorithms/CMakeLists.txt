@@ -75,7 +75,6 @@ set ( INC_FILES
 set ( TEST_FILES
 	MuonCalculateAsymmetryTest.h
 	MuonLoadTest.h
-	SANSSolidAngleCorrectionTest.h
 	StepScanTest.h
 )
 
