@@ -80,7 +80,6 @@ set ( TEST_FILES
 )
 
 set ( TEST_PY_FILES 
-  EQSANSQ2DTest.py 
   SANSBeamFluxCorrectionTest.py 
 )
 
