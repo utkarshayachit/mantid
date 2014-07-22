@@ -79,10 +79,6 @@ set ( TEST_FILES
 	StepScanTest.h
 )
 
-set ( TEST_PY_FILES 
-  SANSBeamFluxCorrectionTest.py 
-)
-
 if(UNITY_BUILD)
   include(UnityBuild)
   enable_unity_build(WorkflowAlgorithms SRC_FILES SRC_UNITY_IGNORE_FILES 10)
