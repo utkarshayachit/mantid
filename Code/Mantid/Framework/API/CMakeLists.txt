@@ -387,7 +387,7 @@ if ( WIN32 )
   set ( WINSOCK ws2_32 )
 endif ()
 
-find_library(ADEPT NAMES adept)
+find_package ( adept )
 
 # Add a precompiled header where they are supported
 enable_precompiled_headers( inc/MantidAPI/PrecompiledHeader.h SRC_FILES )
