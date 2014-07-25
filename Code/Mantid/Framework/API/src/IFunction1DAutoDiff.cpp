@@ -1,5 +1,6 @@
 #include "MantidAPI/IFunction1DAutoDiff.h"
 #include "MantidAPI/FunctionDomain1D.h"
+#include "MantidKernel/MultiThreaded.h"
 
 namespace Mantid
 {
@@ -70,59 +71,65 @@ void IFunction1DAutoDiff::functionDeriv(const FunctionDomain &domain, Jacobian &
  */
 void IFunction1DAutoDiff::functionWrapper(const FunctionDomain &domain, FunctionValues &values, AutoDiffJacobianAdapter *jacobian) const
 {
-    try {
-        const FunctionDomain1D &d1d = dynamic_cast<const FunctionDomain1D &>(domain);
+    /* Currently, adept can not be built as a DLL in a thread safe way.
+     * Testing on example programs revealed that putting the relevant code in a critical
+     * section for omp is sufficient to ensure correct behavior.
+     */
+    PARALLEL_CRITICAL(adeptFunction) {
+        try {
+            const FunctionDomain1D &d1d = dynamic_cast<const FunctionDomain1D &>(domain);
 
-        /* Set up the adept stack and a y-array of correct size.
-         * Initialize parameter adapter from this-pointer
-         * to make adept::adouble parameters available.
-         */
-        size_t domainSize = d1d.size();
-
-        adept::Stack stack;
-        std::vector<adept::adouble> y(domainSize);
-        AutoDiffParameterAdapter parameters(this);
-
-        if(jacobian != 0) {
-            stack.new_recording();
-        } else {
-            /* This branch is executed when no AutoDiffJacobianAdapter is supplied,
-             * which means that only function values are computed and thus, recording
-             * of the execution stack is not required.
+            /* Set up the adept stack and a y-array of correct size.
+             * Initialize parameter adapter from this-pointer
+             * to make adept::adouble parameters available.
              */
-            if(values.size() != domain.size()) {
-                throw std::invalid_argument("FunctionValues does not match FunctionDomain in size.");
+            size_t domainSize = d1d.size();
+
+            adept::Stack stack;
+            std::vector<adept::adouble> y(domainSize);
+            AutoDiffParameterAdapter parameters(this);
+
+            if(jacobian != 0) {
+                stack.new_recording();
+            } else {
+                /* This branch is executed when no AutoDiffJacobianAdapter is supplied,
+                 * which means that only function values are computed and thus, recording
+                 * of the execution stack is not required.
+                 */
+                if(values.size() != domain.size()) {
+                    throw std::invalid_argument("FunctionValues does not match FunctionDomain in size.");
+                }
+
+                stack.pause_recording();
             }
 
-            stack.pause_recording();
-        }
-
-        /* Call the actual function implementation to calculate values in y.
-         * adept::adouble parameters are passed.
-         */
-        function1DAutoDiff(d1d, y, parameters);
-
-        if(jacobian != 0) {
-            /* If the "Jacobian branch" is executed, it is calculated by identifying
-             * dependent and independent variables and telling the stack object where
-             * to put the calculated values, using the raw pointer access of AutoDiffJacobianAdapter.
+            /* Call the actual function implementation to calculate values in y.
+             * adept::adouble parameters are passed.
              */
-            size_t numberParameters = parameters.size();
+            function1DAutoDiff(d1d, y, parameters);
 
-            stack.independent(&parameters[0], numberParameters);
-            stack.dependent(&y[0], domainSize);
-            stack.jacobian(jacobian->rawValues());
-        } else {
-            /* Otherwise, the function values need to be copied to the right place.
-             * For performance reasons it's done via raw pointers.
-             */
-            double *first = values.getPointerToCalculated(0);
-            for(size_t i = 0; i < values.size(); ++i) {
-                *(first + i) = y[i].value();
+            if(jacobian != 0) {
+                /* If the "Jacobian branch" is executed, it is calculated by identifying
+                 * dependent and independent variables and telling the stack object where
+                 * to put the calculated values, using the raw pointer access of AutoDiffJacobianAdapter.
+                 */
+                size_t numberParameters = parameters.size();
+
+                stack.independent(&parameters[0], numberParameters);
+                stack.dependent(&y[0], domainSize);
+                stack.jacobian(jacobian->rawValues());
+            } else {
+                /* Otherwise, the function values need to be copied to the right place.
+                 * For performance reasons it's done via raw pointers.
+                 */
+                double *first = values.getPointerToCalculated(0);
+                for(size_t i = 0; i < values.size(); ++i) {
+                    *(first + i) = y[i].value();
+                }
             }
+        } catch(std::bad_cast) {
+            throw std::invalid_argument("Provided domain is not of type FunctionDomain1D.");
         }
-    } catch(std::bad_cast) {
-        throw std::invalid_argument("Provided domain is not of type FunctionDomain1D.");
     }
 }
 
