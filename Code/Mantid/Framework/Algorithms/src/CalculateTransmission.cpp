@@ -11,18 +11,53 @@
 #include "MantidAPI/FunctionFactory.h"
 #include "MantidAPI/IFunction.h"
 
+#include <algorithm>
+#include <cassert>
 #include <cmath>
+
+#include <boost/algorithm/string/join.hpp>
+#include <boost/assign/list_of.hpp>
+#include <boost/foreach.hpp>
+#include <boost/lexical_cast.hpp>
 
 namespace Mantid
 {
 namespace Algorithms
 {
 
-// Register the algorithm into the AlgorithmFactory
-DECLARE_ALGORITHM(CalculateTransmission)
-
 using namespace Kernel;
 using namespace API;
+
+namespace // anonymous
+{
+  // For LOQ at least, the transmission monitor is 3.  (The incident beam monitor's UDET is 2.)
+  const detid_t LOQ_TRANSMISSION_MONITOR_UDET = 3;
+
+  /**
+   * Helper function to convert a single detector ID to a workspace index.
+   * Should we just go ahead and add this to the MatrixWorkspace class?
+   *
+   * @param ws    :: workspace containing det ID to ws index mapping
+   * @param detID :: the detector ID to look for
+   *
+   * @returns workspace index corresponding to the given detector ID
+   */
+  size_t getIndexFromDetectorID(MatrixWorkspace_sptr ws, detid_t detid)
+  {
+    const std::vector<detid_t> input = boost::assign::list_of(detid);
+    std::vector<size_t> result;
+    
+    ws->getIndicesFromDetectorIDs(input, result);
+    if( result.empty() )
+      throw std::invalid_argument("Could not find the spectra corresponding to detector ID " + 
+        boost::lexical_cast<std::string>(detid));
+
+    return result[0];
+  }
+}
+
+// Register the algorithm into the AlgorithmFactory
+DECLARE_ALGORITHM(CalculateTransmission)
 
 CalculateTransmission::CalculateTransmission() : API::Algorithm(), m_done(0.0)
 {}
@@ -43,9 +78,11 @@ void CalculateTransmission::init()
 
   auto zeroOrMore = boost::make_shared<BoundedValidator<int> >();
   zeroOrMore->setLower(0);
-  // The defaults here are the correct detector numbers for LOQ
-  declareProperty("IncidentBeamMonitor",EMPTY_INT(),zeroOrMore,"The UDET of the incident beam monitor");
-  declareProperty("TransmissionMonitor",3,zeroOrMore,"The UDET of the transmission monitor");
+  
+  declareProperty("IncidentBeamMonitor", EMPTY_INT(), zeroOrMore,
+    "The UDET of the incident beam monitor");
+  declareProperty("TransmissionMonitor", EMPTY_INT(), zeroOrMore,
+    "The UDET of the transmission monitor");
 
   declareProperty(new ArrayProperty<double>("RebinParams"),
     "A comma separated list of first bin boundary, width, last bin boundary. Optionally\n"
@@ -64,6 +101,11 @@ void CalculateTransmission::init()
   declareProperty("PolynomialOrder", 2, twoOrMore, "Order of the polynomial to fit. It is considered only for FitMethod=Polynomial"); 
 
   declareProperty("OutputUnfittedData",false, "If True, will output an additional workspace called [OutputWorkspace]_unfitted containing the unfitted transmission correction.");
+
+  declareProperty(new ArrayProperty<detid_t>("TransmissionROI"),
+    "An optional ArrayProperty containing a list of detector ID's.  These specify a region of interest "
+    "which is to be summed and then used instead of a tranmission monitor. This allow for a \"beam stop "
+    "out\" method of transmission calculation." );
 }
 
 void CalculateTransmission::exec()
@@ -71,76 +113,81 @@ void CalculateTransmission::exec()
   MatrixWorkspace_sptr sampleWS = getProperty("SampleRunWorkspace");
   MatrixWorkspace_sptr directWS = getProperty("DirectRunWorkspace");
 
-  // Check whether we need to normalise by the beam monitor
-  int beamMonitorID = getProperty("IncidentBeamMonitor");
-  bool normaliseToMonitor = true;
-  if ( isEmpty(beamMonitorID) ) normaliseToMonitor = false;
+  const detid_t beamMonitorID             = getProperty("IncidentBeamMonitor");
+  detid_t transMonitorID                  = getProperty("TransmissionMonitor");
+  const std::vector<detid_t> transDetList = getProperty("TransmissionROI");
 
-  // Check that the two input workspaces are from the same instrument
-  if ( sampleWS->getInstrument()->getName() != directWS->getInstrument()->getName() )
+  const bool usingSameInstrument = sampleWS->getInstrument()->getName() == directWS->getInstrument()->getName();
+  if ( !usingSameInstrument )
+    throw std::invalid_argument("The input workspaces do not come from the same instrument.");
+  if ( !WorkspaceHelpers::matchingBins(sampleWS, directWS) )
+    throw std::invalid_argument("The input workspaces do not have matching bins.");
+
+  bool usingMonitor = !isEmpty(transMonitorID);
+  const bool usingROI = !transDetList.empty();
+  if( usingMonitor && usingROI )
+    throw std::invalid_argument("Unable to use both a monitor and a region of interest in transmission calculation.");
+  if( !usingMonitor && !usingROI )
   {
-    g_log.error("The input workspaces do not come from the same instrument");
-    throw std::invalid_argument("The input workspaces do not come from the same instrument");
+    transMonitorID = LOQ_TRANSMISSION_MONITOR_UDET;
+    usingMonitor = true;
   }
-  // Check that the two inputs have matching binning
-  if ( ! WorkspaceHelpers::matchingBins(sampleWS,directWS) )
+
+  // Populate transmissionIndices with the workspace indices to use for the transmission.
+  // In the case of TransmissionMonitor this will be a single index corresponding to a
+  // monitor, in the case of TransmissionROI it will be one or more indices corresponding
+  // to a region of interest on the detector bank(s).
+  std::vector<size_t> transmissionIndices;
+  if(usingMonitor)
   {
-    g_log.error("Input workspaces do not have matching binning");
-    throw std::invalid_argument("Input workspaces do not have matching binning");
+    const size_t transmissionMonitorIndex = getIndexFromDetectorID(sampleWS, transMonitorID);
+    transmissionIndices.push_back(transmissionMonitorIndex);
+    logIfNotMonitor(sampleWS, directWS, transmissionMonitorIndex);
+  }
+  else if(usingROI)
+  {
+    sampleWS->getIndicesFromDetectorIDs(transDetList, transmissionIndices);
+  }
+  else
+    assert(false);
+  
+  const std::string transPropName = usingMonitor ? "TransmissionMonitor" : "TransmissionROI";
+
+  if( transmissionIndices.empty() )
+    throw std::invalid_argument(
+      "The UDET(s) passed to " + transPropName + " do not correspond to spectra in the workspace.");
+
+  // Check if we're normalising to the incident beam monitor.  If so, then it
+  // needs to be a monitor that is not also used for the transmission.
+  const bool normaliseToMonitor = !isEmpty(beamMonitorID);
+  size_t beamMonitorIndex;
+  if( normaliseToMonitor )
+  {
+    beamMonitorIndex = getIndexFromDetectorID(sampleWS, beamMonitorID);
+    logIfNotMonitor(sampleWS, directWS, beamMonitorIndex);
+
+    BOOST_FOREACH( size_t transmissionIndex, transmissionIndices )
+      if( transmissionIndex == beamMonitorIndex )
+        throw std::invalid_argument(
+          "The IncidentBeamMonitor UDET (" + boost::lexical_cast<std::string>(transmissionIndex) + \
+          ") matches a UDET given in " + transPropName + ".");
   }
   
-  // Extract the required spectra into separate workspaces
-  std::vector<detid_t> udets;
-  std::vector<size_t> indices;
-  // For LOQ at least, the incident beam monitor's UDET is 2 and the transmission monitor is 3
-  udets.push_back(getProperty("TransmissionMonitor"));
-  if (normaliseToMonitor) udets.push_back(getProperty("IncidentBeamMonitor"));
-  // Convert UDETs to workspace indices
-  sampleWS->getIndicesFromDetectorIDs(udets, indices);
-  if ( (indices.size() < 2 && normaliseToMonitor) || (indices.size() < 1 && !normaliseToMonitor))
-  {
-    if (indices.size() == 1)
-    {
-      g_log.error() << "Incident and transmitted spectra must be set to different spectra that exist in the workspaces. Only found one valid index " << indices.front() << std::endl;
-    }
-    else
-    {
-      g_log.debug() << "sampleWS->getIndicesFromDetectorIDs() returned empty\n";
-    }
-    throw std::invalid_argument("Could not find the incident and transmission monitor spectra\n");
-  }
-  // Check that given spectra are monitors
-  if ( normaliseToMonitor && !sampleWS->getDetector(indices.back())->isMonitor() )
-  {
-    g_log.information("The Incident Beam Monitor UDET provided is not marked as a monitor");
-  }
-  if ( !sampleWS->getDetector(indices.front())->isMonitor() )
-  {
-    g_log.information("The Transmission Monitor UDET provided is not marked as a monitor");
-  }
-  MatrixWorkspace_sptr M2_sample;
-  if (normaliseToMonitor) M2_sample = this->extractSpectrum(sampleWS,indices[1]);
-  MatrixWorkspace_sptr M3_sample = this->extractSpectrum(sampleWS,indices[0]);
-  sampleWS->getIndicesFromDetectorIDs(udets,indices);
-  // Check that given spectra are monitors
-  if ( !directWS->getDetector(indices.back())->isMonitor() )
-  {
-    g_log.information("The Incident Beam Monitor UDET provided is not marked as a monitor");
-  }
-  if ( !directWS->getDetector(indices.front())->isMonitor() )
-  {
-    g_log.information("The Transmission Monitor UDET provided is not marked as a monitor");
-  }
-  MatrixWorkspace_sptr M2_direct;
-  if (normaliseToMonitor) M2_direct = this->extractSpectrum(directWS,indices[1]);
-  MatrixWorkspace_sptr M3_direct = this->extractSpectrum(directWS,indices[0]);
+  MatrixWorkspace_sptr sampleInc;
+  if (normaliseToMonitor) sampleInc = this->extractSpectra(sampleWS, std::vector<size_t>(1, beamMonitorIndex));
+  MatrixWorkspace_sptr sampleTrans = this->extractSpectra(sampleWS, transmissionIndices);
+
+  MatrixWorkspace_sptr directInc;
+  if (normaliseToMonitor) directInc = this->extractSpectra(directWS, std::vector<size_t>(1, beamMonitorIndex));
+  MatrixWorkspace_sptr directTrans = this->extractSpectra(directWS, transmissionIndices);
   
   double start = m_done;
   Progress progress(this, start, m_done += 0.2, 2);
   progress.report("CalculateTransmission: Dividing transmission by incident");
+
   // The main calculation
-  MatrixWorkspace_sptr transmission = M3_sample/M3_direct;
-  if (normaliseToMonitor)  transmission = transmission*(M2_direct/M2_sample);
+  MatrixWorkspace_sptr transmission = sampleTrans/directTrans;
+  if (normaliseToMonitor)  transmission = transmission*(directInc/sampleInc);
 
   // This workspace is now a distribution
   progress.report("CalculateTransmission: Dividing transmission by incident");
@@ -172,23 +219,34 @@ void CalculateTransmission::exec()
   setProperty("OutputWorkspace", transmission);
 }
 
-/** Extracts a single spectrum from a Workspace2D into a new workspaces. Uses CropWorkspace to do this.
- *  @param WS ::    The workspace containing the spectrum to extract
- *  @param index :: The workspace index of the spectrum to extract
- *  @return A Workspace2D containing the extracted spectrum
- *  @throw runtime_error if the ExtractSingleSpectrum algorithm fails during execution
+/**
+ * Extracts multiple spectra from a Workspace2D into a new workspaces, using SumSpectra.
+ *
+ * @param ws      :: The workspace containing the spectrum to extract
+ * @param indices :: The workspace index of the spectrum to extract
+ *
+ * @returns a Workspace2D containing the extracted spectrum
+ * @throws runtime_error if the ExtractSingleSpectrum algorithm fails during execution
  */
-API::MatrixWorkspace_sptr CalculateTransmission::extractSpectrum(API::MatrixWorkspace_sptr WS, const int64_t index)
+API::MatrixWorkspace_sptr CalculateTransmission::extractSpectra(API::MatrixWorkspace_sptr ws, const std::vector<size_t> & indices)
 {
+  // Compile a comma separated list of indices that we can pass to SumSpectra.
+  std::vector<std::string> indexStrings(indices.size());
+  std::transform(
+    indices.begin(), indices.end(),
+    indexStrings.begin(), boost::lexical_cast<std::string, size_t>);
+  const std::string commaIndexList = boost::algorithm::join(indexStrings, ",");
+
   double start = m_done;
-  IAlgorithm_sptr childAlg = createChildAlgorithm("ExtractSingleSpectrum", start, m_done += 0.1);
-  childAlg->setProperty<MatrixWorkspace_sptr>("InputWorkspace", WS);
-  childAlg->setProperty<int>("WorkspaceIndex", static_cast<int>(index));
+  IAlgorithm_sptr childAlg = createChildAlgorithm("SumSpectra", start, m_done += 0.1);
+  childAlg->setProperty<MatrixWorkspace_sptr>("InputWorkspace", ws);
+  childAlg->setPropertyValue("ListOfWorkspaceIndices", commaIndexList);
   childAlg->executeAsChildAlg();
 
   // Only get to here if successful
   return childAlg->getProperty("OutputWorkspace");
 }
+
 /** Calculate a workspace that contains the result of the fit to the transmission fraction that was calculated
 *  @param raw [in] the workspace with the unfitted transmission ratio data
 *  @param rebinParams [in] the parameters for rebinning
@@ -198,7 +256,7 @@ API::MatrixWorkspace_sptr CalculateTransmission::extractSpectrum(API::MatrixWork
 */
 API::MatrixWorkspace_sptr CalculateTransmission::fit(API::MatrixWorkspace_sptr raw, std::vector<double> rebinParams, const std::string fitMethod)
 {
-  MatrixWorkspace_sptr output = this->extractSpectrum(raw,0);
+  MatrixWorkspace_sptr output = this->extractSpectra(raw, std::vector<size_t>(1, 0));
 
   Progress progress(this, m_done, 1.0, 4);
   progress.report("CalculateTransmission: Performing fit");
@@ -324,7 +382,7 @@ API::MatrixWorkspace_sptr CalculateTransmission::fitData(API::MatrixWorkspace_sp
   // Only get to here if successful
   offset = linearBack->getParameter(0);
   grad = linearBack->getParameter(1);
-  return this->extractSpectrum(childAlg->getProperty("OutputWorkspace"),1);
+  return this->extractSpectra(childAlg->getProperty("OutputWorkspace"), std::vector<size_t>(1, 1));
 }
 /** Uses Polynomial as a ChildAlgorithm to fit the log of the exponential curve expected for the transmission.
  * @param[in] WS The single-spectrum workspace to fit
@@ -357,7 +415,7 @@ API::MatrixWorkspace_sptr CalculateTransmission::fitPolynomial(API::MatrixWorksp
   for (int i = 0; i<=order; i++){
     coeficients[i] = polyfit->getParameter(i); 
   }
-  return this->extractSpectrum(childAlg->getProperty("OutputWorkspace"),1);
+  return this->extractSpectra(childAlg->getProperty("OutputWorkspace"), std::vector<size_t>(1, 1));
 } 
 
 /** Calls rebin as Child Algorithm
@@ -376,6 +434,23 @@ API::MatrixWorkspace_sptr CalculateTransmission::rebin(std::vector<double> & bin
   
   // Only get to here if successful
   return childAlg->getProperty("OutputWorkspace");
+}
+
+/**
+ * Outputs message to log if the detector at the given index is not a monitor in both input workspaces.
+ *
+ * @param sampleWS :: the input sample workspace
+ * @param sampleWS :: the input direct workspace
+ * @param index    :: the index of the detector to checked
+ */
+void CalculateTransmission::logIfNotMonitor(API::MatrixWorkspace_sptr sampleWS, API::MatrixWorkspace_sptr directWS, size_t index)
+{
+  const std::string message = "The detector at index " + boost::lexical_cast<std::string>(index) + \
+                              " is not a monitor in the ";
+  if( !sampleWS->getDetector(index)->isMonitor() )
+    g_log.information(message + "sample workspace.");
+  if( !directWS->getDetector(index)->isMonitor() )
+    g_log.information(message + "direct workspace.");
 }
 
 } // namespace Algorithm
