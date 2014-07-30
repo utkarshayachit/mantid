@@ -1,4 +1,5 @@
 import unittest
+from mantid.simpleapi import *
 import SANSUtility as su
 
 class TestSliceStringParser(unittest.TestCase):
@@ -6,7 +7,7 @@ class TestSliceStringParser(unittest.TestCase):
     def checkValues(self, list1, list2):
 
         def _check_single_values( v1, v2):
-                self.assertAlmostEqual(v1, v2)
+            self.assertAlmostEqual(v1, v2)
 
         self.assertEqual(len(list1), len(list2))
         for v1,v2 in zip(list1, list2):
@@ -17,12 +18,12 @@ class TestSliceStringParser(unittest.TestCase):
 
     def test_checkValues(self):
         """sanity check to ensure that the others will work correctly"""
-        values = [  [[1,2],],
-                  [[None, 3],[4, None]],
-                 ]
+        values = [
+            [[1,2],],
+            [[None, 3],[4, None]],
+        ]
         for singlevalues in values:
             self.checkValues(singlevalues, singlevalues)
-
     
     def test_parse_strings(self):
         inputs = { '1-2':[[1,2]],         # single period syntax  min < x < max
@@ -47,6 +48,25 @@ class TestSliceStringParser(unittest.TestCase):
 
     def test_empty_string_is_valid(self):
         self.checkValues(su.sliceParser(""), [[-1,-1]])
+
+    def test_extract_spectra(self):
+        mtd.clear()
+
+        ws = CreateSampleWorkspace("Histogram", "Multiple Peaks")
+        det_ids = [100, 102, 104]
+
+        result = su.extract_spectra(ws, det_ids, "result")
+
+        # Essentially, do we end up with our original workspace and the resulting
+        # workspace in the ADS, and NOTHING else?
+        self.assertTrue("result" in mtd)
+        self.assertTrue("ws" in mtd)
+        self.assertEquals(2, len(mtd))
+
+        self.assertEquals(result.getNumberHistograms(), len(det_ids))
+        self.assertEquals(result.getDetector(0).getID(), 100)
+        self.assertEquals(result.getDetector(1).getID(), 102)
+        self.assertEquals(result.getDetector(2).getID(), 104)
 
 if __name__ == "__main__":
     unittest.main()
