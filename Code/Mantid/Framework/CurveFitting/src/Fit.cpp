@@ -447,6 +447,8 @@ namespace CurveFitting
       errorString += "Failed to converge after " + boost::lexical_cast<std::string>(maxIterations) + " iterations.";
     }
 
+    g_log.warning() << "Finished after " << static_cast<int>(iter) << " iterations." << std::endl;
+
     // return the status flag
     setPropertyValue("OutputStatus",errorString);
 
