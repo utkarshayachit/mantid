@@ -2,7 +2,7 @@ import unittest
 from mantid.simpleapi import *
 import SANSUtility as su
 
-class TestSliceStringParser(unittest.TestCase):
+class SANSUtilityTest(unittest.TestCase):
     
     def checkValues(self, list1, list2):
 
@@ -67,6 +67,18 @@ class TestSliceStringParser(unittest.TestCase):
         self.assertEquals(result.getDetector(0).getID(), 100)
         self.assertEquals(result.getDetector(1).getID(), 102)
         self.assertEquals(result.getDetector(2).getID(), 104)
+
+    def test_get_masked_det_ids(self):
+        ws = CreateSampleWorkspace("Histogram", "Multiple Peaks")
+
+        MaskDetectors(Workspace=ws, DetectorList=[100, 102, 104])
+
+        masked_det_ids = list(su.get_masked_det_ids(ws))
+
+        self.assertTrue(100 in masked_det_ids)
+        self.assertTrue(102 in masked_det_ids)
+        self.assertTrue(104 in masked_det_ids)
+        self.assertEquals(len(masked_det_ids), 3)
 
 if __name__ == "__main__":
     unittest.main()
