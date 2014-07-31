@@ -46,6 +46,8 @@ namespace CurveFitting
     void init();
     void exec();
 
+    std::string m_derType;
+
 
   };
 

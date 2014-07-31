@@ -1,8 +1,10 @@
 #include "MantidCurveFitting/AutoDiffTestAlg.h"
-#include "MantidCurveFitting/Gaussian.h"
+#include "MantidCurveFitting/GaussianNumDiff.h"
 
 #include "MantidCurveFitting/GaussianAutoDiff.h"
 #include "MantidAPI/CompositeFunction.h"
+#include "MantidKernel/Timer.h"
+#include "MantidKernel/Logger.h"
 
 namespace Mantid
 {
@@ -53,7 +55,33 @@ void AutoDiffTestAlg::init()
     declareProperty(new WorkspaceProperty<MatrixWorkspace>("InputWorkspace","",Direction::Input), "Data with 20 gaussian peaks.");
     declareProperty(new WorkspaceProperty<ITableWorkspace>("OutputWorkspace","",Direction::Output), "Data with 20 gaussian peaks.");
     declareProperty(new WorkspaceProperty<MatrixWorkspace>("OutputWorkspacePlot","",Direction::Output), "Data with 20 gaussian peaks.");
+    declareProperty("DerivativeType","adept","How to calculate derivatives.");
 
+}
+
+//----------------------------------------------------------------------------------------------
+namespace
+{
+
+  // Logger
+  Kernel::Logger g_log("AutoDiffTestAlg");
+
+  IFunction_sptr getFunction(const std::string& type)
+  {
+    if ( type == "adept" )
+    {
+      return IFunction_sptr(new GaussianAutoDiff);
+    }
+    /*
+    API::CompositeFunction_sptr comp(new API::CompositeFunction);
+    auto gauss = IFunction_sptr(new GaussianNumDiff);
+    gauss->initialize();
+    comp->addFunction( gauss );
+    comp->setAttributeValue("NumDeriv",true);
+    return comp;
+    */
+    return IFunction_sptr(new GaussianNumDiff);
+  }
 }
 
 //----------------------------------------------------------------------------------------------
@@ -62,6 +90,7 @@ void AutoDiffTestAlg::init()
 void AutoDiffTestAlg::exec()
 {
     MatrixWorkspace_sptr fitData = getProperty("InputWorkspace");
+    m_derType = getPropertyValue("DerivativeType");
 
     // reference positions
     std::vector<double> peakPos;
@@ -130,11 +159,10 @@ void AutoDiffTestAlg::exec()
     sigma.push_back(12.065185190743160);
     sigma.push_back(5.657079363007425);
 
-
     // make composite function
     CompositeFunction_sptr bigFunction(new CompositeFunction);
     for(size_t i = 0; i < 20; ++i) {
-        IFunction_sptr g(new GaussianAutoDiff);
+        IFunction_sptr g = getFunction(m_derType);
         g->initialize();
         g->setParameter(0, peakHeight[i] * 1.1);
         g->setParameter(2, sigma[i] * 1.15);
@@ -145,6 +173,8 @@ void AutoDiffTestAlg::exec()
         bigFunction->addFunction(g);
     }
 
+    Kernel::Timer timer;
+
     IAlgorithm_sptr fitAlgorithm = createChildAlgorithm("Fit", -1, -1, true);
     fitAlgorithm->setProperty("CreateOutput", true);
     fitAlgorithm->setProperty("Output", "FitPeaks1D");
@@ -154,6 +184,8 @@ void AutoDiffTestAlg::exec()
     fitAlgorithm->setProperty("WorkspaceIndex", 0);
 
     fitAlgorithm->execute();
+
+    g_log.warning() << "Fit took " << timer.elapsed() << " seconds to complete" << std::endl;
 
     ITableWorkspace_sptr t = fitAlgorithm->getProperty("OutputParameters");
     MatrixWorkspace_sptr mw = fitAlgorithm->getProperty("OutputWorkspace");
