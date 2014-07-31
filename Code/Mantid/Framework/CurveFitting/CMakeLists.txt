@@ -48,6 +48,7 @@ set ( SRC_FILES
 	src/Gaussian.cpp
 	src/GaussianAutoDiff.cpp
 	src/GaussianComptonProfile.cpp
+	src/GaussianNumDiff.cpp
 	src/GramCharlierComptonProfile.cpp
 	src/IkedaCarpenterPV.cpp
 	src/LeBailFit.cpp
@@ -154,6 +155,7 @@ set ( INC_FILES
 	inc/MantidCurveFitting/Gaussian.h
 	inc/MantidCurveFitting/GaussianAutoDiff.h
 	inc/MantidCurveFitting/GaussianComptonProfile.h
+	inc/MantidCurveFitting/GaussianNumDiff.h
 	inc/MantidCurveFitting/GramCharlierComptonProfile.h
 	inc/MantidCurveFitting/IkedaCarpenterPV.h
 	inc/MantidCurveFitting/Jacobian.h
@@ -249,6 +251,7 @@ set ( TEST_FILES
 	GausOscTest.h
 	GaussianAutoDiffTest.h
 	GaussianComptonProfileTest.h
+	GaussianNumDiffTest.h
 	GaussianTest.h
 	GramCharlierComptonProfileTest.h
 	IkedaCarpenterPVTest.h
