@@ -22,7 +22,8 @@ class SNSPowderReduction(DataProcessorAlgorithm):
         return "SNSPowderReduction"
 
     def summary(self):
-        return "Time filter wall is used in Load Data to load data in a certain range of time. "
+        " "
+        return "The algorithm used for reduction of powder diffraction data obtained on SNS instruments (e.g. PG3) "
 
     def PyInit(self):
         sns = ConfigService.getFacility("SNS")
@@ -76,7 +77,8 @@ class SNSPowderReduction(DataProcessorAlgorithm):
         self.declareProperty("VanadiumPeakTol", 0.05,
                              "How far from the ideal position a vanadium peak can be during StripVanadiumPeaks. Default=0.05, negative turns off")
         self.declareProperty("VanadiumSmoothParams", "20,2", "Default=20,2")
-        self.declareProperty("FilterBadPulses", True, "Filter out events measured while proton charge is more than 5% below average")
+        self.declareProperty("FilterBadPulses", 95.,
+                             doc="Filter out events measured while proton charge is more than 5% below average")
         self.declareProperty("ScaleData", defaultValue=1., validator=FloatBoundedValidator(lower=0., exclusive=True),
                              doc="Constant to multiply the data before writing out. This does not apply to PDFgetN files.")
         self.declareProperty("SaveAs", "gsas",
@@ -92,6 +94,8 @@ class SNSPowderReduction(DataProcessorAlgorithm):
 
         self.declareProperty("LowResolutionSpectraOffset", -1,
                              "If larger and equal to 0, then process low resolution TOF and offset is the spectra number. Otherwise, ignored.")
+
+        self.declareProperty("NormalizeByCurrent", True, "Normalize by current")
 
         return
 
@@ -149,6 +153,8 @@ class SNSPowderReduction(DataProcessorAlgorithm):
             self.log().information("SplittersWorkspace is None, and thus there is NO time filter wall. ")
 
         self._splitinfotablews = self.getProperty("SplitInformationWorkspace").value
+
+        self._normalisebycurrent = self.getProperty("NormalizeByCurrent").value
 
         # Process data
         workspacelist = [] # all data workspaces that will be converted to d-spacing in the end
@@ -297,9 +303,10 @@ class SNSPowderReduction(DataProcessorAlgorithm):
                     name = "_".join(str(vanRun).split("_")[:-1])
                     vanRun = api.RenameWorkspace(InputWorkspace=vanRun, OutputWorkspace=name)
                     try:
-                        vanRun = api.NormaliseByCurrent(InputWorkspace=vanRun, 
-                                                        OutputWorkspace=vanRun)
-                        vanRun.getRun()['gsas_monitor'] = 1
+                        if self._normalisebycurrent is True:
+                            vanRun = api.NormaliseByCurrent(InputWorkspace=vanRun, 
+                                                            OutputWorkspace=vanRun)
+                            vanRun.getRun()['gsas_monitor'] = 1
                     except Exception, e:
                         self.log().warning(str(e))
 
@@ -309,9 +316,10 @@ class SNSPowderReduction(DataProcessorAlgorithm):
                     if vbackRun > 0:
                         vbackRun = self._loadData(vbackRun, SUFFIX, vanFilterWall, outname="vbackRun")
                         try:
-                            vbackRun = api.NormaliseByCurrent(InputWorkspace=vbackRun, 
-                                                              OutputWorkspace=vbackRun)
-                            vbackRun.getRun()['gsas_monitor'] = 1
+                            if self._normalisebycurrent is True:
+                                vbackRun = api.NormaliseByCurrent(InputWorkspace=vbackRun, 
+                                                                  OutputWorkspace=vbackRun)
+                                vbackRun.getRun()['gsas_monitor'] = 1
                         except Exception, e:
                             self.log().warning(str(e))
 
@@ -460,8 +468,9 @@ class SNSPowderReduction(DataProcessorAlgorithm):
             self.log().debug(msg)
 
         # filter bad pulses
-        if self._filterBadPulses:
-            wksp = api.FilterBadPulses(InputWorkspace=wksp, OutputWorkspace=wksp)
+        if self._filterBadPulses > 0.:
+            wksp = api.FilterBadPulses(InputWorkspace=wksp, OutputWorkspace=wksp,
+                                       LowerCutoff=self._filterBadPulses)
             if str(type(wksp)).count("IEvent") > 0:
                 # Event workspace 
                 self.log().information("F1141D There are %d events after FilterBadPulses in workspace %s." % (
@@ -683,9 +692,10 @@ class SNSPowderReduction(DataProcessorAlgorithm):
                     OutputWorkspace=wksplist[itemp], Tolerance=COMPRESS_TOL_TOF) # 100ns
 
             try:
-                wksplist[itemp] = api.NormaliseByCurrent(InputWorkspace=wksplist[itemp], 
-                                                         OutputWorkspace=wksplist[itemp])
-                wksplist[itemp].getRun()['gsas_monitor'] = 1
+                if self._normalisebycurrent is True:
+                    wksplist[itemp] = api.NormaliseByCurrent(InputWorkspace=wksplist[itemp], 
+                                                             OutputWorkspace=wksplist[itemp])
+                    wksplist[itemp].getRun()['gsas_monitor'] = 1
             except Exception, e:
                 self.log().warning(str(e))
 

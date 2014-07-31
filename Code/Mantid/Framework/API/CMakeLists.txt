@@ -365,7 +365,8 @@ set ( TEST_FILES
 	VectorParameterTest.h
 	WorkspaceFactoryTest.h
 	WorkspaceGroupTest.h
-	WorkspaceHistoryTest.h
+  WorkspaceHistoryTest.h
+	WorkspaceHistoryIOTest.h
 	WorkspaceOpOverloadsTest.h
 	WorkspacePropertyTest.h
 )

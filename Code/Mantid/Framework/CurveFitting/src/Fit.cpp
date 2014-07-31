@@ -604,6 +604,7 @@ namespace CurveFitting
 
     }
 
+    progress(1.0);
   }
 
 
