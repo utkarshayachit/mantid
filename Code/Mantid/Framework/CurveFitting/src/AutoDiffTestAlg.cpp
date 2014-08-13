@@ -1,7 +1,10 @@
 #include "MantidCurveFitting/AutoDiffTestAlg.h"
 #include "MantidCurveFitting/GaussianNumDiff.h"
-
 #include "MantidCurveFitting/GaussianAutoDiff.h"
+#include "MantidCurveFitting/GaussianHandCoded.h"
+#include "MantidAPI/FunctionDomain1D.h"
+#include "MantidAPI/FunctionValues.h"
+#include "MantidCurveFitting/Jacobian.h"
 #include "MantidAPI/CompositeFunction.h"
 #include "MantidKernel/Timer.h"
 #include "MantidKernel/Logger.h"
@@ -53,8 +56,7 @@ const std::string AutoDiffTestAlg::summary() const { return "Test"; }
 void AutoDiffTestAlg::init()
 {
     declareProperty(new WorkspaceProperty<MatrixWorkspace>("InputWorkspace","",Direction::Input), "Data with 20 gaussian peaks.");
-    declareProperty(new WorkspaceProperty<ITableWorkspace>("OutputWorkspace","",Direction::Output), "Data with 20 gaussian peaks.");
-    declareProperty(new WorkspaceProperty<MatrixWorkspace>("OutputWorkspacePlot","",Direction::Output), "Data with 20 gaussian peaks.");
+    declareProperty(new WorkspaceProperty<MatrixWorkspace>("OutputWorkspace","",Direction::Output), "Data with 20 gaussian peaks.");
     declareProperty("DerivativeType","adept","How to calculate derivatives.");
 
 }
@@ -71,7 +73,7 @@ namespace
     if ( type == "adept" )
     {
       return IFunction_sptr(new GaussianAutoDiff);
-    }
+    } else if ( type == "num") {
     /*
     API::CompositeFunction_sptr comp(new API::CompositeFunction);
     auto gauss = IFunction_sptr(new GaussianNumDiff);
@@ -81,6 +83,9 @@ namespace
     return comp;
     */
     return IFunction_sptr(new GaussianNumDiff);
+    }
+
+    return IFunction_sptr(new GaussianHandCoded);
   }
 }
 
@@ -160,6 +165,7 @@ void AutoDiffTestAlg::exec()
     sigma.push_back(5.657079363007425);
 
     // make composite function
+    /*
     CompositeFunction_sptr bigFunction(new CompositeFunction);
     for(size_t i = 0; i < 20; ++i) {
         IFunction_sptr g = getFunction(m_derType);
@@ -172,26 +178,76 @@ void AutoDiffTestAlg::exec()
 
         bigFunction->addFunction(g);
     }
+    */
 
     Kernel::Timer timer;
 
-    IAlgorithm_sptr fitAlgorithm = createChildAlgorithm("Fit", -1, -1, true);
-    fitAlgorithm->setProperty("CreateOutput", true);
-    fitAlgorithm->setProperty("Output", "FitPeaks1D");
-    fitAlgorithm->setProperty("CalcErrors", true);
-    fitAlgorithm->setProperty("Function", boost::static_pointer_cast<IFunction>(bigFunction));
-    fitAlgorithm->setProperty("InputWorkspace", fitData);
-    fitAlgorithm->setProperty("WorkspaceIndex", 0);
+    for(size_t i = 0; i < 10; ++i) {
+        IFunction_sptr g = getFunction(m_derType);
+        g->initialize();
+        g->setParameter(0, 4.0); // h
+        g->setParameter(1, 0.0); // x0
+        g->setParameter(2, 3.5); // s
 
-    fitAlgorithm->execute();
+        IAlgorithm_sptr fitAlgorithm = createChildAlgorithm("Fit", -1, -1, false);
+        fitAlgorithm->setProperty("CreateOutput", true);
+        fitAlgorithm->setProperty("Output", "FitPeaks1D");
+        fitAlgorithm->setProperty("CalcErrors", true);
+        fitAlgorithm->setProperty("Function", g);
+        fitAlgorithm->setProperty("InputWorkspace", fitData);
+        fitAlgorithm->setProperty("WorkspaceIndex", 0);
+
+        fitAlgorithm->execute();
+    }
 
     g_log.warning() << "Fit took " << timer.elapsed() << " seconds to complete" << std::endl;
 
-    ITableWorkspace_sptr t = fitAlgorithm->getProperty("OutputParameters");
-    MatrixWorkspace_sptr mw = fitAlgorithm->getProperty("OutputWorkspace");
+    IFunction_sptr g = getFunction(m_derType);
+    g->initialize();
+    g->setParameter(0, 4.0); // h
+    g->setParameter(1, 0.0); // x0
+    g->setParameter(2, 3.5); // s
 
+    FunctionDomain1DVector x(fitData->readX(0));
+    FunctionValues y(x);
+    CurveFitting::Jacobian J(500, 3);
+
+    g->function(x, y);
+    g->functionDeriv(x, J);
+
+    MatrixWorkspace_sptr t = WorkspaceFactory::Instance().create(fitData);
+
+    MantidVec &yd = t->dataY(0);
+    const MantidVec &yr = fitData->readY(0);
+    for(size_t i = 0; i < 500; ++i) {
+        yd[i] = yr[i] - y[i];
+    }
+
+    MantidVec &dfdx0 = t->dataY(1);
+    const MantidVec &dfdx0r = fitData->readY(1);
+    for(size_t i = 0; i < 500; ++i) {
+        dfdx0[i] = dfdx0r[i] - J.get(i, 1);
+    }
+
+    MantidVec &dfdh = t->dataY(2);
+    const MantidVec &dfdhr = fitData->readY(2);
+    for(size_t i = 0; i < 500; ++i) {
+        dfdh[i] = dfdhr[i] - J.get(i, 0);
+    }
+
+    MantidVec &dfds = t->dataY(3);
+    const MantidVec &dfdsr = fitData->readY(3);
+    for(size_t i = 0; i < 500; ++i) {
+        dfds[i] = dfdsr[i] - J.get(i, 2);
+    }
+
+    for(size_t i = 0; i < 4; ++i) {
+        MantidVec &xd = t->dataX(i);
+        xd = fitData->readX(i);
+    }
+
+    // test accuracy
     setProperty("OutputWorkspace", t);
-    setProperty("OutputWorkspacePlot", mw);
 }
 
 
