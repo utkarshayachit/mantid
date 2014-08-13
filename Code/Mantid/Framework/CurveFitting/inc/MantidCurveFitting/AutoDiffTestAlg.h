@@ -45,6 +45,7 @@ namespace CurveFitting
   private:
     void init();
     void exec();
+    std::vector<double> parameterValues(const std::string &parameterString) const;
 
     std::string m_derType;
 

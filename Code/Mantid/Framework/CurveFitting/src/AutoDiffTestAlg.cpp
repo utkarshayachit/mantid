@@ -9,6 +9,9 @@
 #include "MantidKernel/Timer.h"
 #include "MantidKernel/Logger.h"
 
+#include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
+
 namespace Mantid
 {
 namespace CurveFitting
@@ -56,6 +59,7 @@ const std::string AutoDiffTestAlg::summary() const { return "Test"; }
 void AutoDiffTestAlg::init()
 {
     declareProperty(new WorkspaceProperty<MatrixWorkspace>("InputWorkspace","",Direction::Input), "Data with 20 gaussian peaks.");
+    declareProperty("GaussianParameters", "", "Gaussian parameters (h, x0, s)");
     declareProperty(new WorkspaceProperty<MatrixWorkspace>("OutputWorkspace","",Direction::Output), "Data with 20 gaussian peaks.");
     declareProperty("DerivativeType","adept","How to calculate derivatives.");
 
@@ -74,15 +78,7 @@ namespace
     {
       return IFunction_sptr(new GaussianAutoDiff);
     } else if ( type == "num") {
-    /*
-    API::CompositeFunction_sptr comp(new API::CompositeFunction);
-    auto gauss = IFunction_sptr(new GaussianNumDiff);
-    gauss->initialize();
-    comp->addFunction( gauss );
-    comp->setAttributeValue("NumDeriv",true);
-    return comp;
-    */
-    return IFunction_sptr(new GaussianNumDiff);
+      return IFunction_sptr(new GaussianNumDiff);
     }
 
     return IFunction_sptr(new GaussianHandCoded);
@@ -97,148 +93,97 @@ void AutoDiffTestAlg::exec()
     MatrixWorkspace_sptr fitData = getProperty("InputWorkspace");
     m_derType = getPropertyValue("DerivativeType");
 
-    // reference positions
-    std::vector<double> peakPos;
-    peakPos.push_back(0.827127667318377 * 1e3);
-    peakPos.push_back(0.446507516865451 * 1e3);
-    peakPos.push_back(3.212031089462408 * 1e3);
-    peakPos.push_back(0.339620248883351 * 1e3);
-    peakPos.push_back(0.853734126295672 * 1e3);
-    peakPos.push_back(3.533866873710056 * 1e3);
-    peakPos.push_back(2.675258995780313 * 1e3);
-    peakPos.push_back(2.804395617510907 * 1e3);
-    peakPos.push_back(4.080720843054712 * 1e3);
-    peakPos.push_back(4.009692942511339 * 1e3);
-    peakPos.push_back(2.608962017782574 * 1e3);
-    peakPos.push_back(1.527833877767375 * 1e3);
-    peakPos.push_back(0.774391717294182 * 1e3);
-    peakPos.push_back(4.455669248757245 * 1e3);
-    peakPos.push_back(4.857387157338189 * 1e3);
-    peakPos.push_back(4.724126301815355 * 1e3);
-    peakPos.push_back(3.263015036059334 * 1e3);
-    peakPos.push_back(0.634832729798558 * 1e3);
-    peakPos.push_back(0.558598951514288 * 1e3);
-    peakPos.push_back(1.075764493763790 * 1e3);
+    std::string parameterString = getProperty("GaussianParameters");
+    std::vector<double> paramValues = parameterValues(parameterString);
 
-    std::vector<double> peakHeight;
-    peakHeight.push_back(2.245209864353441 * 1e2);
-    peakHeight.push_back(1.510637181301955 * 1e2);
-    peakHeight.push_back(0.976472331098110 * 1e2);
-    peakHeight.push_back(2.155967444583149 * 1e2);
-    peakHeight.push_back(2.096849388602564 * 1e2);
-    peakHeight.push_back(2.001412921426884 * 1e2);
-    peakHeight.push_back(0.813583834136194 * 1e2);
-    peakHeight.push_back(0.870991001783003 * 1e2);
-    peakHeight.push_back(1.859893820857897 * 1e2);
-    peakHeight.push_back(1.702790456488836 * 1e2);
-    peakHeight.push_back(1.285023552530342 * 1e2);
-    peakHeight.push_back(2.235335496958465 * 1e2);
-    peakHeight.push_back(1.252322988661303 * 1e2);
-    peakHeight.push_back(2.289811034304849 * 1e2);
-    peakHeight.push_back(1.281157243695577 * 1e2);
-    peakHeight.push_back(1.306906792985985 * 1e2);
-    peakHeight.push_back(1.837545751838062 * 1e2);
-    peakHeight.push_back(1.076168964141773 * 1e2);
-    peakHeight.push_back(1.206518519074316 * 1e2);
-    peakHeight.push_back(0.565707936300742 * 1e2);
+/*
+    if(fitData->getNumberHistograms() > 4) {
+        IFunction_sptr f = getFunction(m_derType);
+        f->initialize();
 
-    std::vector<double> sigma;
-    sigma.push_back(22.452098643534413);
-    sigma.push_back(15.106371813019551);
-    sigma.push_back(9.764723310981100);
-    sigma.push_back(21.559674445831490);
-    sigma.push_back(20.968493886025641);
-    sigma.push_back(20.014129214268841);
-    sigma.push_back(8.135838341361936);
-    sigma.push_back(8.709910017830035);
-    sigma.push_back(18.598938208578964);
-    sigma.push_back(17.027904564888356);
-    sigma.push_back(12.850235525303422);
-    sigma.push_back(22.353354969584650);
-    sigma.push_back(12.523229886613029);
-    sigma.push_back(22.898110343048490);
-    sigma.push_back(12.811572436955773);
-    sigma.push_back(13.069067929859852);
-    sigma.push_back(18.375457518380621);
-    sigma.push_back(10.761689641417730);
-    sigma.push_back(12.065185190743160);
-    sigma.push_back(5.657079363007425);
+        for(size_t i = 0; i < paramValues.size(); ++i) {
+            f->setParameter(i, paramValues[i] - 0.001 * paramValues[i]);
+        }
 
-    // make composite function
-    /*
-    CompositeFunction_sptr bigFunction(new CompositeFunction);
-    for(size_t i = 0; i < 20; ++i) {
-        IFunction_sptr g = getFunction(m_derType);
-        g->initialize();
-        g->setParameter(0, peakHeight[i] * 1.1);
-        g->setParameter(2, sigma[i] * 1.15);
-        g->setParameter(1, peakPos[i]);
-
-        //g->addTies("Height = 10*Sigma");
-
-        bigFunction->addFunction(g);
-    }
-    */
-
-    Kernel::Timer timer;
-
-    for(size_t i = 0; i < 10; ++i) {
-        IFunction_sptr g = getFunction(m_derType);
-        g->initialize();
-        g->setParameter(0, 4.0); // h
-        g->setParameter(1, 0.0); // x0
-        g->setParameter(2, 3.5); // s
-
-        IAlgorithm_sptr fitAlgorithm = createChildAlgorithm("Fit", -1, -1, false);
+        IAlgorithm_sptr fitAlgorithm = createChildAlgorithm("Fit", -1, -1, true);
         fitAlgorithm->setProperty("CreateOutput", true);
         fitAlgorithm->setProperty("Output", "FitPeaks1D");
         fitAlgorithm->setProperty("CalcErrors", true);
-        fitAlgorithm->setProperty("Function", g);
+        fitAlgorithm->setProperty("Function", f);
         fitAlgorithm->setProperty("InputWorkspace", fitData);
-        fitAlgorithm->setProperty("WorkspaceIndex", 0);
+        fitAlgorithm->setProperty("WorkspaceIndex", 4);
 
         fitAlgorithm->execute();
-    }
 
-    g_log.warning() << "Fit took " << timer.elapsed() << " seconds to complete" << std::endl;
+        g_log.notice() << "Fit results:" << std::endl;
+        for(size_t i = 0; i < paramValues.size(); ++i) {
+            g_log.notice() << "  " << f->parameterName(i) << " = " << f->getParameter(i) << " (" << f->getError(i) << ")" << std::endl;
+        }
+    }
+    */
 
     IFunction_sptr g = getFunction(m_derType);
     g->initialize();
-    g->setParameter(0, 4.0); // h
-    g->setParameter(1, 0.0); // x0
-    g->setParameter(2, 3.5); // s
+
+    for(size_t i = 0; i < paramValues.size(); ++i) {
+        g->setParameter(i, paramValues[i]);
+    }
 
     FunctionDomain1DVector x(fitData->readX(0));
     FunctionValues y(x);
     CurveFitting::Jacobian J(x.size(), 3);
 
     g->function(x, y);
-    g->functionDeriv(x, J);
+
+    Kernel::Timer timer;
+
+    for(size_t i = 0; i < 1000; ++i) {
+        g->functionDeriv(x, J);
+    }
+
+    g_log.warning() << "Calculating derivatives took " << timer.elapsed() / 1000 << " seconds to complete." << std::endl;
+
 
     MatrixWorkspace_sptr t = WorkspaceFactory::Instance().create(fitData);
 
     MantidVec &yd = t->dataY(0);
     const MantidVec &yr = fitData->readY(0);
     for(size_t i = 0; i < x.size(); ++i) {
-        yd[i] = yr[i] - y[i];
+        yd[i] = 1.0 - y[i] / yr[i];
+
+        if(std::isinf(yd[i])) {
+            yd[i] = 0.0;
+        }
     }
 
     MantidVec &dfdx0 = t->dataY(1);
     const MantidVec &dfdx0r = fitData->readY(1);
     for(size_t i = 0; i < x.size(); ++i) {
-        dfdx0[i] = dfdx0r[i] - J.get(i, 1);
+        dfdx0[i] = 1.0 - J.get(i, 1) / dfdx0r[i];
+
+        if(std::isinf(dfdx0[i])) {
+            dfdx0[i] = 0.0;
+        }
     }
 
     MantidVec &dfdh = t->dataY(2);
     const MantidVec &dfdhr = fitData->readY(2);
     for(size_t i = 0; i < x.size(); ++i) {
-        dfdh[i] = dfdhr[i] - J.get(i, 0);
+        dfdh[i] = 1.0 - J.get(i, 0) / dfdhr[i];
+
+        if(std::isinf(dfdh[i])) {
+            dfdh[i] = 0.0;
+        }
     }
 
     MantidVec &dfds = t->dataY(3);
     const MantidVec &dfdsr = fitData->readY(3);
     for(size_t i = 0; i < x.size(); ++i) {
-        dfds[i] = dfdsr[i] - J.get(i, 2);
+        dfds[i] = 1.0 - J.get(i, 2) / dfdsr[i];
+
+        if(std::isinf(dfds[i])) {
+            dfds[i] = 0.0;
+        }
     }
 
     for(size_t i = 0; i < 4; ++i) {
@@ -248,6 +193,22 @@ void AutoDiffTestAlg::exec()
 
     // test accuracy
     setProperty("OutputWorkspace", t);
+}
+
+std::vector<double> AutoDiffTestAlg::parameterValues(const std::string &parameterString) const
+{
+    std::vector<std::string> strings;
+    boost::split(strings, parameterString, boost::is_any_of(", "));
+
+    std::vector<double> values(strings.size());
+
+    std::cout << std::setprecision(17);
+    for(size_t i = 0; i < values.size(); ++i) {
+        values[i] = boost::lexical_cast<double>(strings[i]);
+        std::cout << values[i] << std::endl;
+    }
+
+    return values;
 }
 
 
