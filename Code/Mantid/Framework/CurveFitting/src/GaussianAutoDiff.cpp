@@ -24,7 +24,8 @@ void GaussianAutoDiff::function1DAutoDiff(const FunctionDomain1D &domain, std::v
     adept::adouble sigma = parameters.getParameter("Sigma");
 
     for(size_t i = 0; i < y.size(); ++i) {
-        y[i] = height * exp(-0.5 * pow( (domain[i] - centre)/sigma, 2.0) );
+        adept::adouble term = (domain[i] - centre)/sigma;
+        y[i] = height * exp(-0.5 * term * term);
     }
 }
 

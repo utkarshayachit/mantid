@@ -27,7 +27,8 @@ namespace CurveFitting
       double sigma = getParameter("Sigma");
 
       for(size_t i = 0; i < nData; ++i) {
-          out[i] = height * exp(-0.5 * pow( (xValues[i] - centre)/sigma, 2.0) );
+          double term = (xValues[i] - centre)/sigma;
+          out[i] = height * exp(-0.5 * term * term );
       }
   }
 

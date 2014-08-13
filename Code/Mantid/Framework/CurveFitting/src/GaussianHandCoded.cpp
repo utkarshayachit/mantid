@@ -27,7 +27,8 @@ using namespace API;
       double sigma = getParameter("Sigma");
 
       for(size_t i = 0; i < nData; ++i) {
-          out[i] = height * exp(-0.5 * pow( (xValues[i] - centre)/sigma, 2.0) );
+          double diffTerm = (xValues[i] - centre)/sigma;
+          out[i] = height * exp(-0.5 * diffTerm * diffTerm );
       }
   }
 
@@ -39,11 +40,12 @@ using namespace API;
 
       for(size_t i = 0; i < nData; ++i) {
           double xDiff = xValues[i] - centre;
-          double expTerm = exp(-0.5 * pow( (xDiff)/sigma, 2.0));
+          double term = (xDiff)/sigma;
+          double expTerm = exp(-0.5 * term * term);
 
           out->set(i, 0, expTerm);
-          out->set(i, 1, (height*expTerm*(2 * xDiff))/(2*pow(sigma, 2)));
-          out->set(i, 2, (height*expTerm*pow(xDiff, 2))/pow(sigma, 3));
+          out->set(i, 1, (height*expTerm*(xDiff))/(sigma * sigma));
+          out->set(i, 2, (height*expTerm*term * term)/(sigma));
       }
   }
 
