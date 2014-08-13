@@ -60,6 +60,7 @@ set ( SRC_FILES
 	src/LogNormal.cpp
 	src/Lorentzian.cpp
 	src/Lorentzian1D.cpp
+	src/LorentzianFamily.cpp
 	src/MultiDomainCreator.cpp
 	src/MuonFInteraction.cpp
 	src/NeutronBk2BkExpConvPVoigt.cpp
@@ -169,6 +170,7 @@ set ( INC_FILES
 	inc/MantidCurveFitting/LogNormal.h
 	inc/MantidCurveFitting/Lorentzian.h
 	inc/MantidCurveFitting/Lorentzian1D.h
+	inc/MantidCurveFitting/LorentzianFamily.h
 	inc/MantidCurveFitting/MultiDomainCreator.h
 	inc/MantidCurveFitting/MuonFInteraction.h
 	inc/MantidCurveFitting/NeutronBk2BkExpConvPVoigt.h
@@ -266,6 +268,7 @@ set ( TEST_FILES
 	LinearBackgroundTest.h
 	LogNormalTest.h
 	Lorentzian1DTest.h
+	LorentzianFamilyTest.h
 	LorentzianTest.h
 	MultiDomainCreatorTest.h
 	MultiDomainFunctionTest.h
