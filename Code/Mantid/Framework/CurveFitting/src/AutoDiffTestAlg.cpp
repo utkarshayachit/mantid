@@ -210,7 +210,7 @@ void AutoDiffTestAlg::exec()
 
     FunctionDomain1DVector x(fitData->readX(0));
     FunctionValues y(x);
-    CurveFitting::Jacobian J(500, 3);
+    CurveFitting::Jacobian J(x.size(), 3);
 
     g->function(x, y);
     g->functionDeriv(x, J);
@@ -219,25 +219,25 @@ void AutoDiffTestAlg::exec()
 
     MantidVec &yd = t->dataY(0);
     const MantidVec &yr = fitData->readY(0);
-    for(size_t i = 0; i < 500; ++i) {
+    for(size_t i = 0; i < x.size(); ++i) {
         yd[i] = yr[i] - y[i];
     }
 
     MantidVec &dfdx0 = t->dataY(1);
     const MantidVec &dfdx0r = fitData->readY(1);
-    for(size_t i = 0; i < 500; ++i) {
+    for(size_t i = 0; i < x.size(); ++i) {
         dfdx0[i] = dfdx0r[i] - J.get(i, 1);
     }
 
     MantidVec &dfdh = t->dataY(2);
     const MantidVec &dfdhr = fitData->readY(2);
-    for(size_t i = 0; i < 500; ++i) {
+    for(size_t i = 0; i < x.size(); ++i) {
         dfdh[i] = dfdhr[i] - J.get(i, 0);
     }
 
     MantidVec &dfds = t->dataY(3);
     const MantidVec &dfdsr = fitData->readY(3);
-    for(size_t i = 0; i < 500; ++i) {
+    for(size_t i = 0; i < x.size(); ++i) {
         dfds[i] = dfdsr[i] - J.get(i, 2);
     }
 
