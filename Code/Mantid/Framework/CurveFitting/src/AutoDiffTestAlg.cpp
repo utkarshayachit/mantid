@@ -2,6 +2,7 @@
 #include "MantidCurveFitting/GaussianNumDiff.h"
 #include "MantidCurveFitting/GaussianAutoDiff.h"
 #include "MantidCurveFitting/GaussianHandCoded.h"
+#include "MantidCurveFitting/LorentzianFamily.h"
 #include "MantidAPI/FunctionDomain1D.h"
 #include "MantidAPI/FunctionValues.h"
 #include "MantidCurveFitting/Jacobian.h"
@@ -76,12 +77,14 @@ namespace
   {
     if ( type == "adept" )
     {
-      return IFunction_sptr(new GaussianAutoDiff);
+      return IFunction_sptr(new Lorentzians::LorentzianAutoDiff);
+      //return IFunction_sptr(new GaussianAutoDiff);
     } else if ( type == "num") {
-      return IFunction_sptr(new GaussianNumDiff);
+      return IFunction_sptr(new Lorentzians::LorentzianNumDiff);
+      //return IFunction_sptr(new GaussianNumDiff);
     }
-
-    return IFunction_sptr(new GaussianHandCoded);
+    return IFunction_sptr(new Lorentzians::LorentzianHandCoded);
+    //return IFunction_sptr(new GaussianHandCoded);
   }
 }
 
@@ -96,7 +99,6 @@ void AutoDiffTestAlg::exec()
     std::string parameterString = getProperty("GaussianParameters");
     std::vector<double> paramValues = parameterValues(parameterString);
 
-/*
     if(fitData->getNumberHistograms() > 4) {
         IFunction_sptr f = getFunction(m_derType);
         f->initialize();
@@ -120,7 +122,6 @@ void AutoDiffTestAlg::exec()
             g_log.notice() << "  " << f->parameterName(i) << " = " << f->getParameter(i) << " (" << f->getError(i) << ")" << std::endl;
         }
     }
-    */
 
     IFunction_sptr g = getFunction(m_derType);
     g->initialize();
@@ -137,11 +138,11 @@ void AutoDiffTestAlg::exec()
 
     Kernel::Timer timer;
 
-    for(size_t i = 0; i < 1000; ++i) {
+    for(size_t i = 0; i < 10000; ++i) {
         g->functionDeriv(x, J);
     }
 
-    g_log.warning() << "Calculating derivatives took " << timer.elapsed() / 1000 << " seconds to complete." << std::endl;
+    g_log.warning() << "Calculating derivatives took " << timer.elapsed() / 10000 << " seconds to complete." << std::endl;
 
 
     MatrixWorkspace_sptr t = WorkspaceFactory::Instance().create(fitData);
@@ -186,7 +187,7 @@ void AutoDiffTestAlg::exec()
         }
     }
 
-    for(size_t i = 0; i < 4; ++i) {
+    for(size_t i = 0; i < fitData->getNumberHistograms(); ++i) {
         MantidVec &xd = t->dataX(i);
         xd = fitData->readX(i);
     }
