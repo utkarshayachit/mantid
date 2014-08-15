@@ -251,11 +251,13 @@ namespace MDAlgorithms
       if(!box->isBox())continue;
       // load all contributed events into current box;
       this->loadEventsFromSubBoxes(boxes[ib]);
-
+      // calculate box averages e.g. signal, error and number of events in the box
+      box->refreshCache();
       if(DiskBuf)
       {
         if(box->getDataInMemorySize()>0)
         {  // data position has been already pre-calculated 
+            
             box->getISaveable()->save();
             box->clearDataFromMemory();
             //Kernel::ISaveable *Saver = box->getISaveable();
