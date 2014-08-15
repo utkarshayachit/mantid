@@ -96,6 +96,8 @@ void AutoDiffTestAlg::exec()
     MatrixWorkspace_sptr fitData = getProperty("InputWorkspace");
     m_derType = getPropertyValue("DerivativeType");
 
+    g_log.warning() << "Using " << m_derType << " derivatives." << std::endl;
+
     std::string parameterString = getProperty("GaussianParameters");
     std::vector<double> paramValues = parameterValues(parameterString);
 
@@ -134,15 +136,22 @@ void AutoDiffTestAlg::exec()
     FunctionValues y(x);
     CurveFitting::Jacobian J(x.size(), 3);
 
-    g->function(x, y);
+    Kernel::Timer timerF;
 
-    Kernel::Timer timer;
+    for(size_t i = 0; i < 10000; ++i) {
+        g->function(x, y);
+    }
+
+    g_log.warning() << "Calculating function took " << timerF.elapsed() / 10000 << " seconds to complete." << std::endl;
+
+
+    Kernel::Timer timerDf;
 
     for(size_t i = 0; i < 10000; ++i) {
         g->functionDeriv(x, J);
     }
 
-    g_log.warning() << "Calculating derivatives took " << timer.elapsed() / 10000 << " seconds to complete." << std::endl;
+    g_log.warning() << "Calculating derivatives took " << timerDf.elapsed() / 10000 << " seconds to complete." << std::endl;
 
 
     MatrixWorkspace_sptr t = WorkspaceFactory::Instance().create(fitData);
@@ -206,7 +215,6 @@ std::vector<double> AutoDiffTestAlg::parameterValues(const std::string &paramete
     std::cout << std::setprecision(17);
     for(size_t i = 0; i < values.size(); ++i) {
         values[i] = boost::lexical_cast<double>(strings[i]);
-        std::cout << values[i] << std::endl;
     }
 
     return values;
