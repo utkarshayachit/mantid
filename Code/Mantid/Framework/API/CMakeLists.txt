@@ -389,6 +389,10 @@ if ( WIN32 )
 endif ()
 
 find_package ( adept )
+add_definitions(-DADEPT_INITIAL_STACK_LENGTH=8000)
+add_definitions(-DADEPT_RECORDING_PAUSABLE=1)
+add_definitions(-DADEPT_STACK_THREAD_UNSAFE=1)
+add_definitions(-DADEPT_MULTIPASS_SIZE=2)
 
 # Add a precompiled header where they are supported
 enable_precompiled_headers( inc/MantidAPI/PrecompiledHeader.h SRC_FILES )
