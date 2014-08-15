@@ -223,7 +223,7 @@ public:
     }
 
     /// Returns the parameter with supplied name. Throws std::
-    const adept::adouble &getParameter(std::string name) const
+    const adept::adouble &getParameter(const std::string &name) const
     {
         auto it = m_names.find(name);
         if(it == m_names.end()) {
