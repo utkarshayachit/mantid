@@ -50,7 +50,7 @@ namespace Mantid
           "Workspace of Peaks with UB loaded");
 
       declareProperty(
-          new WorkspaceProperty<TableWorkspace>("HKLIntegerOffsets", "HKLIntegerOffsets",
+          new WorkspaceProperty<ITableWorkspace>("HKLIntegerOffsets", "HKLIntegerOffsets",
               Direction::Output), "Workspace with the Results");
     }
 
