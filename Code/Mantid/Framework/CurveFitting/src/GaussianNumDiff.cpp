@@ -33,8 +33,8 @@ namespace CurveFitting
   }
 
   void GaussianNumDiff::init() {
-      declareParameter("Height");
       declareParameter("PeakCentre");
+      declareParameter("Height");      
       declareParameter("Sigma");
   }
   

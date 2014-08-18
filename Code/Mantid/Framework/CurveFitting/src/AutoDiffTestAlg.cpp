@@ -3,6 +3,7 @@
 #include "MantidCurveFitting/GaussianAutoDiff.h"
 #include "MantidCurveFitting/GaussianHandCoded.h"
 #include "MantidCurveFitting/LorentzianFamily.h"
+#include "MantidCurveFitting/PearsonVIIFamily.h"
 #include "MantidAPI/FunctionDomain1D.h"
 #include "MantidAPI/FunctionValues.h"
 #include "MantidCurveFitting/Jacobian.h"
@@ -60,7 +61,7 @@ const std::string AutoDiffTestAlg::summary() const { return "Test"; }
 void AutoDiffTestAlg::init()
 {
     declareProperty(new WorkspaceProperty<MatrixWorkspace>("InputWorkspace","",Direction::Input), "Data with 20 gaussian peaks.");
-    declareProperty("GaussianParameters", "", "Gaussian parameters (h, x0, s)");
+    declareProperty("GaussianParameters", "", "Function parameters");
     declareProperty(new WorkspaceProperty<MatrixWorkspace>("OutputWorkspace","",Direction::Output), "Data with 20 gaussian peaks.");
     declareProperty("DerivativeType","adept","How to calculate derivatives.");
 
@@ -77,14 +78,17 @@ namespace
   {
     if ( type == "adept" )
     {
-      return IFunction_sptr(new Lorentzians::LorentzianAutoDiff);
-      //return IFunction_sptr(new GaussianAutoDiff);
+      //return IFunction_sptr(new Lorentzians::LorentzianAutoDiff);
+      return IFunction_sptr(new Pearsons::PearsonVIIAutoDiff);
+      return IFunction_sptr(new GaussianAutoDiff);
     } else if ( type == "num") {
-      return IFunction_sptr(new Lorentzians::LorentzianNumDiff);
-      //return IFunction_sptr(new GaussianNumDiff);
+      //return IFunction_sptr(new Lorentzians::LorentzianNumDiff);
+      return IFunction_sptr(new Pearsons::PearsonVIINumDiff);
+      return IFunction_sptr(new GaussianNumDiff);
     }
-    return IFunction_sptr(new Lorentzians::LorentzianHandCoded);
-    //return IFunction_sptr(new GaussianHandCoded);
+    //return IFunction_sptr(new Lorentzians::LorentzianHandCoded);
+    return IFunction_sptr(new Pearsons::PearsonVIIHandCoded);
+    return IFunction_sptr(new GaussianHandCoded);
   }
 }
 
@@ -101,10 +105,10 @@ void AutoDiffTestAlg::exec()
     std::string parameterString = getProperty("GaussianParameters");
     std::vector<double> paramValues = parameterValues(parameterString);
 
-    if(fitData->getNumberHistograms() > 4) {
-        IFunction_sptr f = getFunction(m_derType);
-        f->initialize();
+    IFunction_sptr f = getFunction(m_derType);
+    f->initialize();
 
+    if(fitData->getNumberHistograms() > (f->nParams() + 1)) {
         for(size_t i = 0; i < paramValues.size(); ++i) {
             f->setParameter(i, paramValues[i] - 0.001 * paramValues[i]);
         }
@@ -115,7 +119,7 @@ void AutoDiffTestAlg::exec()
         fitAlgorithm->setProperty("CalcErrors", true);
         fitAlgorithm->setProperty("Function", f);
         fitAlgorithm->setProperty("InputWorkspace", fitData);
-        fitAlgorithm->setProperty("WorkspaceIndex", 4);
+        fitAlgorithm->setProperty("WorkspaceIndex", static_cast<int>(f->nParams() + 1));
 
         fitAlgorithm->execute();
 
@@ -134,7 +138,7 @@ void AutoDiffTestAlg::exec()
 
     FunctionDomain1DVector x(fitData->readX(0));
     FunctionValues y(x);
-    CurveFitting::Jacobian J(x.size(), 3);
+    CurveFitting::Jacobian J(x.size(), g->nParams());
 
     Kernel::Timer timerF;
 
@@ -166,33 +170,15 @@ void AutoDiffTestAlg::exec()
         }
     }
 
-    MantidVec &dfdx0 = t->dataY(1);
-    const MantidVec &dfdx0r = fitData->readY(1);
-    for(size_t i = 0; i < x.size(); ++i) {
-        dfdx0[i] = 1.0 - J.get(i, 1) / dfdx0r[i];
+    for(size_t j = 1; (j < f->nParams() + 1); ++j) {
+        MantidVec &partialDeriv = t->dataY(j);
+        const MantidVec &reference = fitData->readY(j);
+        for(size_t i = 0; i < partialDeriv.size(); ++i) {
+            partialDeriv[i] = 1.0 - J.get(i, j - 1) / reference[i];
 
-        if(std::isinf(dfdx0[i])) {
-            dfdx0[i] = 0.0;
-        }
-    }
-
-    MantidVec &dfdh = t->dataY(2);
-    const MantidVec &dfdhr = fitData->readY(2);
-    for(size_t i = 0; i < x.size(); ++i) {
-        dfdh[i] = 1.0 - J.get(i, 0) / dfdhr[i];
-
-        if(std::isinf(dfdh[i])) {
-            dfdh[i] = 0.0;
-        }
-    }
-
-    MantidVec &dfds = t->dataY(3);
-    const MantidVec &dfdsr = fitData->readY(3);
-    for(size_t i = 0; i < x.size(); ++i) {
-        dfds[i] = 1.0 - J.get(i, 2) / dfdsr[i];
-
-        if(std::isinf(dfds[i])) {
-            dfds[i] = 0.0;
+            if(std::isinf(partialDeriv[i])) {
+                partialDeriv[i] = 0.0;
+            }
         }
     }
 

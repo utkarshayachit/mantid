@@ -43,15 +43,15 @@ using namespace API;
           double term = (xDiff)/sigma;
           double expTerm = exp(-0.5 * term * term);
 
-          out->set(i, 0, expTerm);
-          out->set(i, 1, (height*expTerm*(xDiff))/(sigma * sigma));
+          out->set(i, 0, (height*expTerm*(xDiff))/(sigma * sigma));
+          out->set(i, 1, expTerm);
           out->set(i, 2, (height*expTerm*term * term)/(sigma));
       }
   }
 
   void GaussianHandCoded::init() {
-      declareParameter("Height");
       declareParameter("PeakCentre");
+      declareParameter("Height");      
       declareParameter("Sigma");
   }
 

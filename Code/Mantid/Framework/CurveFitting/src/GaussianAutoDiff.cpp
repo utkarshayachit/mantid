@@ -30,8 +30,8 @@ void GaussianAutoDiff::function1DAutoDiff(const FunctionDomain1D &domain, std::v
 }
 
 void GaussianAutoDiff::init() {
-    declareParameter("Height");
     declareParameter("PeakCentre");
+    declareParameter("Height");    
     declareParameter("Sigma");
 }
 
