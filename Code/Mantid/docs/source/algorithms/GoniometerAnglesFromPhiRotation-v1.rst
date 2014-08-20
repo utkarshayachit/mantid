@@ -20,6 +20,8 @@ chi and omega rotations.
 Usage
 -----
 
+.. include:: ../usagedata-note.txt
+
 .. testcode:: exGoniometerAnglesFromPhiRotation 
 
    # Load Peaks found in SXD23767.raw 
