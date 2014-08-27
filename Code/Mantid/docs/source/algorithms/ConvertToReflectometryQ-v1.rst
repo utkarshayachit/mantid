@@ -52,4 +52,40 @@ You will usually want to rebin using :ref:`algm-BinMD` or
 :ref:`algm-SliceMD` after transformation because the output workspaces
 are not regularly binned.
 
+Usage
+------
+
+**Example - Working with multidetectors**
+   
+.. testcode:: ConvertToReflectometryQExample
+
+   import numpy as np
+
+   ws = Load('POLREF4699.nxs')
+
+   theta = ws[0].run().getLogData('stheta').value[-1]
+
+   ws = SpecularReflectionPositionCorrect(ws, TwoThetaIn=theta, AnalysisMode='MultiDetectorAnalysis', SampleComponentName='some-surface-holder', SpectrumNumbersOfDetectors= '74')
+
+   mod_q, lam, theta_out = ReflectometryReductionOneAuto(InputWorkspace=ws,  AnalysisMode='MultiDetectorAnalysis', ThetaIn=theta, ProcessingInstructions='0:245', CorrectDetectorPositions=False)
+
+   lam = ConvertSpectrumAxis(lam, Target='signed_theta')
+
+   qlab = ConvertToReflectometryQ(InputWorkspace=lam, OutputDimensions='Q (lab frame)', Extents=[-0.0005,0.0005,0,0.12], OutputAsMDWorkspace=False)
+
+   # Check the results 
+   flatten_qlab = SumSpectra(qlab)
+   y_data = flatten_qlab[0].readY(0)
+   x_data = flatten_qlab[0].readX(0)
+   index_of_max_y =  np.argmax(y_data)
+
+   print "Integrated over q_z, the intensity is greatest at q_x =",  x_data[index_of_max_y]
+
+Output:
+   
+.. testoutput:: ConvertToReflectometryQExample
+
+   Integrated over q_z, the intensity is greatest at q_x = 0.0
+
+
 .. categories::
