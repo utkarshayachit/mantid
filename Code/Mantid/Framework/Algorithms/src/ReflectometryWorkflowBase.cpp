@@ -448,7 +448,7 @@ namespace Mantid
      * @param monitorIndex : Monitor index
      * @param wavelengthMinMax : Wavelength min max for detector workspace
      * @param backgroundMinMax : Wavelength min max for flat background correction of monitor workspace
-     * @param wavelengthStep : Wavlength step size for rebinning.
+     * @param wavelengthStep : Wavelength step size for rebinning.
      * @return Tuple of detector and monitor workspaces
      */
     ReflectometryWorkflowBase::DetectorMonitorWorkspacePair ReflectometryWorkflowBase::toLam(
