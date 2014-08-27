@@ -17,7 +17,7 @@ workspace. It maintains events if the input is an
 `PeaksWorkspace <http://www.mantidproject.org/PeaksWorkspace>`_.
 
 Assignment of Workspaces Explained
-=============================
+==================================
 
 For value types in python, performing *a = b* results in *a* becoming a unique copy of *b*. The assignment (operator =) results in a full deep copy of *b*. For example:
 
