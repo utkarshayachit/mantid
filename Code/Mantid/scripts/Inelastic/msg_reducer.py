@@ -5,8 +5,6 @@ import os
 import sys
 import time
 import types
-import inspect
-import warnings
 import random
 import string
 
@@ -81,13 +79,13 @@ def validate_loader(f):
                             if data_file is None:
                                 return
                         else:
-                            raise RuntimeError, "SANSMSGReductionSteps.LoadRun doesn't recognize workspace handle %s" % workspace
+                            raise RuntimeError("SANSMSGReductionSteps.LoadRun doesn't recognize workspace handle %s" % workspace)
                     else:
                         data_file = self._data_file
 
                     alg = mantid.api.AlgorithmManager.create(algorithm)
                     if not isinstance(alg, mantid.api.AlgorithmProxy):
-                        raise RuntimeError, "Reducer expects an Algorithm object from FrameworkManager, found '%s'" % str(type(alg))
+                        raise RuntimeError("Reducer expects an Algorithm object from FrameworkManager, found '%s'" % str(type(alg)))
 
                     propertyOrder = alg.orderedProperties()
 
@@ -116,7 +114,7 @@ def validate_loader(f):
             return f(reducer, _AlgorithmStep())
 
         elif isinstance(algorithm, mantid.api.IAlgorithm) \
-            or type(algorithm).__name__=="IAlgorithm":
+            or type(algorithm).__name__ == "IAlgorithm":
             class _AlgorithmStep(MSGReductionStep):
                 def __init__(self):
                     self.algorithm = algorithm
@@ -124,7 +122,7 @@ def validate_loader(f):
                 def get_algorithm(self):
                     return self.algorithm
                 def setProperty(self, key, value):
-                    kwargs[key]=value
+                    kwargs[key] = value
                 def execute(self, reducer, inputworkspace=None, outputworkspace=None):
                     """
                         Create a new instance of the requested algorithm object,
@@ -143,7 +141,7 @@ def validate_loader(f):
                             if data_file is None:
                                 return
                         else:
-                            raise RuntimeError, "SANSMSGReductionSteps.LoadRun doesn't recognize workspace handle %s" % workspace
+                            raise RuntimeError("MSGReductionSteps.LoadRun doesn't recognize workspace handle %s" % workspace)
                     else:
                         data_file = self._data_file
 
@@ -166,7 +164,7 @@ def validate_loader(f):
             return f(reducer, _AlgorithmStep())
 
         else:
-            raise RuntimeError, "%s expects a MSGReductionStep object, found %s" % (f.__name__, algorithm.__class__)
+            raise RuntimeError("%s expects a MSGReductionStep object, found %s" % (f.__name__, algorithm.__class__))
     return validated_f
 
 
@@ -213,7 +211,7 @@ def validate_step(f):
                 def get_algorithm(self):
                     return self.algorithm
                 def setProperty(self, key, value):
-                    kwargs[key]=value
+                    kwargs[key] = value
                 def execute(self, reducer, inputworkspace=None, outputworkspace=None):
                     """
                         Create a new instance of the requested algorithm object,
@@ -229,7 +227,7 @@ def validate_step(f):
                         outputworkspace = inputworkspace
                     alg = mantid.AlgorithmManager.create(algorithm)
                     if not isinstance(alg, mantid.api.AlgorithmProxy):
-                        raise RuntimeError, "Reducer expects an Algorithm object from FrameworkManager, found '%s'" % str(type(alg))
+                        raise RuntimeError("Reducer expects an Algorithm object from FrameworkManager, found '%s'" % str(type(alg)))
 
                     propertyOrder = alg.orderedProperties()
 
@@ -246,7 +244,7 @@ def validate_step(f):
                         kwargs["OutputWorkspace"] = outputworkspace
 
                     self.algorithm = alg
-                    simpleapi._set_properties(alg,*(),**kwargs)
+                    simpleapi._set_properties(alg, *(), **kwargs)
                     alg.execute()
                     if "OutputMessage" in propertyOrder:
                         return alg.getPropertyValue("OutputMessage")
@@ -254,14 +252,14 @@ def validate_step(f):
             return f(reducer, _AlgorithmStep())
 
         elif isinstance(algorithm, mantid.api.IAlgorithm) \
-            or type(algorithm).__name__=="IAlgorithm":
+            or type(algorithm).__name__ == "IAlgorithm":
             class _AlgorithmStep(MSGReductionStep):
                 def __init__(self):
                     self.algorithm = algorithm
                 def get_algorithm(self):
                     return self.algorithm
                 def setProperty(self, key, value):
-                    kwargs[key]=value
+                    kwargs[key] = value
                 def execute(self, reducer, inputworkspace=None, outputworkspace=None):
                     """
                         Create a new instance of the requested algorithm object,
@@ -292,7 +290,7 @@ def validate_step(f):
             return f(reducer, _AlgorithmStep())
 
         else:
-            raise RuntimeError, "%s expects a MSGReductionStep object, found %s" % (f.__name__, algorithm.__class__)
+            raise RuntimeError("%s expects a MSGReductionStep object, found %s" % (f.__name__, algorithm.__class__))
     return validated_f
 
 
@@ -303,24 +301,17 @@ class MSGReducer(object):
     providing a semi-consistent interface to both.
     """
 
-    ## Path for data files
-    _data_path = '.'
-    ## Path for output files
-    _output_path = None
-    ## List of data files to process
-    _data_files = {}
-    ## List of workspaces that were modified
-    _dirty = []
-    ## List of reduction steps
-    _reduction_steps = []
-    ## Log
-    log_text = ''
-    ## Output workspaces
-    output_workspaces = []
+    _data_path = '.'            # Path for data files
+    _output_path = None         # Path for output files
+    _data_files = {}            # List of data files to process
+    _dirty = []                 # List of workspaces that were modified
+    _reduction_steps = []       # List of reduction steps
+    log_text = ''               # Log
+    output_workspaces = []      # Output workspaces
 
-    _instrument_name = None #: Name of the instrument used in experiment.
-    _sum = False #: Whether to sum input files or treat them sequentially.
-    _load_logs = False #: Whether to load the log file(s) associated with the raw file.
+    _instrument_name = None     # Name of the instrument used in experiment.
+    _sum = False                # Whether to sum input files or treat them sequentially.
+    _load_logs = False          # Whether to load the log file(s) associated with the raw file.
     _multiple_frames = False
     _detector_range = [-1, -1]
     _masking_detectors = {}
@@ -350,7 +341,7 @@ class MSGReducer(object):
 
         self._multiple_frames = loadData.is_multiple_frames()
 
-        if( self._info_table_props is not None ):
+        if self._info_table_props is not None:
             wsNames = loadData.get_ws_list().keys()
             wsNameList = ", ".join(wsNames)
             propsList = ", ".join(self._info_table_props)
@@ -360,7 +351,7 @@ class MSGReducer(object):
                 LogPropertyNames=propsList,
                 GroupPolicy="First")
 
-        if ( self._sum ):
+        if self._sum:
             self._data_files = loadData.get_ws_list()
 
         self._setup_steps()
@@ -371,9 +362,9 @@ class MSGReducer(object):
         Example:
             reducer.set_detector_range(2,52)
         """
-        if ( not isinstance(start, int) ) or ( not isinstance(end, int) ):
+        if not isinstance(start, int) or not isinstance(end, int):
             raise TypeError("start and end must be integer values")
-        self._detector_range = [ start, end ]
+        self._detector_range = [start, end]
 
     def set_fold_multiple_frames(self, value):
         """When this is set to False, the reducer will not run the FoldData
@@ -472,13 +463,13 @@ class MSGReducer(object):
         nsteps = len(self._reduction_steps)
         for i in range(0, nsteps):
             try:
-                step = self._reduction_steps[nsteps-(i+1)]
+                step = self._reduction_steps[nsteps - (i + 1)]
                 return step.get_result_workspaces()
             except AttributeError:
                 pass
             except IndexError:
                 raise RuntimeError("None of the reduction steps implement "
-                    "the get_result_workspaces() method.")
+                                   "the get_result_workspaces() method.")
 
     def _get_monitor_index(self, workspace):
         """Determine the workspace index of the first monitor spectrum.
@@ -544,19 +535,6 @@ class MSGReducer(object):
             self._output_path = path
         else:
             raise RuntimeError("Reducer.set_output_path: provided path is not a directory (%s)" % path)
-
-    def _full_file_path(self, filename):
-        """
-            Prepends the data folder path and returns a full path to the given file.
-            Raises an exception if the file doesn't exist.
-            @param filename: name of the file to create the full path for
-        """
-        lineno = inspect.currentframe().f_code.co_firstlineno
-        warnings.warn_explicit("Reducer._full_file_path is deprecated: use find_data instead", DeprecationWarning, __file__, lineno)
-
-        instrument_name = ''
-
-        return find_data(filename, instrument=instrument_name)
 
     @validate_step
     def append_step(self, reduction_step):
@@ -639,8 +617,8 @@ class MSGReducer(object):
         self.log_text += "Log saved to %s" % log_path
 
         # Write the log to file
-        f = open(log_path, 'a')
-        f.write("\n-------------------------------------------\n")
-        f.write(self.log_text)
-        f.close()
+        log_file = open(log_path, 'a')
+        log_file.write("\n-------------------------------------------\n")
+        log_file.write(self.log_text)
+        log_file.close()
         return self.log_text
