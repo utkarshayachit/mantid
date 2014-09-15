@@ -1,11 +1,41 @@
-from reduction.reducer import ReductionStep
 import mantid
 from mantid import config
 from mantid.simpleapi import *
 import string
 import os
 
-class LoadData(ReductionStep):
+class MSGReductionStep(object):
+    """
+        Base class for reduction steps
+    """
+    @classmethod
+    def delete_workspaces(cls, workspace):
+        """
+            Delete all workspace created by this reduction step related
+            to the given workspace
+            @param workspace: workspace to delete
+        """
+        return
+
+    @classmethod
+    def _create_unique_name(cls, filepath, descriptor):
+        """
+            Generate a unique name for an internal workspace
+        """
+        random_str = ''.join(random.choice(string.ascii_lowercase + string.ascii_uppercase + string.digits) for x in range(5))
+        return "__"+descriptor+"_"+extract_workspace_name(filepath)+"_"+random_str
+
+    def execute(self, reducer, inputworkspace=None, outputworkspace=None):
+        """
+            Implemented the reduction step.
+            @param reducer: Reducer object for which the step is executed
+            @param inputworkspace: Name of the workspace to apply this step to
+            @param outputworkspace: Name of the workspace to have as an output. If this is None it will be set to inputworkspace
+        """
+        raise NotImplemented
+
+
+class LoadData(MSGReductionStep):
     """Handles the loading of the data for Indirect instruments. The summing
     of input workspaces is handled in this routine, as well as the identifying
     of detectors that require masking.
@@ -31,7 +61,7 @@ class LoadData(ReductionStep):
     _extra_load_opts = {}
 
     def __init__(self):
-        """Initialise the ReductionStep. Constructor should set the initial
+        """Initialise the MSGReductionStep. Constructor should set the initial
         parameters for the step.
         """
         super(LoadData, self).__init__()
@@ -216,7 +246,7 @@ class LoadData(ReductionStep):
 
 #--------------------------------------------------------------------------------------------------
 
-class IdentifyBadDetectors(ReductionStep):
+class IdentifyBadDetectors(MSGReductionStep):
     """ Identifies bad detectors in a workspace and creates a list of
     detectors to mask. This step will set the masking detectors property on
     the reducer object passed to execute. This uses the IdentifyNoisyDetectors algorithm.
@@ -271,7 +301,7 @@ class IdentifyBadDetectors(ReductionStep):
 
 #--------------------------------------------------------------------------------------------------
 
-class BackgroundOperations(ReductionStep):
+class BackgroundOperations(MSGReductionStep):
     """Removes, if requested, a background from the detectors data in TOF
     units. Currently only uses the CalculateFlatBackground algorithm, more options
     to cover SNS use to be added at a later point.
@@ -305,7 +335,7 @@ class BackgroundOperations(ReductionStep):
         self._background_start = start
         self._background_end = end
 
-class CreateCalibrationWorkspace(ReductionStep):
+class CreateCalibrationWorkspace(MSGReductionStep):
     """Creates a calibration workspace from a White-Beam Vanadium run.
     """
 
@@ -445,7 +475,7 @@ class CreateCalibrationWorkspace(ReductionStep):
             return ( self._back_min, self._back_max, self._peak_min,
                 self._peak_max )
 
-class ApplyCalibration(ReductionStep):
+class ApplyCalibration(MSGReductionStep):
     """Applies a calibration workspace to the data.
     """
 
@@ -477,7 +507,7 @@ class ApplyCalibration(ReductionStep):
     def set_calib_workspace(self, value):
         self._calib_workspace = value
 
-class HandleMonitor(ReductionStep):
+class HandleMonitor(MSGReductionStep):
     """Handles the montior for the reduction of inelastic indirect data.
 
     This uses the following parameters from the instrument:
@@ -601,7 +631,7 @@ class HandleMonitor(ReductionStep):
             if factor != 1.0:
                 Scale(InputWorkspace=monitor,OutputWorkspace= monitor,Factor= ( 1.0 / factor ),Operation= 'Multiply')
 
-class CorrectByMonitor(ReductionStep):
+class CorrectByMonitor(MSGReductionStep):
     """
     """
 
@@ -633,7 +663,7 @@ class CorrectByMonitor(ReductionStep):
         """
         self._emode = emode
 
-class FoldData(ReductionStep):
+class FoldData(MSGReductionStep):
     _result_workspaces = []
 
     def __init__(self):
@@ -687,7 +717,7 @@ class FoldData(ReductionStep):
             if ( xval >= range[0] and xval <= range[1] ): result += 1
         return result
 
-class ConvertToCm1(ReductionStep):
+class ConvertToCm1(MSGReductionStep):
     """
     Converts the workspaces to cm-1.
     """
@@ -722,7 +752,7 @@ class ConvertToCm1(ReductionStep):
     def set_save_to_cm_1(self, save_to_cm_1):
         self._save_to_cm_1 = save_to_cm_1
 
-class ConvertToEnergy(ReductionStep):
+class ConvertToEnergy(MSGReductionStep):
     """
     """
     _rebin_string = None
@@ -779,7 +809,7 @@ class ConvertToEnergy(ReductionStep):
             else:
                 Rebin(InputWorkspace=ws,OutputWorkspace= ws,Params= rstwo)
 
-class RebinToFirstSpectrum(ReductionStep):
+class RebinToFirstSpectrum(MSGReductionStep):
     """
         A simple step to rebin the input workspace to match
         the first spectrum of itself
@@ -789,7 +819,7 @@ class RebinToFirstSpectrum(ReductionStep):
         RebinToWorkspace(WorkspaceToRebin=inputworkspace,WorkspaceToMatch=inputworkspace,
                          OutputWorkspace=inputworkspace)
 
-class NormaliseToUnityStep(ReductionStep):
+class NormaliseToUnityStep(MSGReductionStep):
     """
         A simple step to normalise a workspace to a given factor
     """
@@ -819,7 +849,7 @@ class NormaliseToUnityStep(ReductionStep):
         self._peak_min = pmin
         self._peak_max = pmax
 
-class DetailedBalance(ReductionStep):
+class DetailedBalance(MSGReductionStep):
     """
     """
     _temp = None
@@ -847,7 +877,7 @@ class DetailedBalance(ReductionStep):
     def set_temperature(self, temp):
         self._temp = temp
 
-class Scaling(ReductionStep):
+class Scaling(MSGReductionStep):
     """
     """
     _scale_factor = None
@@ -873,8 +903,8 @@ class Scaling(ReductionStep):
     def set_scale_factor(self, scaleFactor):
         self._scale_factor = scaleFactor
 
-class Grouping(ReductionStep):
-    """This ReductionStep handles the grouping and renaming of the final
+class Grouping(MSGReductionStep):
+    """This MSGReductionStep handles the grouping and renaming of the final
     workspace. In most cases, this will require a Rebin on the data. The option
     to do this is given in the ConvertToEnergy step.
 
@@ -967,7 +997,7 @@ class Grouping(ReductionStep):
                         Behaviour='Average')
         return workspace
 
-class SaveItem(ReductionStep):
+class SaveItem(MSGReductionStep):
     """This routine will save a given workspace in the selected file formats.
     The currently recognised formats are:
         * 'spe' - SPE ASCII format
@@ -1015,7 +1045,7 @@ class SaveItem(ReductionStep):
     def set_save_to_cm_1(self, save_to_cm_1):
         self._save_to_cm_1 = save_to_cm_1
 
-class Naming(ReductionStep):
+class Naming(MSGReductionStep):
     """Takes the responsibility of naming the results away from the Grouping
     step so that ws names are consistent right up until the last step. This
     uses the following instrument parameters:
