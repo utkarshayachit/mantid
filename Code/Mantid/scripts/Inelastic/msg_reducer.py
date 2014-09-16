@@ -1,19 +1,16 @@
 # Reducers for use by ISIS Molecular Spectroscopy Group
 
-import os.path
 import os
 import sys
-import time
 import types
 import random
 import string
 
 import mantid
-from mantid import simpleapi
+from mantid import simpleapi, logger
 from mantid.simpleapi import *
 from mantid.kernel import config
 import inelastic_indirect_reduction_steps as steps
-from inelastic_indirect_reduction_steps import MSGReductionStep
 
 
 def extract_workspace_name(filepath, suffix=''):
@@ -42,7 +39,7 @@ def extract_workspace_name(filepath, suffix=''):
 def validate_loader(f):
 
     def validated_f(reducer, algorithm, *args, **kwargs):
-        if issubclass(algorithm.__class__, MSGReductionStep) or algorithm is None:
+        if issubclass(algorithm.__class__, steps.MSGReductionStep) or algorithm is None:
             # If we have a MSGReductionStep object, just use it.
             # "None" is allowed as an algorithm (usually tells the reducer to skip a step)
             return f(reducer, algorithm)
@@ -53,7 +50,7 @@ def validate_loader(f):
 
         if isinstance(algorithm, types.StringType):
             # If we have a string, assume it's an algorithm name
-            class _AlgorithmStep(MSGReductionStep):
+            class _AlgorithmStep(steps.MSGReductionStep):
                 def __init__(self):
                     self.algorithm = None
                     self._data_file = None
@@ -119,7 +116,7 @@ def validate_loader(f):
 
         elif isinstance(algorithm, mantid.api.IAlgorithm) \
             or type(algorithm).__name__ == "IAlgorithm":
-            class _AlgorithmStep(MSGReductionStep):
+            class _AlgorithmStep(steps.MSGReductionStep):
                 def __init__(self):
                     self.algorithm = algorithm
                     self._data_file = None
@@ -203,7 +200,7 @@ def validate_step(f):
 
         @param algorithm: algorithm name, MSGReductionStep object, or Mantid algorithm function
         """
-        if issubclass(algorithm.__class__, MSGReductionStep) or algorithm is None:
+        if issubclass(algorithm.__class__, steps.MSGReductionStep) or algorithm is None:
             # If we have a MSGReductionStep object, just use it.
             # "None" is allowed as an algorithm (usually tells the reducer to skip a step)
             return f(reducer, algorithm)
@@ -214,7 +211,7 @@ def validate_step(f):
 
         if isinstance(algorithm, types.StringType):
             # If we have a string, assume it's an algorithm name
-            class _AlgorithmStep(MSGReductionStep):
+            class _AlgorithmStep(steps.MSGReductionStep):
                 def __init__(self):
                     self.algorithm = None
 
@@ -266,7 +263,7 @@ def validate_step(f):
 
         elif isinstance(algorithm, mantid.api.IAlgorithm) \
             or type(algorithm).__name__ == "IAlgorithm":
-            class _AlgorithmStep(MSGReductionStep):
+            class _AlgorithmStep(steps.MSGReductionStep):
                 def __init__(self):
                     self.algorithm = algorithm
 
