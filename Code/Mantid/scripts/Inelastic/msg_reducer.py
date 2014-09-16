@@ -57,10 +57,13 @@ def validate_loader(f):
                 def __init__(self):
                     self.algorithm = None
                     self._data_file = None
+
                 def get_algorithm(self):
                     return self.algorithm
+
                 def setProperty(self, key, value):
                     kwargs[key] = value
+
                 def execute(self, reducer, inputworkspace=None, outputworkspace=None):
                     """
                         Create a new instance of the requested algorithm object,
@@ -79,7 +82,7 @@ def validate_loader(f):
                             if data_file is None:
                                 return
                         else:
-                            raise RuntimeError("SANSMSGReductionSteps.LoadRun doesn't recognize workspace handle %s" % workspace)
+                            raise RuntimeError("MSGReductionSteps.LoadRun doesn't recognize workspace handle %s" % inputworkspace)
                     else:
                         data_file = self._data_file
 
@@ -87,10 +90,10 @@ def validate_loader(f):
                     if not isinstance(alg, mantid.api.AlgorithmProxy):
                         raise RuntimeError("Reducer expects an Algorithm object from FrameworkManager, found '%s'" % str(type(alg)))
 
-                    propertyOrder = alg.orderedProperties()
+                    property_order = alg.orderedProperties()
 
                     # add the args to the kw list so everything can be set in a single way
-                    for (key, arg) in zip(propertyOrder[:len(args)], args):
+                    for (key, arg) in zip(property_order[:len(args)], args):
                         kwargs[key] = arg
 
                     # Override input and output workspaces
@@ -102,13 +105,13 @@ def validate_loader(f):
                         kwargs["Filename"] = data_file
 
                     if "AlternateName" in kwargs and \
-                        kwargs["AlternateName"] in propertyOrder:
+                        kwargs["AlternateName"] in property_order:
                         kwargs[kwargs["AlternateName"]] = data_file
 
                     self.algorithm = alg
                     simpleapi._set_properties(alg, *(), **kwargs)
                     alg.execute()
-                    if "OutputMessage" in propertyOrder:
+                    if "OutputMessage" in property_order:
                         return alg.getPropertyValue("OutputMessage")
                     return "%s applied" % alg.name()
             return f(reducer, _AlgorithmStep())
@@ -119,10 +122,13 @@ def validate_loader(f):
                 def __init__(self):
                     self.algorithm = algorithm
                     self._data_file = None
+
                 def get_algorithm(self):
                     return self.algorithm
+
                 def setProperty(self, key, value):
                     kwargs[key] = value
+
                 def execute(self, reducer, inputworkspace=None, outputworkspace=None):
                     """
                         Create a new instance of the requested algorithm object,
@@ -141,22 +147,22 @@ def validate_loader(f):
                             if data_file is None:
                                 return
                         else:
-                            raise RuntimeError("MSGReductionSteps.LoadRun doesn't recognize workspace handle %s" % workspace)
+                            raise RuntimeError("MSGReductionSteps.LoadRun doesn't recognize workspace handle %s" % inputworkspace)
                     else:
                         data_file = self._data_file
 
-                    propertyOrder = algorithm.orderedProperties()
+                    property_order = algorithm.orderedProperties()
 
                     # Override input and output workspaces
-                    if "Workspace" in propertyOrder:
+                    if "Workspace" in property_order:
                         algorithm.setPropertyValue("Workspace", inputworkspace)
-                    if "OutputWorkspace" in propertyOrder:
+                    if "OutputWorkspace" in property_order:
                         algorithm.setPropertyValue("OutputWorkspace", inputworkspace)
-                    if "Filename" in propertyOrder:
+                    if "Filename" in property_order:
                         algorithm.setPropertyValue("Filename", data_file)
 
                     if "AlternateName" in kwargs and \
-                        kwargs["AlternateName"] in propertyOrder:
+                        kwargs["AlternateName"] in property_order:
                         algorithm.setPropertyValue(kwargs["AlternateName"], data_file)
 
                     algorithm.execute()
@@ -208,10 +214,13 @@ def validate_step(f):
             class _AlgorithmStep(MSGReductionStep):
                 def __init__(self):
                     self.algorithm = None
+
                 def get_algorithm(self):
                     return self.algorithm
+
                 def setProperty(self, key, value):
                     kwargs[key] = value
+
                 def execute(self, reducer, inputworkspace=None, outputworkspace=None):
                     """
                         Create a new instance of the requested algorithm object,
@@ -229,10 +238,10 @@ def validate_step(f):
                     if not isinstance(alg, mantid.api.AlgorithmProxy):
                         raise RuntimeError("Reducer expects an Algorithm object from FrameworkManager, found '%s'" % str(type(alg)))
 
-                    propertyOrder = alg.orderedProperties()
+                    property_order = alg.orderedProperties()
 
                     # add the args to the kw list so everything can be set in a single way
-                    for (key, arg) in zip(propertyOrder[:len(args)], args):
+                    for (key, arg) in zip(property_order[:len(args)], args):
                         kwargs[key] = arg
 
                     # Override input and output workspaces
@@ -246,7 +255,7 @@ def validate_step(f):
                     self.algorithm = alg
                     simpleapi._set_properties(alg, *(), **kwargs)
                     alg.execute()
-                    if "OutputMessage" in propertyOrder:
+                    if "OutputMessage" in property_order:
                         return alg.getPropertyValue("OutputMessage")
                     return "%s applied" % alg.name()
             return f(reducer, _AlgorithmStep())
@@ -256,10 +265,13 @@ def validate_step(f):
             class _AlgorithmStep(MSGReductionStep):
                 def __init__(self):
                     self.algorithm = algorithm
+
                 def get_algorithm(self):
                     return self.algorithm
+
                 def setProperty(self, key, value):
                     kwargs[key] = value
+
                 def execute(self, reducer, inputworkspace=None, outputworkspace=None):
                     """
                         Create a new instance of the requested algorithm object,
@@ -273,18 +285,18 @@ def validate_step(f):
                     """
                     if outputworkspace is None:
                         outputworkspace = inputworkspace
-                    propertyOrder = algorithm.orderedProperties()
+                    property_order = algorithm.orderedProperties()
 
                     # Override input and output workspaces
-                    if "Workspace" in propertyOrder:
+                    if "Workspace" in property_order:
                         algorithm.setPropertyValue("Workspace", inputworkspace)
-                    if "InputWorkspace" in propertyOrder:
+                    if "InputWorkspace" in property_order:
                         algorithm.setPropertyValue("InputWorkspace", inputworkspace)
-                    if "OutputWorkspace" in propertyOrder:
+                    if "OutputWorkspace" in property_order:
                         algorithm.setPropertyValue("OutputWorkspace", outputworkspace)
 
                     algorithm.execute()
-                    if "OutputMessage" in propertyOrder:
+                    if "OutputMessage" in property_order:
                         return algorithm.getPropertyValue("OutputMessage")
                     return "%s applied" % algorithm.name()
             return f(reducer, _AlgorithmStep())
@@ -301,10 +313,7 @@ class MSGReducer(object):
     providing a semi-consistent interface to both.
     """
 
-    _data_path = '.'            # Path for data files
-    _output_path = None         # Path for output files
     _data_files = {}            # List of data files to process
-    _dirty = []                 # List of workspaces that were modified
     _reduction_steps = []       # List of reduction steps
     log_text = ''               # Log
     output_workspaces = []      # Output workspaces
@@ -327,32 +336,38 @@ class MSGReducer(object):
         self._data_files = {}
         self._reduction_steps = []
 
+    def _setup_steps(self):
+        """
+        This should be implemented in the derived class.
+        """
+        raise RuntimeError('No setup_steps implementation in class derived from MSGReducer')
+
     def pre_process(self):
         self._reduction_steps = []
 
-        loadData = steps.LoadData()
-        loadData.set_ws_list(self._data_files)
-        loadData.set_sum(self._sum)
-        loadData.set_load_logs(self._load_logs)
-        loadData.set_detector_range(self._detector_range[0], self._detector_range[1])
-        loadData.set_parameter_file(self._parameter_file)
-        loadData.set_extra_load_opts(self._extra_load_opts)
-        loadData.execute(self, None)
+        load_data = steps.LoadData()
+        load_data.set_ws_list(self._data_files)
+        load_data.set_sum(self._sum)
+        load_data.set_load_logs(self._load_logs)
+        load_data.set_detector_range(self._detector_range[0], self._detector_range[1])
+        load_data.set_parameter_file(self._parameter_file)
+        load_data.set_extra_load_opts(self._extra_load_opts)
+        load_data.execute(self, None)
 
-        self._multiple_frames = loadData.is_multiple_frames()
+        self._multiple_frames = load_data.is_multiple_frames()
 
         if self._info_table_props is not None:
-            wsNames = loadData.get_ws_list().keys()
-            wsNameList = ", ".join(wsNames)
-            propsList = ", ".join(self._info_table_props)
+            ws_names = load_data.get_ws_list().keys()
+            ws_name_list = ", ".join(ws_names)
+            props_list = ", ".join(self._info_table_props)
             CreateLogPropertyTable(
                 OutputWorkspace="RunInfo",
-                InputWorkspaces=wsNameList,
-                LogPropertyNames=propsList,
+                InputWorkspaces=ws_name_list,
+                LogPropertyNames=props_list,
                 GroupPolicy="First")
 
         if self._sum:
-            self._data_files = loadData.get_ws_list()
+            self._data_files = load_data.get_ws_list()
 
         self._setup_steps()
 
@@ -481,61 +496,6 @@ class MSGReducer(object):
         except IndexError:
             raise ValueError('Unable to retrieve spectrum number of monitor.')
 
-    def dirty(self, workspace):
-        """
-            Flag a workspace as dirty when the data has been modified
-        """
-        if workspace not in self._dirty:
-            self._dirty.append(workspace)
-
-    def clean_up(self):
-        """
-            Removes all workspace flagged as dirty, use when a reduction aborts with errors
-        """
-        for bad_data in self._dirty:
-            if bad_data in mtd:
-                simpleapi.DeleteWorkspace(Workspace=bad_data)
-            else:
-                mantid.logger.notice('reducer: Could not access tainted workspace ' + bad_data)
-
-    def clean(self, workspace):
-        """
-            Remove the dirty flag on a workspace
-        """
-        if workspace in self._dirty:
-            self._dirty.remove(workspace)
-
-    def is_clean(self, workspace):
-        """
-            Returns True if the workspace is clean
-        """
-        if workspace in self._dirty:
-            return False
-        return True
-
-    def set_data_path(self, path):
-        """
-            Set the path for data files
-            @param path: data file path
-        """
-        path = os.path.normcase(path)
-        if os.path.isdir(path):
-            self._data_path = path
-            mantid.config.appendDataSearchDir(path)
-        else:
-            raise RuntimeError("Reducer.set_data_path: provided path is not a directory (%s)" % path)
-
-    def set_output_path(self, path):
-        """
-            Set the path for output files
-            @param path: output file path
-        """
-        path = os.path.normcase(path)
-        if os.path.isdir(path):
-            self._output_path = path
-        else:
-            raise RuntimeError("Reducer.set_output_path: provided path is not a directory (%s)" % path)
-
     @validate_step
     def append_step(self, reduction_step):
         """
@@ -605,12 +565,7 @@ class MSGReducer(object):
                     raise
 
         # Determine which directory to use
-        output_dir = self._data_path
-        if self._output_path is not None:
-            if os.path.isdir(self._output_path):
-                output_dir = self._output_path
-            else:
-                output_dir = os.path.expanduser('~')
+        output_dir = os.path.expanduser('~')
 
         self.log_text += "Reduction completed in %g sec\n" % (time.time() - t_0)
         log_path = os.path.join(output_dir, "%s_reduction.log" % self._instrument_name)
