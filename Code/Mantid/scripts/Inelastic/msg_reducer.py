@@ -18,10 +18,10 @@ from inelastic_indirect_reduction_steps import MSGReductionStep
 
 def extract_workspace_name(filepath, suffix=''):
     """
-        Returns a default workspace name for a given data file path.
+    Returns a default workspace name for a given data file path.
 
-        @param filepath: path of the file to generate a workspace name for
-        @param suffix: string to append to name
+    @param filepath: path of the file to generate a workspace name for
+    @param suffix: string to append to name
     """
     filepath_tmp = filepath
     if type(filepath) is list:
@@ -66,14 +66,15 @@ def validate_loader(f):
 
                 def execute(self, reducer, inputworkspace=None, outputworkspace=None):
                     """
-                        Create a new instance of the requested algorithm object,
-                        set the algorithm properties replacing the input and output
-                        workspaces.
-                        The execution will work for any combination of mandatory/optional
-                        properties.
-                        @param reducer: Reducer object managing the reduction
-                        @param inputworkspace: input workspace name [optional]
-                        @param outputworkspace: output workspace name [optional]
+                    Create a new instance of the requested algorithm object,
+                    set the algorithm properties replacing the input and output
+                    workspaces.
+                    The execution will work for any combination of mandatory/optional
+                    properties.
+
+                    @param reducer: Reducer object managing the reduction
+                    @param inputworkspace: input workspace name [optional]
+                    @param outputworkspace: output workspace name [optional]
                     """
                     # If we don't have a data file, look up the workspace handle
                     if self._data_file is None:
@@ -131,14 +132,15 @@ def validate_loader(f):
 
                 def execute(self, reducer, inputworkspace=None, outputworkspace=None):
                     """
-                        Create a new instance of the requested algorithm object,
-                        set the algorithm properties replacing the input and output
-                        workspaces.
-                        The execution will work for any combination of mandatory/optional
-                        properties.
-                        @param reducer: Reducer object managing the reduction
-                        @param inputworkspace: input workspace name [optional]
-                        @param outputworkspace: output workspace name [optional]
+                    Create a new instance of the requested algorithm object,
+                    set the algorithm properties replacing the input and output
+                    workspaces.
+                    The execution will work for any combination of mandatory/optional
+                    properties.
+
+                    @param reducer: Reducer object managing the reduction
+                    @param inputworkspace: input workspace name [optional]
+                    @param outputworkspace: output workspace name [optional]
                     """
                     # If we don't have a data file, look up the workspace handle
                     if self._data_file is None:
@@ -176,29 +178,30 @@ def validate_loader(f):
 
 def validate_step(f):
     """
-        Decorator for Reducer methods that need a MSGReductionStep
-        object as its first argument.
+    Decorator for Reducer methods that need a MSGReductionStep
+    object as its first argument.
 
-        Example:
-            @validate_step
-            def some_func(self, reduction_step):
-                [...]
+    Example:
+        @validate_step
+        def some_func(self, reduction_step):
+            [...]
 
-        Arguments to a Mantid algorithm function should be passed as arguments.
-        Example:
-            #Load("my_file.txt", "my_wksp") will become:
-            reducer.some_func(Load, "my_file.txt", "my_wksp")
+    Arguments to a Mantid algorithm function should be passed as arguments.
+    Example:
+        #Load("my_file.txt", "my_wksp") will become:
+        reducer.some_func(Load, "my_file.txt", "my_wksp")
 
-        InputWorkspace and OutputWorkspace arguments can be left as None
-        if they are to be overwritten by the Reducer.
+    InputWorkspace and OutputWorkspace arguments can be left as None
+    if they are to be overwritten by the Reducer.
     """
 
     def validated_f(reducer, algorithm, *args, **kwargs):
         """
-            Wrapper function around the function f.
-            The function ensures that the algorithm parameter
-            is a sub-class of MSGReductionStep
-            @param algorithm: algorithm name, MSGReductionStep object, or Mantid algorithm function
+        Wrapper function around the function f.
+        The function ensures that the algorithm parameter
+        is a sub-class of MSGReductionStep
+
+        @param algorithm: algorithm name, MSGReductionStep object, or Mantid algorithm function
         """
         if issubclass(algorithm.__class__, MSGReductionStep) or algorithm is None:
             # If we have a MSGReductionStep object, just use it.
@@ -223,14 +226,15 @@ def validate_step(f):
 
                 def execute(self, reducer, inputworkspace=None, outputworkspace=None):
                     """
-                        Create a new instance of the requested algorithm object,
-                        set the algorithm properties replacing the input and output
-                        workspaces.
-                        The execution will work for any combination of mandatory/optional
-                        properties.
-                        @param reducer: Reducer object managing the reduction
-                        @param inputworkspace: input workspace name [optional]
-                        @param outputworkspace: output workspace name [optional]
+                    Create a new instance of the requested algorithm object,
+                    set the algorithm properties replacing the input and output
+                    workspaces.
+                    The execution will work for any combination of mandatory/optional
+                    properties.
+
+                    @param reducer: Reducer object managing the reduction
+                    @param inputworkspace: input workspace name [optional]
+                    @param outputworkspace: output workspace name [optional]
                     """
                     if outputworkspace is None:
                         outputworkspace = inputworkspace
@@ -274,14 +278,15 @@ def validate_step(f):
 
                 def execute(self, reducer, inputworkspace=None, outputworkspace=None):
                     """
-                        Create a new instance of the requested algorithm object,
-                        set the algorithm properties replacing the input and output
-                        workspaces.
-                        The execution will work for any combination of mandatory/optional
-                        properties.
-                        @param reducer: Reducer object managing the reduction
-                        @param inputworkspace: input workspace name [optional]
-                        @param outputworkspace: output workspace name [optional]
+                    Create a new instance of the requested algorithm object,
+                    set the algorithm properties replacing the input and output
+                    workspaces.
+                    The execution will work for any combination of mandatory/optional
+                    properties.
+
+                    @param reducer: Reducer object managing the reduction
+                    @param inputworkspace: input workspace name [optional]
+                    @param outputworkspace: output workspace name [optional]
                     """
                     if outputworkspace is None:
                         outputworkspace = inputworkspace
@@ -307,7 +312,8 @@ def validate_step(f):
 
 
 class MSGReducer(object):
-    """This is the base class for the reducer classes to be used by the ISIS
+    """
+    This is the base class for the reducer classes to be used by the ISIS
     Molecular Spectroscopy Group (MSG). It exists to serve the functions that
     are common to both spectroscopy and diffraction workflows in the hopes of
     providing a semi-consistent interface to both.
@@ -315,7 +321,6 @@ class MSGReducer(object):
 
     _data_files = {}            # List of data files to process
     _reduction_steps = []       # List of reduction steps
-    log_text = ''               # Log
     output_workspaces = []      # Output workspaces
 
     _instrument_name = None     # Name of the instrument used in experiment.
@@ -372,7 +377,8 @@ class MSGReducer(object):
         self._setup_steps()
 
     def set_detector_range(self, start, end):
-        """Sets the start and end detector points for the reduction process.
+        """
+        Sets the start and end detector points for the reduction process.
         These numbers are to be the *workspace index*, not the spectrum number.
         Example:
             reducer.set_detector_range(2,52)
@@ -382,7 +388,8 @@ class MSGReducer(object):
         self._detector_range = [start, end]
 
     def set_fold_multiple_frames(self, value):
-        """When this is set to False, the reducer will not run the FoldData
+        """
+        When this is set to False, the reducer will not run the FoldData
         reduction step or any step which appears after it in the reduction
         chain.
         This will only affect data which would ordinarily have used this
@@ -393,7 +400,8 @@ class MSGReducer(object):
         self._fold_multiple_frames = value
 
     def set_instrument_name(self, instrument):
-        """Unlike the SANS reducers, we do not create a class to describe the
+        """
+        Unlike the SANS reducers, we do not create a class to describe the
         instruments. Instead, we load the instrument and parameter file and
         query it for information.
         Raises:
@@ -409,7 +417,8 @@ class MSGReducer(object):
         self._instrument_name = instrument
 
     def set_parameter_file(self, file_name):
-        """Sets the parameter file to be used in the reduction. The parameter
+        """
+        Sets the parameter file to be used in the reduction. The parameter
         file will contain some settings that are used throughout the reduction
         process.
         Note: This is *not* the base parameter file, ie "IRIS_Parameters.xml"
@@ -419,14 +428,16 @@ class MSGReducer(object):
             os.path.join(config["parameterDefinition.directory"], file_name)
 
     def set_rebin_string(self, rebin):
-        """Sets the rebin string to be used with the Rebin algorithm.
+        """
+        Sets the rebin string to be used with the Rebin algorithm.
         """
         if not isinstance(rebin, str):
             raise TypeError("rebin variable must be of string type")
         self._rebin_string = rebin
 
     def set_sum_files(self, value):
-        """Mark whether multiple runs should be summed together for the process
+        """
+        Mark whether multiple runs should be summed together for the process
         or treated individually.
         The default value for this is False.
         """
@@ -435,7 +446,8 @@ class MSGReducer(object):
         self._sum = value
 
     def set_load_logs(self, value):
-        """Mark whether the log file(s) associated with a raw file should be
+        """
+        Mark whether the log file(s) associated with a raw file should be
         loaded along with the raw file.
         The default value for this is False.
         """
@@ -444,7 +456,8 @@ class MSGReducer(object):
         self._load_logs = value
 
     def set_save_formats(self, formats):
-        """Selects the save formats in which to export the reduced data.
+        """
+        Selects the save formats in which to export the reduced data.
         formats should be a list object of strings containing the file
         extension that signifies the type.
         For example:
@@ -460,13 +473,14 @@ class MSGReducer(object):
 
     def append_load_option(self, name, value):
         """
-           Additional options for the Load call, require name & value
-           of property
+        Additional options for the Load call, require name & value
+        of property
         """
         self._extra_load_opts[name] = value
 
     def get_result_workspaces(self):
-        """Returns a Python list object containing the names of the workspaces
+        """
+        Returns a Python list object containing the names of the workspaces
         processed at the last reduction step. Using this, you can incorporate
         the reducer into your own scripts.
         It will only be effective after the reduce() function has run.
@@ -487,7 +501,8 @@ class MSGReducer(object):
                                    "the get_result_workspaces() method.")
 
     def _get_monitor_index(self, workspace):
-        """Determine the workspace index of the first monitor spectrum.
+        """
+        Determine the workspace index of the first monitor spectrum.
         """
         inst = workspace.getInstrument()
         try:
@@ -499,8 +514,9 @@ class MSGReducer(object):
     @validate_step
     def append_step(self, reduction_step):
         """
-            Append a reduction step
-            @param reduction_step: MSGReductionStep object
+        Append a reduction step
+
+        @param reduction_step: MSGReductionStep object
         """
         if reduction_step is None:
             return None
@@ -511,18 +527,19 @@ class MSGReducer(object):
 
     def clear_data_files(self):
         """
-            Empty the list of files to reduce while keeping all the
-            other options the same.
+        Empty the list of files to reduce while keeping all the
+        other options the same.
         """
         self._data_files = {}
 
     def append_data_file(self, data_file, workspace=None):
         """
-            Append a file to be processed.
-            @param data_file: name of the file to be processed
-            @param workspace: optional name of the workspace for this data,
-                default will be the name of the file
-            TODO: this needs to be an ordered list
+        Append a file to be processed.
+
+        @param data_file: name of the file to be processed
+        @param workspace: optional name of the workspace for this data,
+            default will be the name of the file
+        TODO: this needs to be an ordered list
         """
         if data_file is None:
             if workspace in mtd:
@@ -542,38 +559,25 @@ class MSGReducer(object):
 
     def reduce(self):
         """
-            Go through the list of reduction steps
+        Go through the list of reduction steps.
         """
-        t_0 = time.time()
         self.output_workspaces = []
 
-        # Log text
-        self.log_text = "%s reduction - %s\n" % (self._instrument_name, time.ctime())
+        logger.notice('%s reduction started' % self._instrument_name)
 
         # Go through the list of steps that are common to all data files
         self.pre_process()
 
         # Go through the list of files to be reduced
         for file_ws in self._data_files:
+            logger.information('Reducing: %s' % file_ws)
             for item in self._reduction_steps:
                 try:
                     result = item.execute(self, file_ws)
                     if result is not None and len(str(result)) > 0:
-                        self.log_text += "%s\n" % str(result)
+                        logger.information(result)
                 except:
-                    self.log_text += "\n%s\n" % sys.exc_value
+                    logger.notice(sys.exc_value)
                     raise
 
-        # Determine which directory to use
-        output_dir = os.path.expanduser('~')
-
-        self.log_text += "Reduction completed in %g sec\n" % (time.time() - t_0)
-        log_path = os.path.join(output_dir, "%s_reduction.log" % self._instrument_name)
-        self.log_text += "Log saved to %s" % log_path
-
-        # Write the log to file
-        log_file = open(log_path, 'a')
-        log_file.write("\n-------------------------------------------\n")
-        log_file.write(self.log_text)
-        log_file.close()
-        return self.log_text
+        logger.notice('%s reduction completed' % self._instrument_name)
