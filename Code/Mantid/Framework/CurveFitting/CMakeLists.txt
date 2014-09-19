@@ -134,8 +134,8 @@ set ( INC_FILES
 	inc/MantidCurveFitting/DampingMinimizer.h
 	inc/MantidCurveFitting/DeltaFunction.h
 	inc/MantidCurveFitting/DerivMinimizer.h
-	inc/MantidCurveFitting/DiffSphere.h
 	inc/MantidCurveFitting/DiffRotDiscreteCircle.h
+	inc/MantidCurveFitting/DiffSphere.h
 	inc/MantidCurveFitting/DllConfig.h
 	inc/MantidCurveFitting/EndErfc.h
 	inc/MantidCurveFitting/ExpDecay.h

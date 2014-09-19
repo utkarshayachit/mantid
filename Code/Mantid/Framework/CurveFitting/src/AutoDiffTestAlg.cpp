@@ -78,15 +78,15 @@ namespace
   {
     if ( type == "adept" )
     {
-      //return IFunction_sptr(new Lorentzians::LorentzianAutoDiff);
+      return IFunction_sptr(new Lorentzians::LorentzianAutoDiff);
       return IFunction_sptr(new Pearsons::PearsonVIIAutoDiff);
       return IFunction_sptr(new GaussianAutoDiff);
     } else if ( type == "num") {
-      //return IFunction_sptr(new Lorentzians::LorentzianNumDiff);
+      return IFunction_sptr(new Lorentzians::LorentzianNumDiff);
       return IFunction_sptr(new Pearsons::PearsonVIINumDiff);
       return IFunction_sptr(new GaussianNumDiff);
     }
-    //return IFunction_sptr(new Lorentzians::LorentzianHandCoded);
+    return IFunction_sptr(new Lorentzians::LorentzianHandCoded);
     return IFunction_sptr(new Pearsons::PearsonVIIHandCoded);
     return IFunction_sptr(new GaussianHandCoded);
   }

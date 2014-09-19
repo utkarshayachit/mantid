@@ -70,10 +70,12 @@ void LorentzianAutoDiff::function1DAutoDiff(const FunctionDomain1D &domain, std:
     adept::adouble h = parameters.getParameter("Height");
     adept::adouble x0 = parameters.getParameter("Centre");
     adept::adouble s = parameters.getParameter("Gamma");
+    adept::adouble ssq = s * s;
 
     for(size_t i = 0; i < y.size(); ++i) {
         adept::adouble diff = domain[i] - x0;
-        y[i] = h * s * s / (diff*diff + s * s);
+
+        y[i] = h * ssq / (diff*diff + ssq);
     }
 }
 
