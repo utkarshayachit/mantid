@@ -4,9 +4,7 @@
 #include "MantidAPI/Algorithm.h" 
 #include "MantidAPI/IMDEventWorkspace.h"
 #include "MantidDataObjects/PeaksWorkspace.h"
-#include "MantidKernel/System.h"
 #include "MantidMDEvents/MDEventWorkspace.h"
-#include "MantidAPI/CompositeFunction.h"
 
 namespace Mantid
 {
@@ -25,12 +23,12 @@ namespace MDAlgorithms
     ~IntegratePeaksMD2();
     
     /// Algorithm's name for identification 
-    virtual const std::string name() const { return "IntegratePeaksMD";};
+    virtual const std::string name() const { return "IntegratePeaksMD";}
     ///Summary of algorithms purpose
     virtual const std::string summary() const {return "Integrate single-crystal peaks in reciprocal space, for MDEventWorkspaces.";}
 
     /// Algorithm's version for identification 
-    virtual int version() const { return 2;};
+    virtual int version() const { return 2;}
     /// Algorithm's category for identification
     virtual const std::string category() const { return "MDAlgorithms";}
     
@@ -47,15 +45,14 @@ namespace MDAlgorithms
     Mantid::API::IMDEventWorkspace_sptr inWS;
 
     /// Calculate if this Q is on a detector
-    bool detectorQ(Mantid::Kernel::V3D QLabFrame, double PeakRadius);
+    bool detectorQ(const Kernel::V3D & QLabFrame, double PeakRadius);
 
     /// Instrument reference
     Geometry::Instrument_const_sptr inst;
 
     /// Check if peaks overlap
-    void checkOverlap(int i,
-    		Mantid::DataObjects::PeaksWorkspace_sptr peakWS, int CoordinatesToUse, double radius);
-
+    void checkOverlap(int i, DataObjects::PeaksWorkspace & peakWS,
+                      int CoordinatesToUse, double radius);
   };
 
 
