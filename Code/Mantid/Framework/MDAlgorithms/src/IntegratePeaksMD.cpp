@@ -582,9 +582,10 @@ namespace MDAlgorithms
    */
   bool IntegratePeaksMD::detectorQ(Mantid::Kernel::V3D QLabFrame, double r)
   {
-    bool in = true;
+    // Define a "hit" if > 50% of attempts make it to a detector
     const int nAngles = 8;
     double dAngles = static_cast<coord_t>(nAngles);
+    int nhits(0);
     // check 64 points in theta and phi at outer radius
     for (int i = 0; i < nAngles; ++i)
     {
@@ -601,19 +602,14 @@ namespace MDAlgorithms
         try
         {
           Peak p(inst, edge);
-          in = (in && p.findDetector());
-          if (!in)
-          {
-            return in;
-          }
+          if(p.findDetector()) ++nhits;
         }
         catch (...)
         {
-          return false;
         }
       }
     }
-    return in;
+    return static_cast<double>(nhits)/(dAngles*dAngles) > 0.75;
   }
 
   //----------------------------------------------------------------------------------------------
