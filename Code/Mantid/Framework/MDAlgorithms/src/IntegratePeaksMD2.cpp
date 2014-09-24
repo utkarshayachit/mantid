@@ -1,24 +1,23 @@
-#include "MantidAPI/IMDEventWorkspace.h"
-#include "MantidMDAlgorithms/GSLFunctions.h"
-#include "MantidDataObjects/PeaksWorkspace.h"
-#include "MantidKernel/System.h"
-#include "MantidMDEvents/MDEventFactory.h"
 #include "MantidMDAlgorithms/IntegratePeaksMD2.h"
-#include "MantidMDEvents/CoordTransformDistance.h"
-#include "MantidKernel/ListValidator.h"
-#include "MantidAPI/WorkspaceFactory.h"
-#include "MantidDataObjects/Workspace2D.h"
+#include "MantidMDAlgorithms/GSLFunctions.h"
+
 #include "MantidAPI/AnalysisDataService.h"
-#include "MantidAPI/TextAxis.h"
-#include "MantidKernel/Utils.h"
-#include "MantidAPI/FileProperty.h"
-#include "MantidAPI/TableRow.h"
 #include "MantidAPI/Column.h"
+#include "MantidAPI/FileProperty.h"
+#include "MantidAPI/FunctionFactory.h"
 #include "MantidAPI/FunctionDomain1D.h"
 #include "MantidAPI/FunctionValues.h"
-#include "MantidAPI/FunctionFactory.h"
 #include "MantidAPI/IPeakFunction.h"
+#include "MantidAPI/TableRow.h"
+#include "MantidAPI/TextAxis.h"
+#include "MantidDataObjects/Workspace2D.h"
+#include "MantidMDEvents/MDEventFactory.h"
+#include "MantidMDEvents/CoordTransformDistance.h"
+#include "MantidKernel/ListValidator.h"
+#include "MantidKernel/Utils.h"
+
 #include <boost/math/special_functions/fpclassify.hpp>
+
 #include <gsl/gsl_integration.h>
 #include <fstream>
 
