@@ -135,7 +135,7 @@ file is availible in `Mantid system tests repository <https://github.com/mantidp
    LoadEventNexus(Filename=r'TOPAZ_3132_event.nxs',OutputWorkspace='TOPAZ_3132_nxs')
    ConvertToDiffractionMDWorkspace(InputWorkspace='TOPAZ_3132_nxs',OutputWorkspace='TOPAZ_3132_md',LorentzCorrection='1')
    FindPeaksMD(InputWorkspace='TOPAZ_3132_md',PeakDistanceThreshold='0.15',MaxPeaks='100',OutputWorkspace='peaks')
-    FindUBUsingFFT(PeaksWorkspace='peaks',MinD='2',MaxD='16')
+   FindUBUsingFFT(PeaksWorkspace='peaks',MinD='2',MaxD='16')
 
     # Perform the peak integration, in-place in the 'peaks' workspace.
    peaks= IntegratePeaksMD(InputWorkspace='TOPAZ_3132_md', PeaksWorkspace='peaks',\
