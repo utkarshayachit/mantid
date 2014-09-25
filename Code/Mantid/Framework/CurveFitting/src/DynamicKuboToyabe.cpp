@@ -148,7 +148,7 @@ double gz (const double x, const double G, const double F)
 }
 
 
-void DynamicKuboToyabe::functionLocal(double* out, const double* xValues, const size_t nData)const
+void DynamicKuboToyabe::function1D(double* out, const double* xValues, const size_t nData)const
 {
     const double& A = getParameter("A");
 	const double& Gtemp = getParameter("Delta");
@@ -197,7 +197,7 @@ void DynamicKuboToyabe::functionLocal(double* out, const double* xValues, const 
 }
 
 
-void DynamicKuboToyabe::functionDerivLocal(API::Jacobian* , const double* , const size_t )
+void DynamicKuboToyabe::functionDeriv1D(API::Jacobian* , const double* , const size_t )
 {
   throw Mantid::Kernel::Exception::NotImplementedError("functionDerivLocal is not implemented for DynamicKuboToyabe.");
 }

@@ -46,32 +46,21 @@ namespace Mantid
      Code Documentation is available at: <http://doxygen.mantidproject.org> 
      */ 
 
-    class DLLExport DynamicKuboToyabe : public API::IPeakFunction, virtual public API::IFunctionMW
+    class DLLExport DynamicKuboToyabe :  public API::ParamFunction, public API::IFunction1D
     {
     public:
 
       /// Destructor
       virtual ~DynamicKuboToyabe() {}
 
-      /// overwrite IPeakFunction base class methods
+      /// overwrite base class methods
       std::string name()const{return "DynamicKuboToyabe";}
-
-      /// overwrite IPeakFunction base class methods
-      virtual double centre()const {return getParameter("Delta");}
-      virtual double height()const {return getParameter("A");}
-      virtual double width()const {return 10;}
-	  virtual double fwhm()const {return 5;}
-      virtual void setCentre(const double c) {setParameter("Delta",c);}
-      virtual void setHeight(const double h) {setParameter("A",h);}
-      virtual void setWidth(const double w) {}
-	  virtual void setFwhm(const double w) {}
 	  virtual const std::string category() const { return "Muon";}
     protected:
-	  virtual void functionLocal(double* out, const double* xValues, const size_t nData)const;
-      virtual void functionDerivLocal(API::Jacobian* out, const double* xValues, const size_t nData);
+	  virtual void function1D(double* out, const double* xValues, const size_t nData)const;
+      virtual void functionDeriv1D(API::Jacobian* out, const double* xValues, const size_t nData);
 	  virtual void functionDeriv(const API::FunctionDomain& domain, API::Jacobian& jacobian);
       virtual void init();
-      //virtual void function1D(double* out, const double* xValues, const size_t nData)const;
       //virtual void setActiveParameter(size_t i,double value);
 
     };
