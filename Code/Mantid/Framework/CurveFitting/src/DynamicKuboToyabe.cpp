@@ -21,18 +21,18 @@ void DynamicKuboToyabe::init()
   declareParameter("A", 0.2);
   declareParameter("Delta", 0.2);
   declareParameter("Field",0.0);
-  declareParameter("hopping rate",0.0);
-  declareParameter("endX",15);
+  declareParameter("HoppingRate",0.0);
+  declareParameter("EndX",15);
 }
 
 //------------------------------------------------------------------------------------------------
-double midpnt(double func(const double, const double, const double,const double),
+double midpnt(double func(const double, const double, const double),
 	const double a, const double b, const int n, const double g, const double w0) {
 // quote & modified from numerical recipe 2nd edtion (page147)	
 	
 	static double s;
 
-	if (n==1) { return (s =0.5*(b-a)*func(a,g,w0,b)+func(b,g,w0,b));
+	if (n==1) { return (s =0.5*(b-a)*func(a,g,w0)+func(b,g,w0));
 	} else {
 		double x, tnm, sum, del, ddel;
 		int it, j;
@@ -43,9 +43,9 @@ double midpnt(double func(const double, const double, const double,const double)
 		x = a+0.5*del;
 		sum =0.0;
 		for (j=0;j<it;j++) {
-			sum += func(x,g,w0,b);
+			sum += func(x,g,w0);
 			x += ddel;
-			sum += func(x,g,w0,b);
+			sum += func(x,g,w0);
 			x += del;
 		}
 		s=(s+(b-a)*sum/tnm)/3.0;
@@ -86,7 +86,7 @@ void polint (double* xa, double* ya, const double x, double& y, double& dy) {
 }
 
 
-double integral (double func(const double, const double, const double, const double),
+double integrate (double func(const double, const double, const double),
 				const double a, const double b, const double g, const double w0) {
 	const int JMAX = 14, JMAXP = JMAX+1, K=5;
 	//const double EPS = 3.0e-9;  //error smaller than this value
@@ -120,7 +120,7 @@ double ZFKT (const double q)
 //Zero field KuboToyabe function.
 
 
-double f1(const double x, const double G, const double w0, const double b) {
+double f1(const double x, const double G, const double w0) {
 	
 	return( exp(-G*G*x*x/2)*sin(w0*x)); 
 }
@@ -140,7 +140,7 @@ double gz (const double x, const double G, const double F)
 		if (F>2.0*G) { w0 = 2*3.1415926*0.01355342*F ;} else { w0 =2*3.1415926*0.01355342*2.0*G; }
 			
 		double p = G*G/(w0*w0);
-		double HKT = 1.0-2.0*p*(1-exp(-q/2.0)*cos(w0*x))+2.0*p*p*w0*integral(f1,0.0,x,G,w0);
+		double HKT = 1.0-2.0*p*(1-exp(-q/2.0)*cos(w0*x))+2.0*p*p*w0*integrate(f1,0.0,x,G,w0);
 		if (F>2.0*G) {return (HKT);} 
 		else {return (ZFKT(q)+ (F/2.0/G)*(HKT-ZFKT(q)));}	 
 		
@@ -151,9 +151,10 @@ double gz (const double x, const double G, const double F)
 void DynamicKuboToyabe::functionLocal(double* out, const double* xValues, const size_t nData)const
 {
     const double& A = getParameter("A");
-    const double& G = abs(getParameter("Delta"));
+	const double& Gtemp = getParameter("Delta");
+    const double& G = abs(Gtemp);
 	const double& F = abs(getParameter("Field"));
-	const double& v = abs(getParameter("hopping rate"));
+	const double& v = abs(getParameter("HoppingRate"));
 
 
 	
@@ -166,11 +167,11 @@ void DynamicKuboToyabe::functionLocal(double* out, const double* xValues, const 
 
 
 	const int n = 1000;
-	const double stepsize = abs(getParameter("endX")/n);
+	const double stepsize = abs(getParameter("EndX")/n);
 	double funcG[n];
 
 	if (v == 0.0) {
-		for (int i = 0; i < nData; i++) {
+		for (size_t i = 0; i < nData; i++) {
 			out[i] = A*gz(xValues[i],G,F);
 		}
 	} 
@@ -187,7 +188,7 @@ void DynamicKuboToyabe::functionLocal(double* out, const double* xValues, const 
 				funcG[i] = (gz(i*stepsize,G,F)*exp(-v*i*stepsize) + v*Integral);
 			}
 		}
-		for (int i = 0; i < nData; i++) {
+		for (size_t i = 0; i < nData; i++) {
 			double a =xValues[i]/stepsize;
 			out[i] = A*(funcG[int(a)]);
 		}
@@ -206,17 +207,6 @@ void DynamicKuboToyabe::functionDeriv(const API::FunctionDomain& domain, API::Ja
   calNumericalDeriv(domain, jacobian);
 }
 
-
-//void DynamicKuboToyabe::functionDerivLocal(API::Jacobian* out, const double* xValues, const size_t nData)
-//{
-  //calNumericalDeriv(out, xValues, nData);
-//}
-//void Lorentzian::functionDerivLocal(Jacobian* out, const double* xValues, const size_t nData)
-
-//void DynamicKuboToyabe::functionDeriv(const API::FunctionDomain& domain, API::Jacobian& jacobian)
-//{
-//  calNumericalDeriv(domain,jacobian);
-//}
 
 } // namespace CurveFitting
 } // namespace Mantid
