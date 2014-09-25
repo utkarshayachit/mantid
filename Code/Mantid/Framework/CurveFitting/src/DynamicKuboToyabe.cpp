@@ -30,13 +30,12 @@ double midpnt(double func(const double, const double, const double,const double)
 	const double a, const double b, const int n, const double g, const double w0) {
 // quote & modified from numerical recipe 2nd edtion (page147)	
 	
-	double x,tnm,sum,del,ddel;
-	int it,j;
 	static double s;
 
 	if (n==1) { return (s =0.5*(b-a)*func(a,g,w0,b)+func(b,g,w0,b));
 	} else {
-
+		double x, tnm, sum, del, ddel;
+		int it, j;
 		for (it=1,j=1;j<n-1;j++) it *= 3;
 		tnm = it;
 		del = (b-a)/(3*tnm);
@@ -56,7 +55,7 @@ double midpnt(double func(const double, const double, const double,const double)
 
 void polint (double* xa, double* ya, const double x, double& y, double& dy) {
 	int i, m, ns = 0;
-	double den, dif, dift, ho, hp, w;
+	double den, dif, dift, ho, hp;
 
 	const int n = sizeof xa;
 	double c[n],d[n];
@@ -72,10 +71,9 @@ void polint (double* xa, double* ya, const double x, double& y, double& dy) {
 	y=ya[ns--];
 	for (m=1;m<n;m++) {
 		for (i=0;i<n-m;i++) {
-
 			ho=xa[i]-x;
 			hp=xa[i+m]-x;
-			w=c[i+1]-d[i];
+			double w=c[i+1]-d[i];
 //			if((den=ho-hp)==0.0) error message!!!; delete next line.
 			den=ho-hp;
 			den=w/den;
@@ -91,7 +89,7 @@ void polint (double* xa, double* ya, const double x, double& y, double& dy) {
 double integral (double func(const double, const double, const double, const double),
 				const double a, const double b, const double g, const double w0) {
 	const int JMAX = 14, JMAXP = JMAX+1, K=5;
-	const double EPS = 3.0e-9;  //error smaller than this value
+	//const double EPS = 3.0e-9;  //error smaller than this value
 	int i,j;
 	double ss,dss;
 	double h[JMAXP], s[JMAX], h_t[K], s_t[K];
@@ -171,7 +169,6 @@ void DynamicKuboToyabe::functionLocal(double* out, const double* xValues, const 
 	const double stepsize = abs(getParameter("endX")/n);
 	double funcG[n];
 
-	double Integral = 0.0;
 	if (v == 0.0) {
 		for (int i = 0; i < nData; i++) {
 			out[i] = A*gz(xValues[i],G,F);
