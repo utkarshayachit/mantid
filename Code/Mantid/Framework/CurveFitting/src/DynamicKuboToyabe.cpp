@@ -55,12 +55,12 @@ double midpnt(double func(const double, const double, const double,const double)
 
 void polint (double* xa, double* ya, const double x, double& y, double& dy) {
 	int i, m, ns = 0;
-	double den, dif, dift, ho, hp;
 
 	const int n = sizeof xa;
 	double c[n],d[n];
-	dif = fabs(x-xa[0]);
+	double dif = fabs(x-xa[0]);
 	for (i=0;i<n;i++){
+		double dift;
 		if((dift=fabs(x-xa[i]))<dif) {
 			ns=i;
 			dif=dift;
@@ -71,11 +71,11 @@ void polint (double* xa, double* ya, const double x, double& y, double& dy) {
 	y=ya[ns--];
 	for (m=1;m<n;m++) {
 		for (i=0;i<n-m;i++) {
-			ho=xa[i]-x;
-			hp=xa[i+m]-x;
+			double ho=xa[i]-x;
+			double hp=xa[i+m]-x;
 			double w=c[i+1]-d[i];
 //			if((den=ho-hp)==0.0) error message!!!; delete next line.
-			den=ho-hp;
+			double den=ho-hp;
 			den=w/den;
 			d[i]=hp*den;
 			c[i]=ho*den;
