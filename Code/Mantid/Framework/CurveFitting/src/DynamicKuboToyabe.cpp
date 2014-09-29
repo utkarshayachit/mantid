@@ -151,10 +151,9 @@ double gz (const double x, const double G, const double F)
 void DynamicKuboToyabe::function1D(double* out, const double* xValues, const size_t nData)const
 {
     const double& A = getParameter("A");
-	const double& Gtemp = getParameter("Delta");
-    const double& G = abs(Gtemp);
-	const double& F = abs(getParameter("Field"));
-	const double& v = abs(getParameter("HoppingRate"));
+    const double& G = fabs(getParameter("Delta"));
+	const double& F = fabs(getParameter("Field"));
+	const double& v = fabs(getParameter("HoppingRate"));
 
 
 	
@@ -167,7 +166,7 @@ void DynamicKuboToyabe::function1D(double* out, const double* xValues, const siz
 
 
 	const int n = 1000;
-	const double stepsize = abs(getParameter("EndX")/n);
+	const double stepsize = fabs(getParameter("EndX")/n);
 	double funcG[n];
 
 	if (v == 0.0) {
