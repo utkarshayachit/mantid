@@ -33,9 +33,27 @@ namespace CustomInterfaces
 
   void ALCDataLoadingPresenter::load()
   {
-    m_view->setWaitingCursor();
+	m_view->setWaitingCursor();
 
-    try
+	// Check Time range
+	if (auto timeRange = m_view->timeRange())
+	{
+		  if (timeRange->first >= timeRange->second )
+		  {
+			  m_view->restoreCursor();
+			  m_view->displayError("Invalid time interval");
+			  return;
+		  }
+	}  
+    else 
+	{
+		  m_view->restoreCursor();
+		  m_view->displayError("No time interval");
+		  return;
+	}
+
+	// try executing PlotAsymmetryByLogValue
+	try
     {
       IAlgorithm_sptr alg = AlgorithmManager::Instance().create("PlotAsymmetryByLogValue");
       alg->setChild(true); // Don't want workspaces in the ADS

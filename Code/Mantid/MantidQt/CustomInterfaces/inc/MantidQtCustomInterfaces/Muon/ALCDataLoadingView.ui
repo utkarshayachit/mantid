@@ -52,7 +52,7 @@
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="MantidQt::MantidWidgets::MWRunFiles" name="firstRun" native="true">
+           <widget class="MantidQt::MantidWidgets::MWRunFiles" name="firstRun">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -68,7 +68,7 @@
            </widget>
           </item>
           <item row="1" column="1">
-           <widget class="MantidQt::MantidWidgets::MWRunFiles" name="lastRun" native="true">
+           <widget class="MantidQt::MantidWidgets::MWRunFiles" name="lastRun">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -152,16 +152,9 @@
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_2">
             <item>
-             <widget class="QCheckBox" name="timeLimit">
-              <property name="text">
-               <string>Time limit:</string>
-              </property>
-             </widget>
-            </item>
-            <item>
              <widget class="QWidget" name="timeLimits" native="true">
               <property name="enabled">
-               <bool>false</bool>
+               <bool>true</bool>
               </property>
               <property name="minimumSize">
                <size>
@@ -276,44 +269,27 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QwtPlot</class>
-   <extends>QFrame</extends>
-   <header>qwt_plot.h</header>
-  </customwidget>
-  <customwidget>
    <class>MantidQt::MantidWidgets::MWRunFiles</class>
    <extends>QWidget</extends>
    <header>MantidQtMantidWidgets/MWRunFiles.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QwtPlot</class>
+   <extends>QFrame</extends>
+   <header>qwt_plot.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <tabstops>
   <tabstop>log</tabstop>
   <tabstop>integral</tabstop>
   <tabstop>differential</tabstop>
-  <tabstop>timeLimit</tabstop>
   <tabstop>minTime</tabstop>
   <tabstop>maxTime</tabstop>
   <tabstop>load</tabstop>
  </tabstops>
  <resources/>
- <connections>
-  <connection>
-   <sender>timeLimit</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>timeLimits</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>94</x>
-     <y>193</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>264</x>
-     <y>205</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
  <buttongroups>
   <buttongroup name="calculationType"/>
  </buttongroups>
