@@ -66,7 +66,7 @@ public:
     ON_CALL(*m_view, lastRun()).WillByDefault(Return("MUSR00015191.nxs"));
     ON_CALL(*m_view, calculationType()).WillByDefault(Return("Integral"));
     ON_CALL(*m_view, log()).WillByDefault(Return("sample_magn_field"));
-    ON_CALL(*m_view, timeRange()).WillByDefault(Return(boost::none));
+    ON_CALL(*m_view, timeRange()).WillByDefault(Return(boost::make_optional(std::make_pair(-6.0,32.0))));
   }
 
   void tearDown()
