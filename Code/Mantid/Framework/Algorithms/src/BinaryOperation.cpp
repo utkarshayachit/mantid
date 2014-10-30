@@ -437,7 +437,7 @@ namespace Mantid
      * @returns True if further processing is not required on the spectra, false if the binary operation should be performed.
      */
     bool BinaryOperation::propagateSpectraMask(const API::MatrixWorkspace_const_sptr lhs, const API::MatrixWorkspace_const_sptr rhs, 
-        const int64_t index, API::MatrixWorkspace_sptr out)
+                                               const std::size_t index, API::MatrixWorkspace_sptr out)
     {
       bool continueOp(true);
       IDetector_const_sptr det_lhs, det_rhs;
@@ -475,7 +475,7 @@ namespace Mantid
       const double rhsE = m_rhs->readE(0)[0];
       
       // Now loop over the spectra of the left hand side calling the virtual function
-      const int64_t numHists = m_lhs->getNumberHistograms();
+      const std::size_t numHists = m_lhs->getNumberHistograms();
 
       if (m_eout)
       {
@@ -523,7 +523,7 @@ namespace Mantid
 
       // Now loop over the spectra of the left hand side pulling m_out the single value from each m_rhs 'spectrum'
       // and then calling the virtual function
-      const int64_t numHists = m_lhs->getNumberHistograms();
+        const std::size_t numHists = m_lhs->getNumberHistograms();
       if (m_eout)
       {
         // ---- The output is an EventWorkspace ------
@@ -598,7 +598,7 @@ namespace Mantid
           const EventList & rhs_spectrum = m_erhs->getEventList(0);
 
           // Now loop over the spectra of the left hand side calling the virtual function
-          const int64_t numHists = m_lhs->getNumberHistograms();
+          const std::size_t numHists = m_lhs->getNumberHistograms();
           BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
           {
             PARALLEL_START_INTERUPT_REGION
@@ -621,7 +621,7 @@ namespace Mantid
           const MantidVec& rhsE = m_rhs->readE(0);
 
           // Now loop over the spectra of the left hand side calling the virtual function
-          const int64_t numHists = m_lhs->getNumberHistograms();
+          const std::size_t numHists = m_lhs->getNumberHistograms();
           BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
           {
             PARALLEL_START_INTERUPT_REGION
@@ -647,7 +647,7 @@ namespace Mantid
         const MantidVec& rhsE = m_rhs->readE(0);
 
         // Now loop over the spectra of the left hand side calling the virtual function
-        const int64_t numHists = m_lhs->getNumberHistograms();
+          const std::size_t numHists = m_lhs->getNumberHistograms();
         BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
         {
           PARALLEL_START_INTERUPT_REGION
@@ -694,13 +694,13 @@ namespace Mantid
         {
            // ------------ The rhs is ALSO an EventWorkspace ---------------
           // Now loop over the spectra of each one calling the virtual function
-          const int64_t numHists = m_lhs->getNumberHistograms();
+          const std::size_t numHists = m_lhs->getNumberHistograms();
           BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
           {
             PARALLEL_START_INTERUPT_REGION
             m_progress->report(this->name());
             bool doOperation = true;
-            int64_t rhs_wi = i;
+            int64_t rhs_wi = static_cast<int64_t>(i);
             if (mismatchedSpectra && table)
             {
               rhs_wi = (*table)[i];
@@ -733,13 +733,13 @@ namespace Mantid
           // -------- The rhs is a histogram, or we want to use the histogram representation of it ---------
 
           // Now loop over the spectra of each one calling the virtual function
-          const int64_t numHists = m_lhs->getNumberHistograms();
+          const std::size_t numHists = m_lhs->getNumberHistograms();
           BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
           {
             PARALLEL_START_INTERUPT_REGION
             m_progress->report(this->name());
             bool doOperation = true;
-            int64_t rhs_wi = i;
+            int64_t rhs_wi = static_cast<int64_t>(i);
             if (mismatchedSpectra && table)
             {
               rhs_wi = (*table)[i];
@@ -775,14 +775,14 @@ namespace Mantid
         //  will be used instead)
 
         // Now loop over the spectra of each one calling the virtual function
-        const int64_t numHists = m_lhs->getNumberHistograms();
+        const std::size_t numHists = m_lhs->getNumberHistograms();
         BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
         {
           PARALLEL_START_INTERUPT_REGION
           m_progress->report(this->name());
           m_out->setX(i,m_lhs->refX(i));
           bool doOperation = true;
-          int64_t rhs_wi = i;
+          int64_t rhs_wi = static_cast<int64_t>(i);
           if (mismatchedSpectra && table)
           {
             rhs_wi = (*table)[i];
@@ -826,9 +826,9 @@ namespace Mantid
      */
     void BinaryOperation::propagateBinMasks(const API::MatrixWorkspace_const_sptr rhs, API::MatrixWorkspace_sptr out)
     {
-      const int64_t outHists = out->getNumberHistograms();
-      const int64_t rhsHists = rhs->getNumberHistograms();
-      for (int64_t i = 0; i < outHists; ++i)
+      const std::size_t outHists = out->getNumberHistograms();
+      const std::size_t rhsHists = rhs->getNumberHistograms();
+      for (std::size_t i = 0; i < outHists; ++i)
       {
         // Copy over masks from the rhs, if any exist.
         // If rhs is single spectrum, copy masks from that to all spectra in the output.
@@ -852,16 +852,16 @@ namespace Mantid
      */
     void BinaryOperation::applyMaskingToOutput(API::MatrixWorkspace_sptr out)
     {
-      int64_t nindices = static_cast<int64_t>(m_indicesToMask.size());
       ParameterMap &pmap = out->instrumentParameters();
-      BEGIN_PARALLEL_FOR(THREADSAFE(out), 0, nindices, i)
+      Mutex BinaryOperation_masking;
+      BEGIN_PARALLEL_FOR(THREADSAFE(out),0,m_indicesToMask.size(),i)
       {
         if (!m_parallelException && !m_cancel) 
         {
            try 
            {
                IDetector_const_sptr det_out = out->getDetector(m_indicesToMask[i]);
-               PARALLEL_CRITICAL(BinaryOperation_masking)
+               Mutex::ScopedLock lock(BinaryOperation_masking);
                {
                     pmap.addBool(det_out.get(), "masked", true);
                }
@@ -1015,8 +1015,8 @@ namespace Mantid
       //  Second int = workspace index to which it will be added in the OUTPUT EW. -1 if it should add a new entry at the end.
       auto table = boost::make_shared<BinaryOperationTable>();
 
-      int rhs_nhist = static_cast<int>(rhs->getNumberHistograms());
-      int lhs_nhist = static_cast<int>(lhs->getNumberHistograms());
+      std::size_t rhs_nhist = rhs->getNumberHistograms();
+      std::size_t lhs_nhist = lhs->getNumberHistograms();
 
       // Initialize the table; filled with -1 meaning no match
       table->resize(lhs_nhist, -1);
@@ -1032,7 +1032,7 @@ namespace Mantid
 
         // ----------------- Matching Workspace Indices and Detector IDs --------------------------------------
         //First off, try to match the workspace indices. Most times, this will be ok right away.
-        int64_t rhsWI = lhsWI;
+        std::size_t rhsWI = lhsWI;
         if (rhsWI < rhs_nhist) //don't go out of bounds
         {
           // Get the detector IDs at that workspace index.
@@ -1083,7 +1083,7 @@ namespace Mantid
           //Didn't find it? Now we need to iterate through the output workspace to
           //  match the detector ID.
           // NOTE: This can be SUPER SLOW!
-          for (rhsWI=0; rhsWI < static_cast<int64_t>(rhs_nhist); rhsWI++)
+          for (rhsWI=0; rhsWI < rhs_nhist; rhsWI++)
           {
             const std::set<detid_t> & rhsDets = rhs->getSpectrum(rhsWI)->getDetectorIDs();
 
