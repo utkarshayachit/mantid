@@ -66,7 +66,10 @@ Notes
 #. A good guess on the limits can be obtained from the
    :ref:`algm-ConvertToMDMinMaxLocal` algorithm.
    
-
+See [[Vates_Validation | VATES validation]] for examples of ConvertToMD usage and 
+comparison between ConvertToMD in Mantid and other packages used in neutron scattering analysis. 
+   
+   
 How to write custom ConvertToMD plugin
 --------------------------------------
 
