@@ -854,8 +854,7 @@ namespace Mantid
     {
       int64_t nindices = static_cast<int64_t>(m_indicesToMask.size());
       ParameterMap &pmap = out->instrumentParameters();
-      PARALLEL_FOR1(out)
-      for(int64_t i = 0; i < nindices; ++i)
+      BEGIN_PARALLEL_FOR(THREADSAFE(out), 0, nindices, i)
       {
         if (!m_parallelException && !m_cancel) 
         {
@@ -887,6 +886,7 @@ namespace Mantid
          } // End of if block in PARALLEL_START_INTERUPT_REGION
 
       }
+      END_PARALLEL_FOR
       PARALLEL_CHECK_INTERUPT_REGION
     }
 
