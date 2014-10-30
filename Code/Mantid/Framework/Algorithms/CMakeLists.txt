@@ -741,9 +741,9 @@ set_target_properties ( Algorithms PROPERTIES OUTPUT_NAME MantidAlgorithms )
 # Add to the 'Framework' group in VS
 set_property ( TARGET Algorithms PROPERTY FOLDER "MantidFramework" )
 
-include_directories ( inc )
+include_directories ( inc ${TBB_INCLUDE_DIRS})
 
-target_link_libraries ( Algorithms ${MANTIDLIBS} ${GSL_LIBRARIES} )
+target_link_libraries ( Algorithms ${MANTIDLIBS} ${GSL_LIBRARIES} ${TBB_LIBRARIES})
 
 # Add the unit tests directory
 add_subdirectory ( test )

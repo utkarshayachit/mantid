@@ -222,6 +222,10 @@ if ( OPENMP_FOUND )
   endif ()
 endif ()
 
+find_package(TBB)
+if(TBB_FOUND )
+  add_definitions(-DHAVE_TBB)
+endif()
 
 ###########################################################################
 # Add linux-specific things
