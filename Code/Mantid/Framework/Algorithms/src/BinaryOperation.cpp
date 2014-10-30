@@ -480,8 +480,7 @@ namespace Mantid
       if (m_eout)
       {
         // ---- The output is an EventWorkspace ------
-        PARALLEL_FOR3(m_lhs,m_rhs,m_out)
-        for (int64_t i = 0; i < numHists; ++i)
+        BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
         {
           PARALLEL_START_INTERUPT_REGION
           m_out->setX(i, m_lhs->refX(i));
@@ -489,13 +488,13 @@ namespace Mantid
           m_progress->report(this->name());
           PARALLEL_END_INTERUPT_REGION
         }
+        END_PARALLEL_FOR
         PARALLEL_CHECK_INTERUPT_REGION
       }
       else
       {
         // ---- Histogram Output -----
-        PARALLEL_FOR3(m_lhs,m_rhs,m_out)
-        for (int64_t i = 0; i < numHists; ++i)
+        BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
         {
           PARALLEL_START_INTERUPT_REGION
           m_out->setX(i,m_lhs->refX(i));
@@ -507,6 +506,7 @@ namespace Mantid
           m_progress->report(this->name());
           PARALLEL_END_INTERUPT_REGION
         }
+        END_PARALLEL_FOR
         PARALLEL_CHECK_INTERUPT_REGION
       }
 
@@ -527,8 +527,7 @@ namespace Mantid
       if (m_eout)
       {
         // ---- The output is an EventWorkspace ------
-        PARALLEL_FOR3(m_lhs,m_rhs,m_out)
-        for (int64_t i = 0; i < numHists; ++i)
+        BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
         {
           PARALLEL_START_INTERUPT_REGION
           const double rhsY = m_rhs->readY(i)[0];
@@ -542,13 +541,13 @@ namespace Mantid
           m_progress->report(this->name());
           PARALLEL_END_INTERUPT_REGION
         }
+        END_PARALLEL_FOR
         PARALLEL_CHECK_INTERUPT_REGION
       }
       else
       {
         // ---- Histogram Output -----
-        PARALLEL_FOR3(m_lhs,m_rhs,m_out)
-        for (int64_t i = 0; i < numHists; ++i)
+        BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
         {
           PARALLEL_START_INTERUPT_REGION
           const double rhsY = m_rhs->readY(i)[0];
@@ -566,6 +565,7 @@ namespace Mantid
           m_progress->report(this->name());
           PARALLEL_END_INTERUPT_REGION
         }
+        END_PARALLEL_FOR
         PARALLEL_CHECK_INTERUPT_REGION
       }
 
@@ -599,8 +599,7 @@ namespace Mantid
 
           // Now loop over the spectra of the left hand side calling the virtual function
           const int64_t numHists = m_lhs->getNumberHistograms();
-          PARALLEL_FOR3(m_lhs,m_rhs,m_out)
-          for (int64_t i = 0; i < numHists; ++i)
+          BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
           {
             PARALLEL_START_INTERUPT_REGION
             //m_out->setX(i,m_lhs->refX(i)); //unnecessary - that was copied before.
@@ -610,6 +609,7 @@ namespace Mantid
             m_progress->report(this->name());
             PARALLEL_END_INTERUPT_REGION
           }
+          END_PARALLEL_FOR
           PARALLEL_CHECK_INTERUPT_REGION
         }
         else
@@ -622,9 +622,7 @@ namespace Mantid
 
           // Now loop over the spectra of the left hand side calling the virtual function
           const int64_t numHists = m_lhs->getNumberHistograms();
-
-          PARALLEL_FOR3(m_lhs,m_rhs,m_out)
-          for (int64_t i = 0; i < numHists; ++i)
+          BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
           {
             PARALLEL_START_INTERUPT_REGION
             //m_out->setX(i,m_lhs->refX(i)); //unnecessary - that was copied before.
@@ -633,6 +631,7 @@ namespace Mantid
             m_progress->report(this->name());
             PARALLEL_END_INTERUPT_REGION
           }
+          END_PARALLEL_FOR
           PARALLEL_CHECK_INTERUPT_REGION
         }
 
@@ -649,9 +648,7 @@ namespace Mantid
 
         // Now loop over the spectra of the left hand side calling the virtual function
         const int64_t numHists = m_lhs->getNumberHistograms();
-
-        PARALLEL_FOR3(m_lhs,m_rhs,m_out)
-        for (int64_t i = 0; i < numHists; ++i)
+        BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
         {
           PARALLEL_START_INTERUPT_REGION
           m_out->setX(i,m_lhs->refX(i));
@@ -663,6 +660,7 @@ namespace Mantid
           m_progress->report(this->name());
           PARALLEL_END_INTERUPT_REGION
         }
+        END_PARALLEL_FOR
         PARALLEL_CHECK_INTERUPT_REGION
       }
     }
@@ -697,34 +695,37 @@ namespace Mantid
            // ------------ The rhs is ALSO an EventWorkspace ---------------
           // Now loop over the spectra of each one calling the virtual function
           const int64_t numHists = m_lhs->getNumberHistograms();
-          PARALLEL_FOR3(m_lhs,m_rhs,m_out)
-          for (int64_t i = 0; i < numHists; ++i)
+          BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
           {
             PARALLEL_START_INTERUPT_REGION
             m_progress->report(this->name());
-
+            bool doOperation = true;
             int64_t rhs_wi = i;
             if (mismatchedSpectra && table)
             {
               rhs_wi = (*table)[i];
               if (rhs_wi < 0)
-                continue;
+                doOperation = false;
             }
             else
             {
               // Check for masking except when mismatched sizes
               if(!propagateSpectraMask(m_lhs, m_rhs, i, m_out) )
-                continue;
+                doOperation = false;
             }
-            //Reach here? Do the division
-            //Perform the operation on the event list on the output (== lhs)
-            performEventBinaryOperation(m_eout->getEventList(i),  m_erhs->getEventList(rhs_wi));
+            if (doOperation)
+            {
+              //Reach here? Do the division
+              //Perform the operation on the event list on the output (== lhs)
+              performEventBinaryOperation(m_eout->getEventList(i),  m_erhs->getEventList(rhs_wi));
 
-            //Free up memory on the RHS if that is possible
-            if (m_ClearRHSWorkspace)
-              const_cast<EventList&>(m_erhs->getEventList(rhs_wi)).clear();
+              //Free up memory on the RHS if that is possible
+              if (m_ClearRHSWorkspace)
+                const_cast<EventList&>(m_erhs->getEventList(rhs_wi)).clear();
+            }
             PARALLEL_END_INTERUPT_REGION
           }
+          END_PARALLEL_FOR
           PARALLEL_CHECK_INTERUPT_REGION
         }
         else
@@ -733,35 +734,36 @@ namespace Mantid
 
           // Now loop over the spectra of each one calling the virtual function
           const int64_t numHists = m_lhs->getNumberHistograms();
-
-          PARALLEL_FOR3(m_lhs,m_rhs,m_out)
-          for (int64_t i = 0; i < numHists; ++i)
+          BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
           {
             PARALLEL_START_INTERUPT_REGION
             m_progress->report(this->name());
+            bool doOperation = true;
             int64_t rhs_wi = i;
             if (mismatchedSpectra && table)
             {
               rhs_wi = (*table)[i];
               if (rhs_wi < 0)
-                continue;
+                doOperation = false;
             }
             else
             {
               // Check for masking except when mismatched sizes
               if(!propagateSpectraMask(m_lhs, m_rhs, i, m_out) )
-                continue;
+                doOperation = false;
             }
+            if (doOperation)
+            {
+              //Reach here? Do the division
+              performEventBinaryOperation(m_eout->getEventList(i),  m_rhs->readX(rhs_wi), m_rhs->readY(rhs_wi), m_rhs->readE(rhs_wi));
 
-            //Reach here? Do the division
-            performEventBinaryOperation(m_eout->getEventList(i),  m_rhs->readX(rhs_wi), m_rhs->readY(rhs_wi), m_rhs->readE(rhs_wi));
-
-            //Free up memory on the RHS if that is possible
-            if (m_ClearRHSWorkspace)
-              const_cast<EventList&>(m_erhs->getEventList(rhs_wi)).clear();
-
+              //Free up memory on the RHS if that is possible
+              if (m_ClearRHSWorkspace)
+                const_cast<EventList&>(m_erhs->getEventList(rhs_wi)).clear();
+            }
             PARALLEL_END_INTERUPT_REGION
           }
+          END_PARALLEL_FOR
           PARALLEL_CHECK_INTERUPT_REGION
         }
 
@@ -774,39 +776,42 @@ namespace Mantid
 
         // Now loop over the spectra of each one calling the virtual function
         const int64_t numHists = m_lhs->getNumberHistograms();
-
-        PARALLEL_FOR3(m_lhs,m_rhs,m_out)
-        for (int64_t i = 0; i < numHists; ++i)
+        BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
         {
           PARALLEL_START_INTERUPT_REGION
           m_progress->report(this->name());
           m_out->setX(i,m_lhs->refX(i));
+          bool doOperation = true;
           int64_t rhs_wi = i;
           if (mismatchedSpectra && table)
           {
             rhs_wi = (*table)[i];
             if (rhs_wi < 0)
-              continue;
+              doOperation = false;
           }
           else
           {
             // Check for masking except when mismatched sizes
             if(!propagateSpectraMask(m_lhs, m_rhs, i, m_out) )
-              continue;
+              doOperation = false;
           }
-          //Reach here? Do the division
-          // Get reference to output vectors here to break any sharing outside the function call below
-          // where the order of argument evaluation is not guaranteed (if it's L->R there would be a data race)
-          MantidVec & outY = m_out->dataY(i);
-          MantidVec & outE = m_out->dataE(i);
-          performBinaryOperation( m_lhs->readX(i), m_lhs->readY(i), m_lhs->readE(i), m_rhs->readY(rhs_wi), m_rhs->readE(rhs_wi), outY ,outE );
+            
+          if (doOperation)
+          {
+            //Reach here? Do the division
+            // Get reference to output vectors here to break any sharing outside the function call below
+            // where the order of argument evaluation is not guaranteed (if it's L->R there would be a data race)
+            MantidVec & outY = m_out->dataY(i);
+            MantidVec & outE = m_out->dataE(i);
+            performBinaryOperation( m_lhs->readX(i), m_lhs->readY(i), m_lhs->readE(i), m_rhs->readY(rhs_wi), m_rhs->readE(rhs_wi), outY ,outE );
 
-          //Free up memory on the RHS if that is possible
-          if (m_ClearRHSWorkspace)
-            const_cast<EventList&>(m_erhs->getEventList(rhs_wi)).clear();
-
+            //Free up memory on the RHS if that is possible
+            if (m_ClearRHSWorkspace)
+              const_cast<EventList&>(m_erhs->getEventList(rhs_wi)).clear();
+          }
           PARALLEL_END_INTERUPT_REGION
         }
+        END_PARALLEL_FOR
         PARALLEL_CHECK_INTERUPT_REGION
       }
       // Make sure we don't use outdated MRU
@@ -1018,8 +1023,7 @@ namespace Mantid
 
       const detid2index_map rhs_det_to_wi = rhs->getDetectorIDToWorkspaceIndexMap();
 
-      PARALLEL_FOR_NO_WSP_CHECK()
-      for (int lhsWI = 0; lhsWI < lhs_nhist; lhsWI++)
+      BEGIN_PARALLEL_FOR(true,0,lhs_nhist,lhsWI)
       {
         bool done=false;
 
@@ -1042,7 +1046,6 @@ namespace Mantid
             done = true;
           }
         }
-
 
         // ----------------- Scrambled Detector IDs with one Detector per Spectrum --------------------------------------
         if (!done && (lhsDets.size() == 1))
@@ -1105,7 +1108,7 @@ namespace Mantid
 //          throw std::runtime_error(mess.str());
         }
       }
-
+    END_PARALLEL_FOR
       return table;
     }
 
