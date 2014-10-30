@@ -19,6 +19,11 @@ with selected dimensions, e.g. the reciprocal space of momentums **(Qx, Qy, Qz)*
 and any other user specified log values which can be treated as dimensions. If the target workspace do exist, 
 the **MD Events** are added to this workspace.
 
+See `VATES validation <http://www.mantidproject.org/Vates_Validation>`__ for examples of ConvertToMD usage and 
+comparison between ConvertToMD in Mantid and other packages used in neutron scattering analysis. 
+   
+
+
 Used Subalgorithms
 ------------------
 
@@ -65,9 +70,6 @@ Notes
    mode.
 #. A good guess on the limits can be obtained from the
    :ref:`algm-ConvertToMDMinMaxLocal` algorithm.
-   
-See [[Vates_Validation | VATES validation]] for examples of ConvertToMD usage and 
-comparison between ConvertToMD in Mantid and other packages used in neutron scattering analysis. 
    
    
 How to write custom ConvertToMD plugin
