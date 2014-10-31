@@ -61,7 +61,8 @@ const std::string AutoDiffTestAlg::summary() const { return "Test"; }
 void AutoDiffTestAlg::init()
 {
     declareProperty(new WorkspaceProperty<MatrixWorkspace>("InputWorkspace","",Direction::Input), "Data with 20 gaussian peaks.");
-    declareProperty("GaussianParameters", "", "Function parameters");
+    declareProperty("FunctionName", "Function to use. Allowed values are Gaussian, Lorentzian and Pearson.");
+    declareProperty("FunctionParameters", "", "Function parameters");
     declareProperty(new WorkspaceProperty<MatrixWorkspace>("OutputWorkspace","",Direction::Output), "Data with 20 gaussian peaks.");
     declareProperty("DerivativeType","adept","How to calculate derivatives.");
 
@@ -71,25 +72,39 @@ void AutoDiffTestAlg::init()
 namespace
 {
 
-  // Logger
-  Kernel::Logger g_log("AutoDiffTestAlg");
+// Logger
+Kernel::Logger g_log("AutoDiffTestAlg");
 
-  IFunction_sptr getFunction(const std::string& type)
-  {
-    if ( type == "adept" )
+// Not pretty, but does the job for these three functions.
+IFunction_sptr getFunction(const std::string &function, const std::string& derivativeType)
+{
+    if ( derivativeType == "adept" )
     {
-      return IFunction_sptr(new Lorentzians::LorentzianAutoDiff);
-      return IFunction_sptr(new Pearsons::PearsonVIIAutoDiff);
-      return IFunction_sptr(new GaussianAutoDiff);
-    } else if ( type == "num") {
-      return IFunction_sptr(new Lorentzians::LorentzianNumDiff);
-      return IFunction_sptr(new Pearsons::PearsonVIINumDiff);
-      return IFunction_sptr(new GaussianNumDiff);
+        if(function == "Lorentzian") {
+            return IFunction_sptr(new Lorentzians::LorentzianAutoDiff);
+        } else if(function == "Pearson") {
+            return IFunction_sptr(new Pearsons::PearsonVIIAutoDiff);
+        }
+
+        return IFunction_sptr(new GaussianAutoDiff);
+    } else if ( derivativeType == "num") {
+        if(function == "Lorentzian") {
+            return IFunction_sptr(new Lorentzians::LorentzianNumDiff);
+        } else if(function == "Pearson") {
+            return IFunction_sptr(new Pearsons::PearsonVIINumDiff);
+        }
+
+        return IFunction_sptr(new GaussianNumDiff);
     }
-    return IFunction_sptr(new Lorentzians::LorentzianHandCoded);
-    return IFunction_sptr(new Pearsons::PearsonVIIHandCoded);
+
+    if(function == "Lorentzian") {
+        return IFunction_sptr(new Lorentzians::LorentzianHandCoded);
+    } else if(function == "Pearson") {
+        return IFunction_sptr(new Pearsons::PearsonVIIHandCoded);
+    }
+
     return IFunction_sptr(new GaussianHandCoded);
-  }
+}
 }
 
 //----------------------------------------------------------------------------------------------
@@ -99,17 +114,28 @@ void AutoDiffTestAlg::exec()
 {
     MatrixWorkspace_sptr fitData = getProperty("InputWorkspace");
     m_derType = getPropertyValue("DerivativeType");
+    m_functionName = getPropertyValue("FunctionName");
 
-    g_log.warning() << "Using " << m_derType << " derivatives." << std::endl;
+    g_log.warning() << "Using function '" << m_functionName << "' with '" << m_derType << "' derivatives." << std::endl;
 
-    std::string parameterString = getProperty("GaussianParameters");
+    /* Parse function parameters. If the string contains more parameters
+     * than the function accepts, additional parameters are ignored.
+     */
+    std::string parameterString = getProperty("FunctionParameters");
     std::vector<double> paramValues = parameterValues(parameterString);
 
-    IFunction_sptr f = getFunction(m_derType);
+    IFunction_sptr f = getFunction(m_functionName, m_derType);
     f->initialize();
 
+    /* The workspace is expected to have at least one spectrum for
+     * function values and one for each parameter, so there must be at least
+     * nParams() + 1 spectra. If there are more, the first additional spectrum
+     * is expected to contain a "noisy" version of the function values,
+     * which can be used to fit parameters.
+     */
     if(fitData->getNumberHistograms() > (f->nParams() + 1)) {
         for(size_t i = 0; i < paramValues.size(); ++i) {
+            // Make parameters 0.1% lower as starting values for fit.
             f->setParameter(i, paramValues[i] - 0.001 * paramValues[i]);
         }
 
@@ -124,22 +150,25 @@ void AutoDiffTestAlg::exec()
         fitAlgorithm->execute();
 
         g_log.notice() << "Fit results:" << std::endl;
-        for(size_t i = 0; i < paramValues.size(); ++i) {
+        for(size_t i = 0; i < f->nParams(); ++i) {
             g_log.notice() << "  " << f->parameterName(i) << " = " << f->getParameter(i) << " (" << f->getError(i) << ")" << std::endl;
         }
     }
 
-    IFunction_sptr g = getFunction(m_derType);
+    // Create function and initialize parameters
+    IFunction_sptr g = getFunction(m_functionName, m_derType);
     g->initialize();
 
-    for(size_t i = 0; i < paramValues.size(); ++i) {
+    for(size_t i = 0; i < g->nParams(); ++i) {
         g->setParameter(i, paramValues[i]);
     }
 
+    // Make domain, values and jacobian
     FunctionDomain1DVector x(fitData->readX(0));
     FunctionValues y(x);
     CurveFitting::Jacobian J(x.size(), g->nParams());
 
+    // Time function execution and write result to log
     Kernel::Timer timerF;
 
     for(size_t i = 0; i < 10000; ++i) {
@@ -148,7 +177,7 @@ void AutoDiffTestAlg::exec()
 
     g_log.warning() << "Calculating function took " << timerF.elapsed() / 10000 << " seconds to complete." << std::endl;
 
-
+    // Time derivative exection
     Kernel::Timer timerDf;
 
     for(size_t i = 0; i < 10000; ++i) {
@@ -157,31 +186,35 @@ void AutoDiffTestAlg::exec()
 
     g_log.warning() << "Calculating derivatives took " << timerDf.elapsed() / 10000 << " seconds to complete." << std::endl;
 
-
+    /* Create output workspace.
+     * First spectrum contains 1.0 - y_calc/y_ref
+     * infs and nans are replaced by 0.
+     */
     MatrixWorkspace_sptr t = WorkspaceFactory::Instance().create(fitData);
-
     MantidVec &yd = t->dataY(0);
     const MantidVec &yr = fitData->readY(0);
     for(size_t i = 0; i < x.size(); ++i) {
         yd[i] = 1.0 - y[i] / yr[i];
 
-        if(std::isinf(yd[i])) {
+        if(std::isinf(yd[i]) || std::isnan(yd[i])) {
             yd[i] = 0.0;
         }
     }
 
+    // The same for all partial derivatives.
     for(size_t j = 1; (j < f->nParams() + 1); ++j) {
         MantidVec &partialDeriv = t->dataY(j);
         const MantidVec &reference = fitData->readY(j);
         for(size_t i = 0; i < partialDeriv.size(); ++i) {
             partialDeriv[i] = 1.0 - J.get(i, j - 1) / reference[i];
 
-            if(std::isinf(partialDeriv[i])) {
+            if(std::isinf(partialDeriv[i]) || std::isnan(partialDeriv[i])) {
                 partialDeriv[i] = 0.0;
             }
         }
     }
 
+    // Finally all x-data
     for(size_t i = 0; i < fitData->getNumberHistograms(); ++i) {
         MantidVec &xd = t->dataX(i);
         xd = fitData->readX(i);
@@ -198,7 +231,6 @@ std::vector<double> AutoDiffTestAlg::parameterValues(const std::string &paramete
 
     std::vector<double> values(strings.size());
 
-    std::cout << std::setprecision(17);
     for(size_t i = 0; i < values.size(); ++i) {
         values[i] = boost::lexical_cast<double>(strings[i]);
     }

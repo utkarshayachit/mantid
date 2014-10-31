@@ -48,6 +48,7 @@ namespace CurveFitting
     std::vector<double> parameterValues(const std::string &parameterString) const;
 
     std::string m_derType;
+    std::string m_functionName;
 
 
   };
