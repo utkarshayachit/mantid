@@ -480,7 +480,8 @@ namespace Mantid
       if (m_eout)
       {
         // ---- The output is an EventWorkspace ------
-        BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
+        //BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
+        BEGIN_PARALLEL_FOR(false,0,numHists,i)
         {
           PARALLEL_START_INTERUPT_REGION
           m_out->setX(i, m_lhs->refX(i));
@@ -494,7 +495,8 @@ namespace Mantid
       else
       {
         // ---- Histogram Output -----
-        BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
+        //BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
+        BEGIN_PARALLEL_FOR(false,0,numHists,i)
         {
           PARALLEL_START_INTERUPT_REGION
           m_out->setX(i,m_lhs->refX(i));
@@ -527,7 +529,8 @@ namespace Mantid
       if (m_eout)
       {
         // ---- The output is an EventWorkspace ------
-        BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
+        //BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
+        BEGIN_PARALLEL_FOR(false,0,numHists,i)
         {
           PARALLEL_START_INTERUPT_REGION
           const double rhsY = m_rhs->readY(i)[0];
@@ -548,6 +551,7 @@ namespace Mantid
       {
         // ---- Histogram Output -----
         BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
+        //BEGIN_PARALLEL_FOR(false,0,numHists,i)
         {
           PARALLEL_START_INTERUPT_REGION
           const double rhsY = m_rhs->readY(i)[0];
@@ -600,6 +604,7 @@ namespace Mantid
           // Now loop over the spectra of the left hand side calling the virtual function
           const std::size_t numHists = m_lhs->getNumberHistograms();
           BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
+          //BEGIN_PARALLEL_FOR(false,0,numHists,i)
           {
             PARALLEL_START_INTERUPT_REGION
             //m_out->setX(i,m_lhs->refX(i)); //unnecessary - that was copied before.
@@ -623,6 +628,7 @@ namespace Mantid
           // Now loop over the spectra of the left hand side calling the virtual function
           const std::size_t numHists = m_lhs->getNumberHistograms();
           BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
+          //BEGIN_PARALLEL_FOR(false,0,numHists,i)
           {
             PARALLEL_START_INTERUPT_REGION
             //m_out->setX(i,m_lhs->refX(i)); //unnecessary - that was copied before.
@@ -649,6 +655,7 @@ namespace Mantid
         // Now loop over the spectra of the left hand side calling the virtual function
           const std::size_t numHists = m_lhs->getNumberHistograms();
         BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
+        //BEGIN_PARALLEL_FOR(false,0,numHists,i)
         {
           PARALLEL_START_INTERUPT_REGION
           m_out->setX(i,m_lhs->refX(i));
@@ -696,6 +703,7 @@ namespace Mantid
           // Now loop over the spectra of each one calling the virtual function
           const std::size_t numHists = m_lhs->getNumberHistograms();
           BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
+          //BEGIN_PARALLEL_FOR(false,0,numHists,i)
           {
             PARALLEL_START_INTERUPT_REGION
             m_progress->report(this->name());
@@ -735,6 +743,7 @@ namespace Mantid
           // Now loop over the spectra of each one calling the virtual function
           const std::size_t numHists = m_lhs->getNumberHistograms();
           BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
+          //BEGIN_PARALLEL_FOR(false,0,numHists,i)
           {
             PARALLEL_START_INTERUPT_REGION
             m_progress->report(this->name());
@@ -777,6 +786,7 @@ namespace Mantid
         // Now loop over the spectra of each one calling the virtual function
         const std::size_t numHists = m_lhs->getNumberHistograms();
         BEGIN_PARALLEL_FOR(THREADSAFE(m_lhs,m_rhs,m_out),0,numHists,i)
+        //BEGIN_PARALLEL_FOR(false,0,numHists,i)
         {
           PARALLEL_START_INTERUPT_REGION
           m_progress->report(this->name());
@@ -855,6 +865,7 @@ namespace Mantid
       ParameterMap &pmap = out->instrumentParameters();
       Mutex BinaryOperation_masking;
       BEGIN_PARALLEL_FOR(THREADSAFE(out),0,m_indicesToMask.size(),i)
+      //BEGIN_PARALLEL_FOR(false,0,m_indicesToMask.size(),i)
       {
         if (!m_parallelException && !m_cancel) 
         {
@@ -1024,6 +1035,7 @@ namespace Mantid
       const detid2index_map rhs_det_to_wi = rhs->getDetectorIDToWorkspaceIndexMap();
 
       BEGIN_PARALLEL_FOR(true,0,lhs_nhist,lhsWI)
+      //BEGIN_PARALLEL_FOR(false,0,lhs_nhist,lhsWI)
       {
         bool done=false;
 
