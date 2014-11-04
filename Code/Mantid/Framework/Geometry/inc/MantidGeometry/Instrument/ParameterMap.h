@@ -271,7 +271,9 @@ namespace Geometry
     /// access iterators. end;
     pmap_it end(){return m_map.end();}
     pmap_cit end()const{return m_map.end();}
-
+    ParameterMap( const ParameterMap& other) : m_map(other.m_map), m_cacheLocMap(other.m_cacheLocMap), m_cacheRotMap(other.m_cacheRotMap), m_boundingBoxMap(other.m_boundingBoxMap),
+                                             m_positionCache(), m_boundingBoxCache(), m_rotationCache(), m_mapAccess() {};
+  
   private:
     ///Assignment operator
     ParameterMap& operator=(ParameterMap * rhs);
@@ -279,8 +281,7 @@ namespace Geometry
     component_map_it positionOf(const IComponent* comp,const char *name, const char * type);
     ///const version of the internal function to get position of the parameter in the parameter map
     component_map_cit positionOf(const IComponent* comp,const char *name, const char * type) const;
-
-
+      
     /// internal parameter map instance
     pmap m_map;
     /// internal cache map instance for cached position values
@@ -289,6 +290,9 @@ namespace Geometry
     mutable Kernel::Cache<const ComponentID, Kernel::Quat > m_cacheRotMap;
     ///internal cache map for cached bounding boxes
     mutable Kernel::Cache<const ComponentID,BoundingBox> m_boundingBoxMap;
+      
+    mutable Kernel::Mutex m_positionCache, m_boundingBoxCache, m_rotationCache, m_mapAccess;
+      
   };
 
   /// ParameterMap shared pointer typedef

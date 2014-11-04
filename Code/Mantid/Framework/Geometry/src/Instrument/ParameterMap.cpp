@@ -331,22 +331,19 @@ namespace Mantid
       // can not add null pointer
       if(!par)return;
 
-      PARALLEL_CRITICAL(m_mapAccess)
+      Kernel::Mutex::ScopedLock _lock(m_mapAccess);
+      auto existing_par = positionOf(comp,par->name().c_str(),"");
+      // As this is only an add method it should really throw if it already exists.
+      // However, this is old behaviour and many things rely on this actually be an
+      // add/replace-style function
+      if (existing_par != m_map.end())
       {
-        auto existing_par = positionOf(comp,par->name().c_str(),"");
-        // As this is only an add method it should really throw if it already exists.
-        // However, this is old behaviour and many things rely on this actually be an
-        // add/replace-style function
-        if (existing_par != m_map.end())
-        {
-          existing_par->second = par;
-        }
-        else
-        {
-          m_map.insert(std::make_pair(comp->getComponentID(),par));
-        }
+        existing_par->second = par;
       }
-
+      else
+      {
+        m_map.insert(std::make_pair(comp->getComponentID(),par));
+      }
     }
 
     /** Create or adjust "pos" parameter for a component
@@ -654,8 +651,8 @@ namespace Mantid
       Parameter_sptr result;
       if(!comp) return result;
 
-      PARALLEL_CRITICAL(m_mapAccess)
       {
+        Kernel::Mutex::ScopedLock _lock(m_mapAccess);
         auto itr = positionOf(comp,name, type);
         if (itr != m_map.end())
            result = itr->second;
@@ -739,8 +736,8 @@ namespace Mantid
     Parameter_sptr ParameterMap::getByType(const IComponent* comp, const std::string& type) const
     {
       Parameter_sptr result = Parameter_sptr();
-      PARALLEL_CRITICAL(m_mapAccess)
       {
+        Kernel::Mutex::ScopedLock _lock(m_mapAccess);
         if( !m_map.empty() )
         {
           const ComponentID id = comp->getComponentID();
@@ -763,7 +760,7 @@ namespace Mantid
              } // found->firdst
           } // it_found != m_map.end()
         } //!m_map.empty()
-      } // PARALLEL_CRITICAL(m_map_access)
+      }
       return result;
     }
 
@@ -920,10 +917,8 @@ namespace Mantid
     void ParameterMap::setCachedLocation(const IComponent* comp, const V3D& location) const
     {
       // Call to setCachedLocation is a write so not thread-safe
-      PARALLEL_CRITICAL(positionCache)
-      {
-        m_cacheLocMap.setCache(comp->getComponentID(),location);
-      }
+      Kernel::Mutex::ScopedLock _lock(m_positionCache);
+      m_cacheLocMap.setCache(comp->getComponentID(),location);
     }
 
     ///Attempts to retrieve a location from the location cache
@@ -933,8 +928,8 @@ namespace Mantid
     bool ParameterMap::getCachedLocation(const IComponent* comp, V3D& location) const
     {
       bool inMap(false);
-      PARALLEL_CRITICAL(positionCache)
       {
+        Kernel::Mutex::ScopedLock _lock(m_positionCache);
         inMap = m_cacheLocMap.getCache(comp->getComponentID(),location);
       }
       return inMap;
@@ -946,10 +941,8 @@ namespace Mantid
     void ParameterMap::setCachedRotation(const IComponent* comp, const Quat& rotation) const
     {
       // Call to setCachedRotation is a write so not thread-safe
-      PARALLEL_CRITICAL(rotationCache)
-      {
-        m_cacheRotMap.setCache(comp->getComponentID(),rotation);
-      }
+      Kernel::Mutex::ScopedLock _lock(m_rotationCache);
+      m_cacheRotMap.setCache(comp->getComponentID(),rotation);
     }
 
     ///Attempts to retrieve a rotation from the rotation cache
@@ -959,8 +952,8 @@ namespace Mantid
     bool ParameterMap::getCachedRotation(const IComponent* comp, Quat& rotation) const
     {
       bool inMap(false);
-      PARALLEL_CRITICAL(rotationCache)
       {
+        Kernel::Mutex::ScopedLock _lock(m_rotationCache);
         inMap = m_cacheRotMap.getCache(comp->getComponentID(),rotation);
       }
       return inMap;
@@ -972,10 +965,8 @@ namespace Mantid
     void ParameterMap::setCachedBoundingBox(const IComponent *comp, const BoundingBox & box) const
     {
       // Call to setCachedRotation is a write so not thread-safe
-      PARALLEL_CRITICAL(boundingBoxCache)
-      {
-        m_boundingBoxMap.setCache(comp->getComponentID(), box);
-      }
+      Kernel::Mutex::ScopedLock _lock(m_boundingBoxCache);
+      m_boundingBoxMap.setCache(comp->getComponentID(), box);
     }
 
     ///Attempts to retrieve a bounding box from the cache
@@ -984,6 +975,7 @@ namespace Mantid
     /// @returns true if the bounding is in the map, otherwise false
     bool ParameterMap::getCachedBoundingBox(const IComponent *comp, BoundingBox & box) const
     {
+      Kernel::Mutex::ScopedLock _lock(m_boundingBoxCache);
       return m_boundingBoxMap.getCache(comp->getComponentID(),box);
     }
 
