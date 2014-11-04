@@ -13,6 +13,7 @@
 #include <boost/unordered_map.hpp>
 #include <vector>
 #include <typeinfo>
+#include "Poco/RWLock.h"
 
 namespace Mantid
 {
@@ -272,7 +273,7 @@ namespace Geometry
     pmap_it end(){return m_map.end();}
     pmap_cit end()const{return m_map.end();}
     ParameterMap( const ParameterMap& other) : m_map(other.m_map), m_cacheLocMap(other.m_cacheLocMap), m_cacheRotMap(other.m_cacheRotMap), m_boundingBoxMap(other.m_boundingBoxMap),
-                                             m_positionCache(), m_boundingBoxCache(), m_rotationCache(), m_mapAccess() {};
+                                             m_positionCache(),m_rotationCache(), m_boundingBoxCache(),  m_mapAccess() {};
   
   private:
     ///Assignment operator
@@ -291,7 +292,7 @@ namespace Geometry
     ///internal cache map for cached bounding boxes
     mutable Kernel::Cache<const ComponentID,BoundingBox> m_boundingBoxMap;
       
-    mutable Kernel::Mutex m_positionCache, m_boundingBoxCache, m_rotationCache, m_mapAccess;
+    mutable Poco::RWLock m_positionCache,m_rotationCache, m_boundingBoxCache, m_mapAccess;
       
   };
 

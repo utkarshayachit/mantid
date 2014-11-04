@@ -331,11 +331,11 @@ namespace Mantid
       // can not add null pointer
       if(!par)return;
 
-      Kernel::Mutex::ScopedLock _lock(m_mapAccess);
       auto existing_par = positionOf(comp,par->name().c_str(),"");
       // As this is only an add method it should really throw if it already exists.
       // However, this is old behaviour and many things rely on this actually be an
       // add/replace-style function
+      Poco::RWLock::ScopedWriteLock _lock(m_mapAccess);
       if (existing_par != m_map.end())
       {
         existing_par->second = par;
@@ -652,8 +652,8 @@ namespace Mantid
       if(!comp) return result;
 
       {
-        Kernel::Mutex::ScopedLock _lock(m_mapAccess);
         auto itr = positionOf(comp,name, type);
+        Poco::RWLock::ScopedReadLock _lock(m_mapAccess);
         if (itr != m_map.end())
            result = itr->second;
       }
@@ -668,6 +668,7 @@ namespace Mantid
     */
     component_map_it ParameterMap::positionOf(const IComponent* comp,const char *name, const char * type)
     {
+      Poco::RWLock::ScopedReadLock _lock(m_mapAccess);
       pmap_it result = m_map.end();
       if(!comp) return result;
       const bool anytype = (strlen(type) == 0);
@@ -701,6 +702,7 @@ namespace Mantid
     */
     component_map_cit ParameterMap::positionOf(const IComponent* comp,const char *name, const char * type) const
     {
+      Poco::RWLock::ScopedReadLock _lock(m_mapAccess);
       pmap_cit result = m_map.end();
       if(!comp) return result;
       const bool anytype = (strlen(type) == 0);
@@ -737,7 +739,7 @@ namespace Mantid
     {
       Parameter_sptr result = Parameter_sptr();
       {
-        Kernel::Mutex::ScopedLock _lock(m_mapAccess);
+        Poco::RWLock::ScopedReadLock _lock(m_mapAccess);
         if( !m_map.empty() )
         {
           const ComponentID id = comp->getComponentID();
@@ -917,7 +919,7 @@ namespace Mantid
     void ParameterMap::setCachedLocation(const IComponent* comp, const V3D& location) const
     {
       // Call to setCachedLocation is a write so not thread-safe
-      Kernel::Mutex::ScopedLock _lock(m_positionCache);
+      Poco::RWLock::ScopedWriteLock _lock(m_positionCache);
       m_cacheLocMap.setCache(comp->getComponentID(),location);
     }
 
@@ -929,7 +931,7 @@ namespace Mantid
     {
       bool inMap(false);
       {
-        Kernel::Mutex::ScopedLock _lock(m_positionCache);
+        Poco::RWLock::ScopedReadLock _lock(m_positionCache);
         inMap = m_cacheLocMap.getCache(comp->getComponentID(),location);
       }
       return inMap;
@@ -941,7 +943,7 @@ namespace Mantid
     void ParameterMap::setCachedRotation(const IComponent* comp, const Quat& rotation) const
     {
       // Call to setCachedRotation is a write so not thread-safe
-      Kernel::Mutex::ScopedLock _lock(m_rotationCache);
+      Poco::RWLock::ScopedWriteLock _lock(m_rotationCache);
       m_cacheRotMap.setCache(comp->getComponentID(),rotation);
     }
 
@@ -953,7 +955,7 @@ namespace Mantid
     {
       bool inMap(false);
       {
-        Kernel::Mutex::ScopedLock _lock(m_rotationCache);
+        Poco::RWLock::ScopedReadLock _lock(m_rotationCache);
         inMap = m_cacheRotMap.getCache(comp->getComponentID(),rotation);
       }
       return inMap;
@@ -965,7 +967,7 @@ namespace Mantid
     void ParameterMap::setCachedBoundingBox(const IComponent *comp, const BoundingBox & box) const
     {
       // Call to setCachedRotation is a write so not thread-safe
-      Kernel::Mutex::ScopedLock _lock(m_boundingBoxCache);
+      Poco::RWLock::ScopedWriteLock _lock(m_boundingBoxCache);
       m_boundingBoxMap.setCache(comp->getComponentID(), box);
     }
 
@@ -975,7 +977,7 @@ namespace Mantid
     /// @returns true if the bounding is in the map, otherwise false
     bool ParameterMap::getCachedBoundingBox(const IComponent *comp, BoundingBox & box) const
     {
-      Kernel::Mutex::ScopedLock _lock(m_boundingBoxCache);
+      Poco::RWLock::ScopedReadLock _lock(m_boundingBoxCache);
       return m_boundingBoxMap.getCache(comp->getComponentID(),box);
     }
 
