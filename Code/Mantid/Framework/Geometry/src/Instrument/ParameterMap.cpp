@@ -993,7 +993,7 @@ namespace Mantid
     {
 
       std::set<std::string> oldParameterNames = oldPMap->names(oldComp);
-
+      Poco::RWLock::ScopedWriteLock _lock(m_boundingBoxCache);
       for(auto it = oldParameterNames.begin(); it != oldParameterNames.end(); ++it)
       {
         Parameter_sptr thisParameter = oldPMap->get(oldComp,*it);
