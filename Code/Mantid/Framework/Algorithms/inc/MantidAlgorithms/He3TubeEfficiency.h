@@ -109,6 +109,7 @@ private:
   std::vector<specid_t> spectraSkipped;
   /// Algorithm progress keeper
   API::Progress *progress;
+  Kernel::Mutex deteff_shapecachea,deteff_shapecacheb,deteff_shapecachec;
 };
 
 } // namespace Algorithms

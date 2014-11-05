@@ -248,25 +248,25 @@ namespace Kernel
 template <class func>
 void parallel_for(bool parallel, std::size_t start, std::size_t end, const func& body)
 {
-    if( parallel )
-    {
+  if( parallel )
+  {
 #ifdef HAVE_TBB
-        tbb::parallel_for(start, end, body);
+    tbb::parallel_for(start, end, body);
 #elif (defined(HAVE_OPENMP) && defined(_MSC_VER))
-        PRAGMA(omp parallel for)
-        for (long i = start; i < end; ++i)
-            body(static_cast<std::size_t>(i));
+    PRAGMA(omp parallel for)
+    for (long i = start; i < end; ++i)
+      body(static_cast<std::size_t>(i));
 #else
-        PRAGMA(omp parallel for)
-        for (std::size_t i = start; i < end; ++i)
-            body(i);
+    PRAGMA(omp parallel for)
+    for (std::size_t i = start; i < end; ++i)
+      body(i);
 #endif
-    }
-    else
-    {
-        for (std::size_t i = start; i < end; ++i)
-            body(i);
-    }
+  }
+  else
+  {
+    for (std::size_t i = start; i < end; ++i)
+      body(i);
+  }
 }
 
 #define BEGIN_PARALLEL_FOR(parallel,start,end,variable) \

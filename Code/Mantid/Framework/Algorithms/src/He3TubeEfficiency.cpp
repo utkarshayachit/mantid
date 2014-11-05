@@ -107,9 +107,8 @@ void He3TubeEfficiency::exec()
 
   std::size_t numHists = this->inputWS->getNumberHistograms();
   this->progress = new API::Progress(this, 0.0, 1.0, numHists);
-
-  PARALLEL_FOR2(inputWS, outputWS)
-  for (int i = 0; i < static_cast<int>(numHists); ++i )
+  Kernel::Mutex deteff_invalid;
+  BEGIN_PARALLEL_FOR(THREADSAFE(inputWS,outputWS),0,numHists,i)
   {
     PARALLEL_START_INTERUPT_REGION
 
@@ -125,8 +124,8 @@ void He3TubeEfficiency::exec()
       Mantid::MantidVec& dud = this->outputWS->dataY(i);
       std::transform(dud.begin(), dud.end(), dud.begin(),
           std::bind2nd(std::multiplies<double>(), 0));
-      PARALLEL_CRITICAL(deteff_invalid)
       {
+        Kernel::Mutex::ScopedLock _lock(deteff_invalid);
         this->spectraSkipped.push_back(this->inputWS->getAxis(1)->spectraNo(i));
       }
     }
@@ -141,6 +140,7 @@ void He3TubeEfficiency::exec()
 
     PARALLEL_END_INTERUPT_REGION
   }
+  END_PARALLEL_FOR
   PARALLEL_CHECK_INTERUPT_REGION
 
   this->logErrors();
@@ -266,8 +266,8 @@ void He3TubeEfficiency::getDetectorGeometry(\
       detRadius = zDist / 2.0;
       detAxis = Kernel::V3D(0, 1, 0);
       // assume radii in z and x and the axis is in the y
-      PARALLEL_CRITICAL(deteff_shapecachea)
       {
+        Kernel::Mutex::ScopedLock _lock(deteff_shapecachea);
         this->shapeCache.insert(std::pair<const Geometry::Object *,
             std::pair<double, Kernel::V3D> >(shape_sptr.get(),
                 std::pair<double, Kernel::V3D>(detRadius, detAxis)));
@@ -282,8 +282,8 @@ void He3TubeEfficiency::getDetectorGeometry(\
       detAxis = Kernel::V3D(1, 0, 0);
       // assume that y and z are radii of the cylinder's circular cross-section
       // and the axis is perpendicular, in the x direction
-      PARALLEL_CRITICAL(deteff_shapecacheb)
       {
+        Kernel::Mutex::ScopedLock _lock(deteff_shapecacheb);
         this->shapeCache.insert(std::pair<const Geometry::Object *,
             std::pair<double, Kernel::V3D> >(shape_sptr.get(),
                 std::pair<double, Kernel::V3D>(detRadius, detAxis)));
@@ -295,8 +295,8 @@ void He3TubeEfficiency::getDetectorGeometry(\
     {
       detRadius = xDist / 2.0;
       detAxis = Kernel::V3D(0, 0, 1);
-      PARALLEL_CRITICAL(deteff_shapecachec)
       {
+        Kernel::Mutex::ScopedLock _lock(deteff_shapecachec);
         this->shapeCache.insert(std::pair<const Geometry::Object *,
             std::pair<double, Kernel::V3D> >(shape_sptr.get(),
                 std::pair<double, Kernel::V3D>(detRadius, detAxis)));
@@ -445,58 +445,55 @@ void He3TubeEfficiency::execEvent()
 
   std::size_t numHistograms = inputWS->getNumberHistograms();
   this->progress = new API::Progress(this, 0.0, 1.0, numHistograms);
-  PARALLEL_FOR1(outputWS)
-  for (int i=0; i < static_cast<int>(numHistograms); ++i)
+  Kernel::Mutex deteff_invalid;
+  BEGIN_PARALLEL_FOR(THREADSAFE(outputWS),0,numHistograms,i)
   {
     PARALLEL_START_INTERUPT_REGION
-
     Geometry::IDetector_const_sptr det = inputWS->getDetector(i);
-    if( det->isMonitor() || det->isMasked() )
+    if( !(det->isMonitor() || det->isMasked()) )
     {
-      continue;
-    }
-
-    double exp_constant = 0.0;
-    try
-    {
-      exp_constant = this->calculateExponential(i, det);
-    }
-    catch (std::out_of_range &)
-    {
-      // Parameters are bad so skip correction
-      PARALLEL_CRITICAL(deteff_invalid)
+      double exp_constant = 0.0;
+      try
       {
-        this->spectraSkipped.push_back(inputWS->getAxis(1)->spectraNo(i));
-        outputWS->maskWorkspaceIndex(i);
+        exp_constant = this->calculateExponential(i, det);
+      }
+      catch (std::out_of_range &)
+      {
+        // Parameters are bad so skip correction
+        {
+          Kernel::Mutex::ScopedLock _lock(deteff_invalid);
+          this->spectraSkipped.push_back(inputWS->getAxis(1)->spectraNo(i));
+          outputWS->maskWorkspaceIndex(i);
+        }
+      }
+
+      // Do the correction
+      DataObjects::EventList *evlist = outputWS->getEventListPtr(i);
+      switch (evlist->getEventType())
+      {
+      case API::TOF:
+        // Switch to weights if needed.
+        evlist->switchTo(API::WEIGHTED);
+        // Fall through
+      case API::WEIGHTED:
+        eventHelper(evlist->getWeightedEvents(), exp_constant);
+        break;
+      case API::WEIGHTED_NOTIME:
+        eventHelper(evlist->getWeightedEventsNoTime(), exp_constant);
+        break;
+      }
+
+      this->progress->report();
+
+      // check for canceling the algorithm
+      if ( i % 1000 == 0 )
+      {
+        interruption_point();
       }
     }
-
-    // Do the correction
-    DataObjects::EventList *evlist = outputWS->getEventListPtr(i);
-    switch (evlist->getEventType())
-    {
-    case API::TOF:
-      // Switch to weights if needed.
-      evlist->switchTo(API::WEIGHTED);
-      // Fall through
-    case API::WEIGHTED:
-      eventHelper(evlist->getWeightedEvents(), exp_constant);
-      break;
-    case API::WEIGHTED_NOTIME:
-      eventHelper(evlist->getWeightedEventsNoTime(), exp_constant);
-      break;
-    }
-
-    this->progress->report();
-
-    // check for canceling the algorithm
-    if ( i % 1000 == 0 )
-    {
-      interruption_point();
-    }
-
     PARALLEL_END_INTERUPT_REGION
   }
+  END_PARALLEL_FOR
   PARALLEL_CHECK_INTERUPT_REGION
 
   outputWS->clearMRU();
