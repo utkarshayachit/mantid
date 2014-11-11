@@ -92,7 +92,7 @@ class MANTID_GEOMETRY_DLL IndexingUtils
   /// Find the UB matrix that most nearly maps hkl to qxyz for 3 or more peaks
   static double Optimize_UB(      Kernel::DblMatrix         & UB,
                             const std::vector<Kernel::V3D>  & hkl_vectors, 
-                            const std::vector<Kernel::V3D>  & q_vectors   );
+                            const std::vector<Kernel::V3D>  & q_vectors,  double* out = NULL);
 
   /// Find the vector that best corresponds to plane normal, given 1-D indices
   static double Optimize_Direction(   Kernel::V3D               & best_vec,
@@ -272,8 +272,6 @@ class MANTID_GEOMETRY_DLL IndexingUtils
 
   /// Get a formatted string listing the lattice parameters and cell volume
   static std::string GetLatticeParameterString( const Kernel::DblMatrix & UB );
-
-
 
 private:
  

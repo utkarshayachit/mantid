@@ -21,12 +21,14 @@
 #include "MantidKernel/Matrix.h"
 #include "MantidKernel/Quat.h"
 #include "MantidKernel/V3D.h"
+#include "MantidGeometry/Crystal/IndexingUtils.h"
 #include <cctype>
 #include <string>
 
 using namespace Mantid::DataObjects;
 using namespace Mantid::API;
 using namespace Mantid::Kernel;
+using namespace Mantid::Geometry;
 using Mantid::Geometry::CompAssembly;
 using Mantid::Geometry::IObjComponent_const_sptr;
 using Mantid::Geometry::IComponent_const_sptr;
@@ -364,11 +366,7 @@ namespace Mantid
 
       std::map<int, Mantid::Kernel::Matrix<double> > RunNum2GonMatrixMap;
       getRun2MatMap( Peaks, OptRuns,  RunNum2GonMatrixMap);
-      const DblMatrix & UBx = Peaks->sample().getOrientedLattice().getUB();
-
-      DblMatrix UBinv( UBx );
-      UBinv.Invert();
-      UBinv /= ( 2 * M_PI );
+      DblMatrix  UB = Peaks->sample().getOrientedLattice().getUB();
 
       double GonRotx =getParameter("GonRotx");
       double GonRoty =getParameter("GonRoty");
@@ -379,6 +377,7 @@ namespace Mantid
 
 
       double ChiSqTot = 0.0;
+      std::vector<V3D> q_vectors;
       for( size_t i = 0; i< nData; i+= 3 )
       {
         int peakNum = (int)( .5 + xValues[i] );
@@ -400,27 +399,35 @@ namespace Mantid
           peak.setGoniometerMatrix( GonRot*peak.getGoniometerMatrix());
         }
 
-        V3D hkl = UBinv * peak.getQSampleFrame();
-
-
-
-        for( int k = 0; k<3; k++ )
-        {
-          double d1 = hkl[k] - floor( hkl[k] );
-          if( d1>.5 ) d1 = d1 - 1;
-          if( d1 < -.5 ) d1 = d1 + 1;
-
-          out[i+k] = d1;
-          ChiSqTot += d1*d1;
-        }
-
+        q_vectors.push_back( peak.getQSampleFrame());
 
       }
+      std::vector<double> sigabc(1);// only need chisq
+      std::vector<V3D> miller_ind;
+      std::vector<V3D> indexed_qs;
+      double fit_error;
+      miller_ind.reserve( q_vectors.size() );
+      indexed_qs.reserve( q_vectors.size() );
+      double tolerance = 0.12;
+      IndexingUtils::GetIndexedPeaks( UB, q_vectors, tolerance,
+                          miller_ind, indexed_qs, fit_error );
+      ChiSqTot = IndexingUtils::Optimize_UB(UB, miller_ind,indexed_qs,out);
+
+      int num_indexed = IndexingUtils::NumberIndexed(UB, q_vectors, tolerance);
+      /*for( size_t p = 0 ; p < nData; p++ )
+      {
+          out[p] *= 0.1*static_cast<double>(num_indexed)*static_cast<double>(nData);
+          out[p] -= static_cast<double>(num_indexed)/static_cast<double>(nData);
+      }*/
+      g_log.notice() << "New UB will index " << num_indexed << " Peaks out of " << nData
+                    << " with tolerance of " << std::setprecision(3) << std::setw(5) << tolerance
+                    << "\n";
 
       g_log.debug() << "------------------------Function-----------------------------------------------"<<std::endl;
       for( size_t p = 0 ; p < nParams() ; p++ )
       {
-        g_log.debug() << parameterName(p)<<"("<<getParameter(p)<<"),";
+        g_log.debug() << parameterName(p)<<"("<<getParameter(p
+            )<<"),";
         if ((p + 1) % 6 ==0 )
           g_log.debug() << std::endl;
       }
