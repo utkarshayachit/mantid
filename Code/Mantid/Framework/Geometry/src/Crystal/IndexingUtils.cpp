@@ -721,7 +721,6 @@ double IndexingUtils::Optimize_UB(      DblMatrix         & UB,
   @param  q_vectors    std::vector of V3D objects that contains the list of
                        q_vectors that are indexed by the corresponding hkl
                        vectors.
-  @param  out    optional array of doubles of residuals for fitting
   NOTE: The number of hkl_vectors and q_vectors must be the same, and must
         be at least 3.
   
@@ -740,7 +739,7 @@ double IndexingUtils::Optimize_UB(      DblMatrix         & UB,
 */  
 double IndexingUtils::Optimize_UB(      DblMatrix         & UB,
                                   const std::vector<V3D>  & hkl_vectors, 
-                                  const std::vector<V3D>  & q_vectors , double* out)
+                                  const std::vector<V3D>  & q_vectors )
 {
   if ( UB.numRows() != 3 || UB.numCols() != 3 )
   {
@@ -816,7 +815,6 @@ double IndexingUtils::Optimize_UB(      DblMatrix         & UB,
     for ( size_t i = 0; i < q_vectors.size(); i++ )
     {
       sum_sq_error += gsl_vector_get(residual, i) * gsl_vector_get(residual, i);
-      if (out != NULL)out[row+i*3] = gsl_vector_get(residual, i);
     }
   }
 

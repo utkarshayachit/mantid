@@ -10,7 +10,6 @@
 #include "MantidAPI/IDomainCreator.h"
 #include "MantidCurveFitting/CostFuncLeastSquares.h"
 #include "MantidCurveFitting/CostFuncRwp.h"
-#include "MantidCurveFitting/CostFuncSimplex.h"
 
 #include <stdexcept>
 #include <vector>
@@ -66,8 +65,6 @@ public:
   void rwpVal(const CostFuncRwp& rwp);
   /// Calculate the value, first and second derivatives of a RWP cost function
   void rwpValDerivHessian(const CostFuncRwp& rwp, bool evalFunction, bool evalDeriv, bool evalHessian);
-  virtual void simplexVal(const CostFuncSimplex& simplex);
-  virtual void simplexValDerivHessian(const CostFuncSimplex& leastSquares, bool evalFunction, bool evalDeriv, bool evalHessian);
 
   /// Create an instance of SeqDomain in one of two forms: either SeqDomain for sequential domain creation
   /// or ParDomain for parallel calculations

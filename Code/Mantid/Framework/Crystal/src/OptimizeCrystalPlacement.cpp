@@ -355,10 +355,6 @@ namespace Mantid
 
       fit_alg->setProperty( "MaxIterations" , 60 );
 
-      fit_alg->setProperty( "Minimizer" , "Simplex" );
-
-      fit_alg->setProperty( "CostFunction" , "Simplex" );
-
       fit_alg->setProperty( "Constraints" , Constr );
 
       fit_alg->setProperty( "InputWorkspace" , mwkspc );
@@ -384,14 +380,6 @@ namespace Mantid
         Ties +="GonRotx=0.0,GonRoty=0.0,GonRotz=0.0";
 
       }
-      else
-          {
-            if( !Ties.empty())
-               Ties +=",";
-
-            Ties +="GonRotx=0.0,GonRotz=0.0";
-
-          }
 
       if( !Ties.empty())
          fit_alg->setProperty("Ties",Ties);
