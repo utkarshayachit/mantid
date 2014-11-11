@@ -22,6 +22,7 @@ set ( SRC_FILES
 	src/CostFuncFitting.cpp
 	src/CostFuncLeastSquares.cpp
 	src/CostFuncRwp.cpp
+	src/CostFuncSimplex.cpp
 	src/CubicSpline.cpp
 	src/DampingMinimizer.cpp
 	src/DeltaFunction.cpp
@@ -127,6 +128,7 @@ set ( INC_FILES
 	inc/MantidCurveFitting/CostFuncFitting.h
 	inc/MantidCurveFitting/CostFuncLeastSquares.h
 	inc/MantidCurveFitting/CostFuncRwp.h
+	inc/MantidCurveFitting/CostFuncSimplex.h
 	inc/MantidCurveFitting/CubicSpline.h
 	inc/MantidCurveFitting/DampingMinimizer.h
 	inc/MantidCurveFitting/DeltaFunction.h

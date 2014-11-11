@@ -96,7 +96,26 @@ void SeqDomain::leastSquaresVal(const CostFuncLeastSquares& leastSquares)
     leastSquares.addVal( domain, values );
   }
 }
-
+/**
+ * Calculate the value of a simplex cost function
+ * @param leastSquares :: The least squares cost func to calculate the value for
+ */
+void SeqDomain::simplexVal(const CostFuncSimplex& simplex)
+{
+  API::FunctionDomain_sptr domain;
+  API::FunctionValues_sptr values;
+  const size_t n = getNDomains();
+  for(size_t i = 0; i < n; ++i)
+  {
+    values.reset();
+    getDomainAndValues( i, domain, values );
+    if (!values)
+    {
+      throw std::runtime_error("Simplex: undefined FunctionValues.");
+    }
+    simplex.addVal( domain, values );
+  }
+}
 //------------------------------------------------------------------------------------------------
 /**
  * Calculate the value of a least squares cost function
@@ -140,6 +159,30 @@ void SeqDomain::leastSquaresValDerivHessian(const CostFuncLeastSquares& leastSqu
       throw std::runtime_error("LeastSquares: undefined FunctionValues.");
     }
     leastSquares.addValDerivHessian(leastSquares.getFittingFunction(),domain,values,evalFunction,evalDeriv,evalHessian);
+  }
+}
+
+/**
+ * Calculate the value, first and second derivatives of a simplex cost function
+ * @param simplex :: The simplex cost func to calculate the value for
+ * @param evalFunction :: Flag to evaluate the value of the cost function
+ * @param evalDeriv :: Flag to evaluate the first derivatives
+ * @param evalHessian :: Flag to evaluate the Hessian (second derivatives)
+ */
+void SeqDomain::simplexValDerivHessian(const CostFuncSimplex& simplex, bool evalFunction, bool evalDeriv, bool evalHessian)
+{
+  API::FunctionDomain_sptr domain;
+  API::FunctionValues_sptr values;
+  const size_t n = getNDomains();
+  for(size_t i = 0; i < n; ++i)
+  {
+    values.reset();
+    getDomainAndValues( i, domain, values );
+    if (!values)
+    {
+      throw std::runtime_error("Simplex: undefined FunctionValues.");
+    }
+    simplex.addValDerivHessian(simplex.getFittingFunction(),domain,values,evalFunction,evalDeriv,evalHessian);
   }
 }
 
