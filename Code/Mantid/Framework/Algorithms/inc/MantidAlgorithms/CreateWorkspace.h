@@ -54,7 +54,7 @@ public:
   ///Summary of algorithms purpose
   virtual const std::string summary() const {return "This algorithm constructs a MatrixWorkspace when passed a vector for each of the X, Y, and E data values.";}
 
-  virtual const std::string category() const { return "Utility\\Workspaces"; } ///< @return the algorithms category
+  virtual const std::string category() const { return "Utility\\TestAlgorithm"; } ///< @return the algorithms category
   virtual int version() const { return (1); } ///< @return version number of algorithm
 
 private:

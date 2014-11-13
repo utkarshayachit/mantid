@@ -60,7 +60,7 @@ namespace Algorithms
   int CreateSampleWorkspace::version() const { return 1;};
   
   /// Algorithm's category for identification. @see Algorithm::category
-  const std::string CreateSampleWorkspace::category() const { return "Utility\\Workspaces";}
+  const std::string CreateSampleWorkspace::category() const { return "Utility\\TestAlgorithm";}
 
   //----------------------------------------------------------------------------------------------
   /** Initialize the algorithm's properties.
