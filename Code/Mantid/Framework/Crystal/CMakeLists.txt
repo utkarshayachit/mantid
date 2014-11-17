@@ -33,6 +33,7 @@ set ( SRC_FILES
 	src/LoadIsawSpectrum.cpp
 	src/LoadIsawUB.cpp
 	src/MaskPeaksWorkspace.cpp
+	src/MatchingPeaksWorkspaces.cpp
 	src/NormaliseVanadium.cpp
 	src/OptimizeCrystalPlacement.cpp
 	src/OptimizeExtinctionParameters.cpp
@@ -105,6 +106,7 @@ set ( INC_FILES
 	inc/MantidCrystal/LoadIsawSpectrum.h
 	inc/MantidCrystal/LoadIsawUB.h
 	inc/MantidCrystal/MaskPeaksWorkspace.h
+	inc/MantidCrystal/MatchingPeaksWorkspaces.h
 	inc/MantidCrystal/NormaliseVanadium.h
 	inc/MantidCrystal/OptimizeCrystalPlacement.h
 	inc/MantidCrystal/OptimizeExtinctionParameters.h
@@ -172,6 +174,7 @@ set ( TEST_FILES
 	LoadIsawSpectrumTest.h
 	LoadIsawUBTest.h
 	MaskPeaksWorkspaceTest.h
+	MatchingPeaksWorkspacesTest.h
 	NormaliseVanadiumTest.h
 	OptimizeCrystalPlacementTest.h
 	OptimizeLatticeForCellTypeTest.h
