@@ -30,8 +30,8 @@ class sfCalculator():
     bFittingPlot = False
 
     #size of detector
-    alpha_pixel_nbr = 256
-    beta_pixel_nbr = 304  #will be integrated over this dimension
+    alpha_pixel_nbr = 304
+    beta_pixel_nbr = 256  #will be integrated over this dimension
 
     #name of numerators and denominators
     numerator = None #ex: AiD0
@@ -245,8 +245,8 @@ class sfCalculator():
             self.alpha_pixel_nbr = 304
             self.beta_pixel_nbr = 256
         else:
-            alpha_pixel_nbr = 256
-            beta_pixel_nbr = 304  #will be integrated over this dimension
+            self.alpha_pixel_nbr = 256
+            self.beta_pixel_nbr = 304  #will be integrated over this dimension
 
         proton_charge = self._getProtonCharge(EventDataWks)
         print '----> rebinning '
