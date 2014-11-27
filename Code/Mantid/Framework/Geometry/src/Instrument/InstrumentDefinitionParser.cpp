@@ -513,20 +513,18 @@ namespace Geometry
     // Rotate coordinate system of this component
     if ( pElem->hasAttribute("rot") )
     {
-      // assumed to be in degrees
-      double rotAngle = angleConvertConst*
-        boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("rot")).c_str() ));
+      double rotAngle = angleConvertConst*atof( (pElem->getAttribute("rot")).c_str() ); // assumed to be in degrees
 
       double axis_x = 0.0;
       double axis_y = 0.0;
       double axis_z = 1.0;
 
       if ( pElem->hasAttribute("axis-x") )
-        axis_x = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("axis-x")).c_str() ));
+        axis_x = atof( (pElem->getAttribute("axis-x")).c_str() );
       if ( pElem->hasAttribute("axis-y") )
-        axis_y = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("axis-y")).c_str() ));
+        axis_y = atof( (pElem->getAttribute("axis-y")).c_str() );
       if ( pElem->hasAttribute("axis-z") )
-        axis_z = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("axis-z")).c_str() ));
+        axis_z = atof( (pElem->getAttribute("axis-z")).c_str() );
 
       comp->rotate(Kernel::Quat(rotAngle, Kernel::V3D(axis_x,axis_y,axis_z)));
     }
@@ -586,20 +584,18 @@ namespace Geometry
 
       if (rElem)
       {
-        // assumed to be in degrees
-        double rotAngle = angleConvertConst *
-          boost::lexical_cast<float>(Strings::strip( (rElem->getAttribute("val")).c_str() ));
+        double rotAngle = angleConvertConst*atof( (rElem->getAttribute("val")).c_str() ); // assumed to be in degrees
 
         double axis_x = 0.0;
         double axis_y = 0.0;
         double axis_z = 1.0;
 
         if ( rElem->hasAttribute("axis-x") )
-          axis_x = boost::lexical_cast<float>(Strings::strip( (rElem->getAttribute("axis-x")).c_str() ));
+          axis_x = atof( (rElem->getAttribute("axis-x")).c_str() );
         if ( rElem->hasAttribute("axis-y") )
-          axis_y = boost::lexical_cast<float>(Strings::strip( (rElem->getAttribute("axis-y")).c_str() ));
+          axis_y = atof( (rElem->getAttribute("axis-y")).c_str() );
         if ( rElem->hasAttribute("axis-z") )
-          axis_z = boost::lexical_cast<float>(Strings::strip( (rElem->getAttribute("axis-z")).c_str() ));
+          axis_z = atof( (rElem->getAttribute("axis-z")).c_str() );
 
         comp->rotate(Kernel::Quat(rotAngle, Kernel::V3D(axis_x,axis_y,axis_z)));
 
@@ -632,23 +628,13 @@ namespace Geometry
     {
       double R=0.0, theta=0.0, phi=0.0;
 
-      if ( pElem->hasAttribute("r") )
-        R = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("r")).c_str() ));
-      if ( pElem->hasAttribute("t") )
-        theta = angleConvertConst *
-          boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("t")).c_str() ));
-      if ( pElem->hasAttribute("p") )
-        phi = angleConvertConst *
-          boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("p")).c_str() ));
+      if ( pElem->hasAttribute("r") ) R = atof((pElem->getAttribute("r")).c_str());
+      if ( pElem->hasAttribute("t") ) theta = angleConvertConst*atof((pElem->getAttribute("t")).c_str());
+      if ( pElem->hasAttribute("p") ) phi = angleConvertConst*atof((pElem->getAttribute("p")).c_str());
 
-      if ( pElem->hasAttribute("R") )
-        R = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("R")).c_str() ));
-      if ( pElem->hasAttribute("theta") )
-        theta = angleConvertConst *
-          boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("theta")).c_str() ));
-      if ( pElem->hasAttribute("phi") )
-        phi = angleConvertConst *
-          boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("phi")).c_str() ));
+      if ( pElem->hasAttribute("R") ) R = atof((pElem->getAttribute("R")).c_str());
+      if ( pElem->hasAttribute("theta") ) theta = angleConvertConst*atof((pElem->getAttribute("theta")).c_str());
+      if ( pElem->hasAttribute("phi") ) phi = angleConvertConst*atof((pElem->getAttribute("phi")).c_str());
 
       if ( deltaOffsets )
       {
@@ -700,12 +686,9 @@ namespace Geometry
     {
       double x=0.0, y=0.0, z=0.0;
 
-      if ( pElem->hasAttribute("x") )
-        x = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("x")).c_str() ));
-      if ( pElem->hasAttribute("y") )
-        y = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("y")).c_str() ));
-      if ( pElem->hasAttribute("z") )
-        z = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("z")).c_str() ));
+      if ( pElem->hasAttribute("x") ) x = atof((pElem->getAttribute("x")).c_str());
+      if ( pElem->hasAttribute("y") ) y = atof((pElem->getAttribute("y")).c_str());
+      if ( pElem->hasAttribute("z") ) z = atof((pElem->getAttribute("z")).c_str());
 
       retVal(x,y,z);
     }
@@ -1202,22 +1185,15 @@ namespace Geometry
       boost::shared_ptr<Geometry::Object> shape = mapTypeNameToShape[shapeType];
 
       //These parameters are in the TYPE defining RectangularDetector
-      if ( pType->hasAttribute("xpixels") )
-        xpixels = boost::lexical_cast<int>(Strings::strip( (pType->getAttribute("xpixels")).c_str() ));
-      if ( pType->hasAttribute("xstart") )
-        xstart  = boost::lexical_cast<float>(Strings::strip( (pType->getAttribute("xstart")).c_str() ));
-      if ( pType->hasAttribute("xstep") )
-        xstep = boost::lexical_cast<float>(Strings::strip( (pType->getAttribute("xstep")).c_str() ));
-      if ( pType->hasAttribute("ypixels") )
-        ypixels = boost::lexical_cast<int>(Strings::strip( (pType->getAttribute("ypixels")).c_str() ));
-      if ( pType->hasAttribute("ystart") )
-        ystart = boost::lexical_cast<float>(Strings::strip( (pType->getAttribute("ystart")).c_str() ));
-      if ( pType->hasAttribute("ystep") )
-        ystep = boost::lexical_cast<float>(Strings::strip( (pType->getAttribute("ystep")).c_str() ));
+      if ( pType->hasAttribute("xpixels") ) xpixels = atoi((pType->getAttribute("xpixels")).c_str());
+      if ( pType->hasAttribute("xstart") )  xstart  = atof((pType->getAttribute("xstart")).c_str());
+      if ( pType->hasAttribute("xstep") )   xstep   = atof((pType->getAttribute("xstep")).c_str());
+      if ( pType->hasAttribute("ypixels") ) ypixels = atoi((pType->getAttribute("ypixels")).c_str());
+      if ( pType->hasAttribute("ystart") )  ystart  = atof((pType->getAttribute("ystart")).c_str());
+      if ( pType->hasAttribute("ystep") )   ystep   = atof((pType->getAttribute("ystep")).c_str());
 
       //THESE parameters are in the INSTANCE of this type - since they will change.
-      if ( pCompElem->hasAttribute("idstart") ) 
-        idstart = boost::lexical_cast<int>(Strings::strip((pCompElem->getAttribute("idstart")).c_str()));
+      if ( pCompElem->hasAttribute("idstart") ) idstart = atoi((pCompElem->getAttribute("idstart")).c_str());
       if ( pCompElem->hasAttribute("idfillbyfirst") )
         idfillbyfirst_y = (pCompElem->getAttribute("idfillbyfirst") == "y");
       //Default ID row step size
@@ -1225,11 +1201,10 @@ namespace Geometry
         else idstepbyrow = xpixels;
       if ( pCompElem->hasAttribute("idstepbyrow") )
       {
-        idstepbyrow = boost::lexical_cast<int>(Strings::strip((pCompElem->getAttribute("idstepbyrow")).c_str()));
+        idstepbyrow = atoi((pCompElem->getAttribute("idstepbyrow")).c_str());
       }
       //Default ID row step size
-      if ( pCompElem->hasAttribute("idstep") ) 
-        idstep = boost::lexical_cast<int>(Strings::strip((pCompElem->getAttribute("idstep")).c_str()));
+      if ( pCompElem->hasAttribute("idstep") ) idstep = atoi((pCompElem->getAttribute("idstep")).c_str());
 
       // Now, initialize all the pixels in the bank
       bank->initialize(shape, xpixels, xstart, xstep, ypixels, ystart, ystep, idstart, idfillbyfirst_y, idstepbyrow, idstep);
@@ -1404,17 +1379,16 @@ namespace Geometry
 
     if ( pE->hasAttribute("start") )
     {
-      int startID = boost::lexical_cast<int>(Strings::strip( (pE->getAttribute("start")).c_str() ));
+      int startID = atoi( (pE->getAttribute("start")).c_str() );
 
       int endID;
       if ( pE->hasAttribute("end") )
-        endID = boost::lexical_cast<int>(Strings::strip( (pE->getAttribute("end")).c_str() ));
+        endID = atoi( (pE->getAttribute("end")).c_str() );
       else
         endID = startID;
 
       int increment = 1;
-      if ( pE->hasAttribute("step") )
-        increment = boost::lexical_cast<int>(Strings::strip( (pE->getAttribute("step")).c_str() ));
+      if ( pE->hasAttribute("step") ) increment = atoi( (pE->getAttribute("step")).c_str() );
 
       //check the start end and increment values are sensible
       if (((endID-startID)/increment) < 0)
@@ -1456,22 +1430,21 @@ namespace Geometry
 
           if ( pIDElem->hasAttribute("val") )
           {
-            int valID = boost::lexical_cast<int>(Strings::strip( (pIDElem->getAttribute("val")).c_str() ));
+            int valID = atoi( (pIDElem->getAttribute("val")).c_str() );
             idList.vec.push_back(valID);
           }
           else if ( pIDElem->hasAttribute("start") )
           {
-            int startID = boost::lexical_cast<int>(Strings::strip( (pIDElem->getAttribute("start")).c_str() ));
+            int startID = atoi( (pIDElem->getAttribute("start")).c_str() );
 
             int endID;
             if ( pIDElem->hasAttribute("end") )
-              endID = boost::lexical_cast<int>(Strings::strip( (pIDElem->getAttribute("end")).c_str() ));
+              endID = atoi( (pIDElem->getAttribute("end")).c_str() );
             else
               endID = startID;
 
             int increment = 1;
-            if ( pIDElem->hasAttribute("step") ) 
-              increment = boost::lexical_cast<int>(Strings::strip( (pIDElem->getAttribute("step")).c_str() ));
+            if ( pIDElem->hasAttribute("step") ) increment = atoi( (pIDElem->getAttribute("step")).c_str() );
 
             //check the start end and increment values are sensible
             if (((endID-startID)/increment) < 0)
@@ -1595,23 +1568,13 @@ namespace Geometry
     {
       double R=0.0, theta=0.0, phi=0.0;
 
-      if ( pElem->hasAttribute("r") )
-        R = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("r")).c_str() ));
-      if ( pElem->hasAttribute("t") )
-        theta = m_angleConvertConst *
-          boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("t")).c_str() ));
-      if ( pElem->hasAttribute("p") )
-        phi = m_angleConvertConst *
-          boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("p")).c_str() ));
+      if ( pElem->hasAttribute("r") ) R = atof((pElem->getAttribute("r")).c_str());
+      if ( pElem->hasAttribute("t") ) theta = m_angleConvertConst*atof((pElem->getAttribute("t")).c_str());
+      if ( pElem->hasAttribute("p") ) phi = m_angleConvertConst*atof((pElem->getAttribute("p")).c_str());
 
-      if ( pElem->hasAttribute("R") )
-        R = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("R")).c_str() ));
-      if ( pElem->hasAttribute("theta") )
-        theta = m_angleConvertConst *
-          boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("theta")).c_str() ));
-      if ( pElem->hasAttribute("phi") )
-        phi = m_angleConvertConst *
-          boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("phi")).c_str() ));
+      if ( pElem->hasAttribute("R") ) R = atof((pElem->getAttribute("R")).c_str());
+      if ( pElem->hasAttribute("theta") ) theta = m_angleConvertConst*atof((pElem->getAttribute("theta")).c_str());
+      if ( pElem->hasAttribute("phi") ) phi = m_angleConvertConst*atof((pElem->getAttribute("phi")).c_str());
 
       retV3D.spherical(R,theta,phi);
     }
@@ -1619,12 +1582,9 @@ namespace Geometry
     {
       double x=0.0, y=0.0, z=0.0;
 
-      if ( pElem->hasAttribute("x") )
-        x = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("x")).c_str() ));
-      if ( pElem->hasAttribute("y") )
-        y = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("y")).c_str() ));
-      if ( pElem->hasAttribute("z") )
-        z = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("z")).c_str() ));
+      if ( pElem->hasAttribute("x") ) x = atof((pElem->getAttribute("x")).c_str());
+      if ( pElem->hasAttribute("y") ) y = atof((pElem->getAttribute("y")).c_str());
+      if ( pElem->hasAttribute("z") ) z = atof((pElem->getAttribute("z")).c_str());
 
       retV3D(x,y,z);
     }
@@ -1658,9 +1618,7 @@ namespace Geometry
 
       if ( facingElem->hasAttribute("rot") )
       {
-        // assumed to be in degrees
-        double rotAngle = m_angleConvertConst *
-          boost::lexical_cast<float>(Strings::strip( (facingElem->getAttribute("rot")).c_str() )); 
+        double rotAngle = m_angleConvertConst*atof( (facingElem->getAttribute("rot")).c_str() ); // assumed to be in degrees
         comp->rotate(Kernel::Quat(rotAngle, Kernel::V3D(0,0,1)));
       }
 
@@ -1918,8 +1876,8 @@ namespace Geometry
           for ( unsigned long i = 0; i < numberPoint; i++)
           {
             Element* pPoint = static_cast<Element*>(pNLpoint->item(i));
-            double x = boost::lexical_cast<float>(Strings::strip( pPoint->getAttribute("x").c_str() ));
-            double y = boost::lexical_cast<float>(Strings::strip( pPoint->getAttribute("y").c_str() ));
+            double x = atof( pPoint->getAttribute("x").c_str() );
+            double y = atof( pPoint->getAttribute("y").c_str() );
             interpolation->addPoint(x,y);
           }
         }
@@ -2604,12 +2562,9 @@ namespace Geometry
     {
       double R=0.0, theta=0.0, phi=0.0;
 
-      if ( pElem->hasAttribute("R") )
-        R = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("R")).c_str() ));
-      if ( pElem->hasAttribute("theta") )
-        theta = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("theta")).c_str() ));
-      if ( pElem->hasAttribute("phi") )
-        phi = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("phi")).c_str() ));
+      if ( pElem->hasAttribute("R") ) R = atof((pElem->getAttribute("R")).c_str());
+      if ( pElem->hasAttribute("theta") ) theta = atof((pElem->getAttribute("theta")).c_str());
+      if ( pElem->hasAttribute("phi") ) phi = atof((pElem->getAttribute("phi")).c_str());
 
       retVal.spherical(R,theta,phi);
     }
@@ -2622,11 +2577,11 @@ namespace Geometry
       double R=0.0, theta=0.0, phi=0.0;
 
       if ( pElem->hasAttribute("r") )
-        R = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("r")).c_str() ));
+        R = atof((pElem->getAttribute("r")).c_str());
       if ( pElem->hasAttribute("t") )
-        theta = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("t")).c_str() ));
+        theta = atof((pElem->getAttribute("t")).c_str());
       if ( pElem->hasAttribute("p") )
-        phi = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("p")).c_str() ));
+        phi = atof((pElem->getAttribute("p")).c_str());
 
       retVal.spherical(R,theta,phi);
     }
@@ -2634,12 +2589,9 @@ namespace Geometry
     {
       double x=0.0, y=0.0, z=0.0;
 
-      if ( pElem->hasAttribute("x") )
-        x = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("x")).c_str() ));
-      if ( pElem->hasAttribute("y") )
-        y = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("y")).c_str() ));
-      if ( pElem->hasAttribute("z") )
-        z = boost::lexical_cast<float>(Strings::strip( (pElem->getAttribute("z")).c_str() ));
+      if ( pElem->hasAttribute("x") ) x = atof((pElem->getAttribute("x")).c_str());
+      if ( pElem->hasAttribute("y") ) y = atof((pElem->getAttribute("y")).c_str());
+      if ( pElem->hasAttribute("z") ) z = atof((pElem->getAttribute("z")).c_str());
 
       retVal(x,y,z);
     }
