@@ -1489,6 +1489,11 @@
               </item>
               <item>
                <property name="text">
+                <string>Annulus</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
                 <string>Cylinder</string>
                </property>
               </item>

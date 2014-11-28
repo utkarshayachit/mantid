@@ -178,7 +178,7 @@ namespace IDA
         size = "[" + uiForm().absp_lets->text() + ", 0.0, 0.0]";
       }
     }
-    else if ( uiForm().absp_cbShape->currentText() == "Cylinder" )
+    else if ( uiForm().absp_cbShape->currentText() == "Annulus" )
     {
       geom = "cyl";
 
@@ -193,6 +193,22 @@ namespace IDA
       {
         size = "[" + uiForm().absp_ler1->text() + ", " +
           uiForm().absp_ler2->text() + ", 0.0, 0.0 ]";
+      }
+    }
+    else if ( uiForm().absp_cbShape->currentText() == "Cylinder" )
+    {
+      geom = "cyl";
+
+      // R3 only populated when using can. R4 is fixed to 0.0
+      if ( uiForm().absp_ckUseCan->isChecked() ) 
+      {
+        size = "[0.0, " +
+          uiForm().absp_ler1->text() + ", " +
+          uiForm().absp_ler3->text() + ", 0.0 ]";
+      }
+      else
+      {
+        size = "[" + uiForm().absp_ler1->text() + ",0.0 , 0.0, 0.0 ]";
       }
     }
 
@@ -298,7 +314,9 @@ namespace IDA
 
     uiv.checkFieldIsValid("Beam Width", uiForm().absp_lewidth, uiForm().absp_valWidth);
 
-    if ( uiForm().absp_cbShape->currentText() == "Flat" )
+    QString shape = uiForm().absp_cbShape->currentText();
+
+    if ( shape == "Flat" )
     {
       // Flat Geometry
       uiv.checkFieldIsValid("Thickness", uiForm().absp_lets, uiForm().absp_valts);
@@ -312,16 +330,21 @@ namespace IDA
       uiv.checkFieldIsValid("Can Angle to Beam must be in the range [-180 to -100], [-80 to 80] or [100 to 180].", uiForm().absp_leavar,  uiForm().absp_valAvar);
     }
 
-    if ( uiForm().absp_cbShape->currentText() == "Cylinder" )
+    if ( shape == "Cylinder" || shape == "Annulus" )
     {
       // Cylinder geometry
       uiv.checkFieldIsValid("Radius 1", uiForm().absp_ler1, uiForm().absp_valR1);
-      uiv.checkFieldIsValid("Radius 2", uiForm().absp_ler2, uiForm().absp_valR2);
-      
       double radius1 = uiForm().absp_ler1->text().toDouble();
-      double radius2 = uiForm().absp_ler2->text().toDouble();
-      if( radius1 >= radius2 )
-        uiv.addErrorMessage("Radius 1 should be less than Radius 2.");
+      double radius2 = 0;
+
+      if ( shape == "Annulus" )
+      {
+        uiv.checkFieldIsValid("Radius 2", uiForm().absp_ler2, uiForm().absp_valR2);
+        radius2 = uiForm().absp_ler2->text().toDouble();
+
+        if( radius1 >= radius2 )
+          uiv.addErrorMessage("Radius 1 should be less than Radius 2.");
+      }
 
       // R3 only relevant when using can
       if ( useCan )
@@ -329,16 +352,32 @@ namespace IDA
         uiv.checkFieldIsValid("Radius 3", uiForm().absp_ler3, uiForm().absp_valR3);
         
         double radius3 = uiForm().absp_ler3->text().toDouble();
-        if( radius2 >= radius3 )
-          uiv.addErrorMessage("Radius 2 should be less than Radius 3.");
 
+        if ( shape == "Annulus" )
+        {
+          if( radius2 >= radius3 )
+            uiv.addErrorMessage("Radius 2 should be less than Radius 3.");
+        }
+        else
+        {
+          if( radius1 >= radius3 )
+            uiv.addErrorMessage("Radius 2 should be less than Radius 1.");
+        }
       }
 
-      uiv.checkFieldIsValid("Step Size", uiForm().absp_leavar,  uiForm().absp_valAvar);
-
+      uiv.checkFieldIsValid("Step Size", uiForm().absp_leavar, uiForm().absp_valAvar);
       double stepSize = uiForm().absp_leavar->text().toDouble();
-      if( stepSize >= (radius2 - radius1) )
-        uiv.addErrorMessage("Step size should be less than (Radius 2 - Radius 1).");
+
+      if ( shape == "Annulus" )
+      {
+        if( stepSize >= (radius2 - radius1) )
+          uiv.addErrorMessage("Step size should be less than (Radius 2 - Radius 1).");
+      }
+      else
+      {
+        if( stepSize >= radius1 )
+          uiv.addErrorMessage("Step size should be less than Radius 1.");
+      }
     }
 
     // Sample details
@@ -397,10 +436,23 @@ namespace IDA
 
   void CalcCorr::shape(int index)
   {
-    uiForm().absp_swShapeDetails->setCurrentIndex(index);
     // Meaning of the "avar" variable changes depending on shape selection
     if ( index == 0 ) { uiForm().absp_lbAvar->setText("Sample Angle:"); }
     else if ( index == 1 ) { uiForm().absp_lbAvar->setText("Step Size:"); }
+
+    // Radius 2 is not used for annulus
+    uiForm().absp_ler2->setEnabled(index != 2);
+
+    // Clear validation marker on Radius 2 whne using Cylinder
+    if(index == 2)
+      uiForm().absp_valR2->setText("");
+    else
+      uiForm().absp_valR2->setText("*");
+
+    // Switch to the correct page of shape widgets
+    if(index > 1)
+      index = 1;
+    uiForm().absp_swShapeDetails->setCurrentIndex(index);
   }
 
   void CalcCorr::useCanChecked(bool checked)
