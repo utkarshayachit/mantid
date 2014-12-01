@@ -144,8 +144,8 @@ def AbsRun(inputWS, geom, beam, ncan, size, density, sigs, siga, avar, Verbose, 
             (A1,A2,A3,A4) = FlatAbs(ncan, size, density, sigs, siga, angles, waves)
             kill = 0
 
-        #geometry is a cylinder
-        elif geom == 'cyl':
+        #geometry is an annulus or cylinder
+        elif geom == 'cyl' or geom == 'ann':
             astep = avar
             if (astep) < 1e-5:
                 error = 'Step size is zero'

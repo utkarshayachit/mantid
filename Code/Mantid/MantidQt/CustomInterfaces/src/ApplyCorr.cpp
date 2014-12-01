@@ -131,6 +131,10 @@ namespace IDA
     {
       geom = "cyl";
     }
+    else if ( geom == "Annulus" )
+    {
+      geom = "ann";
+    }
 
     QString pyInput = "from IndirectDataAnalysis import abscorFeeder, loadNexus\n";
 
@@ -284,6 +288,12 @@ namespace IDA
         uiForm().abscor_dsCorrections->setFBSuffixes(QStringList(ext + ".nxs"));
         break;
       case 1:
+        // Geomtry is annulus
+        ext = "_ann_Abs";
+        uiForm().abscor_dsCorrections->setWSSuffixes(QStringList(ext));
+        uiForm().abscor_dsCorrections->setFBSuffixes(QStringList(ext + ".nxs"));
+        break;
+      case 2:
         // Geomtry is cylinder
         ext = "_cyl_Abs";
         uiForm().abscor_dsCorrections->setWSSuffixes(QStringList(ext));

@@ -180,7 +180,7 @@ namespace IDA
     }
     else if ( uiForm().absp_cbShape->currentText() == "Annulus" )
     {
-      geom = "cyl";
+      geom = "ann";
 
       // R3 only populated when using can. R4 is fixed to 0.0
       if ( uiForm().absp_ckUseCan->isChecked() ) 
@@ -437,8 +437,12 @@ namespace IDA
   void CalcCorr::shape(int index)
   {
     // Meaning of the "avar" variable changes depending on shape selection
-    if ( index == 0 ) { uiForm().absp_lbAvar->setText("Sample Angle:"); }
-    else if ( index == 1 ) { uiForm().absp_lbAvar->setText("Step Size:"); }
+    if(index == 0)
+      // For Flat
+      uiForm().absp_lbAvar->setText("Sample Angle:");
+    else
+      // For Annulus and CYlinder
+      uiForm().absp_lbAvar->setText("Step Size:");
 
     // Radius 2 is not used for annulus
     uiForm().absp_ler2->setEnabled(index != 2);
