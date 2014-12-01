@@ -1388,13 +1388,11 @@
             <property name="workspaceSuffixes" stdset="0">
              <stringlist>
               <string>_red</string>
-              <string>_sqw</string>
              </stringlist>
             </property>
             <property name="fileBrowserSuffixes" stdset="0">
              <stringlist>
               <string>_red.nxs</string>
-              <string>_sqw.nxs</string>
              </stringlist>
             </property>
             <property name="showLoad" stdset="0">
@@ -1423,13 +1421,11 @@
             <property name="workspaceSuffixes" stdset="0">
              <stringlist>
               <string>_red</string>
-              <string>_sqw</string>
              </stringlist>
             </property>
             <property name="fileBrowserSuffixes" stdset="0">
              <stringlist>
               <string>_red.nxs</string>
-              <string>_sqw.nxs</string>
              </stringlist>
             </property>
             <property name="showLoad" stdset="0">
@@ -2769,14 +2765,42 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="toolTip">
+        <string>Open interface help page in your web browser.</string>
+       </property>
        <property name="maximumSize">
         <size>
-         <width>20</width>
-         <height>20</height>
+         <width>25</width>
+         <height>25</height>
         </size>
        </property>
        <property name="text">
         <string>?</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pbPythonExport">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string>Export a Python script for the algorithms run on this tab.</string>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>30</width>
+         <height>25</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Py</string>
        </property>
       </widget>
      </item>
@@ -2878,14 +2902,14 @@
   <tabstop>confit_ckSaveSeq</tabstop>
   <tabstop>absp_ckUseCan</tabstop>
   <tabstop>absp_cbShape</tabstop>
-  <tabstop>absp_leavar</tabstop>
-  <tabstop>absp_lewidth</tabstop>
   <tabstop>absp_lets</tabstop>
   <tabstop>absp_letc1</tabstop>
   <tabstop>absp_letc2</tabstop>
   <tabstop>absp_ler1</tabstop>
   <tabstop>absp_ler2</tabstop>
   <tabstop>absp_ler3</tabstop>
+  <tabstop>absp_leavar</tabstop>
+  <tabstop>absp_lewidth</tabstop>
   <tabstop>absp_lesamden</tabstop>
   <tabstop>absp_cbSampleInputType</tabstop>
   <tabstop>absp_lesamsigs</tabstop>
