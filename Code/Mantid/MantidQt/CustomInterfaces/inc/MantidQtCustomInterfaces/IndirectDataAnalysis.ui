@@ -84,13 +84,6 @@
        </item>
        <item>
         <layout class="QGridLayout" name="gridLayout">
-         <item row="0" column="4">
-          <widget class="QCheckBox" name="elwin_ckNormalise">
-           <property name="text">
-            <string>Normalise to Lowest Temperature</string>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="3">
           <spacer name="horizontalSpacer_28">
            <property name="orientation">
@@ -139,19 +132,6 @@
           <string>Output</string>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_5">
-          <item>
-           <widget class="QCheckBox" name="elwin_ckVerbose">
-            <property name="enabled">
-             <bool>true</bool>
-            </property>
-            <property name="text">
-             <string>Verbose</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
           <item>
            <spacer name="horizontalSpacer_8">
             <property name="orientation">
@@ -1408,13 +1388,11 @@
             <property name="workspaceSuffixes" stdset="0">
              <stringlist>
               <string>_red</string>
-              <string>_sqw</string>
              </stringlist>
             </property>
             <property name="fileBrowserSuffixes" stdset="0">
              <stringlist>
               <string>_red.nxs</string>
-              <string>_sqw.nxs</string>
              </stringlist>
             </property>
             <property name="showLoad" stdset="0">
@@ -1443,13 +1421,11 @@
             <property name="workspaceSuffixes" stdset="0">
              <stringlist>
               <string>_red</string>
-              <string>_sqw</string>
              </stringlist>
             </property>
             <property name="fileBrowserSuffixes" stdset="0">
              <stringlist>
               <string>_red.nxs</string>
-              <string>_sqw.nxs</string>
              </stringlist>
             </property>
             <property name="showLoad" stdset="0">
@@ -2779,14 +2755,42 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="toolTip">
+        <string>Open interface help page in your web browser.</string>
+       </property>
        <property name="maximumSize">
         <size>
-         <width>20</width>
-         <height>20</height>
+         <width>25</width>
+         <height>25</height>
         </size>
        </property>
        <property name="text">
         <string>?</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pbPythonExport">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string>Export a Python script for the algorithms run on this tab.</string>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>30</width>
+         <height>25</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Py</string>
        </property>
       </widget>
      </item>
@@ -2854,8 +2858,8 @@
  </customwidgets>
  <tabstops>
   <tabstop>tabWidget</tabstop>
+  <tabstop>elwin_inputFile</tabstop>
   <tabstop>elwin_pbPlotInput</tabstop>
-  <tabstop>elwin_ckVerbose</tabstop>
   <tabstop>elwin_ckPlot</tabstop>
   <tabstop>elwin_ckSave</tabstop>
   <tabstop>msd_ckVerbose</tabstop>
@@ -2876,8 +2880,6 @@
   <tabstop>pbHelp</tabstop>
   <tabstop>pbRun</tabstop>
   <tabstop>pbManageDirs</tabstop>
-  <tabstop>elwin_inputFile</tabstop>
-  <tabstop>elwin_ckNormalise</tabstop>
   <tabstop>leLogName</tabstop>
   <tabstop>furyfit_inputFile</tabstop>
   <tabstop>furyfit_pbPlotInput</tabstop>
@@ -2890,14 +2892,14 @@
   <tabstop>confit_ckSaveSeq</tabstop>
   <tabstop>absp_ckUseCan</tabstop>
   <tabstop>absp_cbShape</tabstop>
-  <tabstop>absp_leavar</tabstop>
-  <tabstop>absp_lewidth</tabstop>
   <tabstop>absp_lets</tabstop>
   <tabstop>absp_letc1</tabstop>
   <tabstop>absp_letc2</tabstop>
   <tabstop>absp_ler1</tabstop>
   <tabstop>absp_ler2</tabstop>
   <tabstop>absp_ler3</tabstop>
+  <tabstop>absp_leavar</tabstop>
+  <tabstop>absp_lewidth</tabstop>
   <tabstop>absp_lesamden</tabstop>
   <tabstop>absp_cbSampleInputType</tabstop>
   <tabstop>absp_lesamsigs</tabstop>

@@ -17,7 +17,7 @@ namespace CustomInterfaces
 namespace IDA
 {
   MSDFit::MSDFit(QWidget * parent) : IDATab(parent),
-    m_msdTree(NULL)
+    m_currentWsName(""), m_msdTree(NULL)
   {
   }
 
@@ -85,6 +85,10 @@ namespace IDA
 
     QString pyOutput = runPythonCode(pyInput);
     UNUSED_ARG(pyOutput);
+
+    // Set the result workspace for Python script export
+    QString dataName = uiForm().msd_dsSampleInput->getCurrentDataName();
+    m_pythonExportWsName = dataName.left(dataName.lastIndexOf("_")).toStdString() + "_msd";
   }
 
   void MSDFit::singleFit()
@@ -163,7 +167,7 @@ namespace IDA
     int minIndex = 0;
     int maxIndex = nHist - 1;
 
-    if (currentWsName == wsname)
+    if (m_currentWsName == wsname)
     {
       if (!plotSpec.isEmpty() && plotSpec.toInt() < nHist)
       {
@@ -210,7 +214,7 @@ namespace IDA
       showMessageBox(exc.what());
     }
 
-    currentWsName = wsname;
+    m_currentWsName = wsname;
   }
 
   void MSDFit::minChanged(double val)
