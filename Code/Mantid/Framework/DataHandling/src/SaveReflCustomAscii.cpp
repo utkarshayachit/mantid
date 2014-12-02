@@ -47,8 +47,8 @@ namespace Mantid
     
     void SaveReflCustomAscii::data(std::ofstream & file, const std::vector<double> & XData, bool exportDeltaQ)
     {
-     
-      AsciiPointBase::data(file, XData, getProperty("WriteDeltaQ"));
+      exportDeltaQ = getProperty("WriteDeltaQ");
+      AsciiPointBase::data(file, XData, exportDeltaQ);
     }
 
 
