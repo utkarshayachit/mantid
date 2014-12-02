@@ -31,14 +31,6 @@ namespace Mantid
       auto samp = m_ws->run();
       //std::string subtitle;
       std::string title = getProperty("Title");
-      /*try
-      {
-        subtitle = samp.getLogData("run_title")->value();
-      }
-      catch (Kernel::Exception::NotFoundError &)
-      {
-        subtitle = "";
-      }*/
 
       if (title != "") //if is toggled
       { 
