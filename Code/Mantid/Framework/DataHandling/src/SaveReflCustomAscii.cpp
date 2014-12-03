@@ -21,6 +21,7 @@ namespace Mantid
       declareProperty(new ArrayProperty<std::string>("LogList"),"List of logs to write to file.");
       declareProperty("Title", "", "Text to be written to the Title field");
       declareProperty("WriteDeltaQ", false, "If true, the error on DeltaQ will be written as the fourth column."); 
+      declareProperty("Subtitle", false, "If true, subtitle added to header.");
     }
 
     /** virtual method to add information to the file before the data
@@ -29,7 +30,8 @@ namespace Mantid
     void SaveReflCustomAscii::extraHeaders(std::ofstream & file)
     {
       auto samp = m_ws->run();
-      //std::string subtitle;
+      bool subtitle = getProperty("Subtitle");
+      std::string subtitleEntry;
       std::string title = getProperty("Title");
 
       if (title != "") //if is toggled
@@ -37,6 +39,19 @@ namespace Mantid
         file << "#" << title << std::endl;
       }
 
+      if(subtitle){
+        try
+        {
+          subtitleEntry = samp.getLogData("run_title")->value();
+        }
+        catch (Kernel::Exception::NotFoundError &)
+        {
+          subtitleEntry = "";
+        }
+      }
+
+      file << "#" << subtitleEntry << std::endl;
+      
       const std::vector<std::string> logList = getProperty("LogList");
       ///logs
       for (auto log = logList.begin(); log != logList.end(); ++log)
