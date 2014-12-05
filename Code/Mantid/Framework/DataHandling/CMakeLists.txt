@@ -409,6 +409,7 @@ set ( TEST_FILES
 	SaveMaskTest.h
 	SaveNISTDATTest.h
 	SaveNXSPETest.h
+	SaveNXTomoTest.h
 	SaveNexusProcessedTest.h
 	SaveNexusTest.h
 	SavePARTest.h
