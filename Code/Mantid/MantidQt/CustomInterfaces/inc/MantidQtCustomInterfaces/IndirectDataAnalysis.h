@@ -6,6 +6,7 @@
 //----------------------
 #include "ui_IndirectDataAnalysis.h"
 #include "MantidQtAPI/UserSubWindow.h"
+#include "MantidQtCustomInterfaces/IndirectTab.h"
 
 #include <Poco/NObserver.h>
 #include "MantidKernel/ConfigService.h"
@@ -54,7 +55,7 @@ namespace IDA
 
   public:
     /// The name of the interface as registered into the factory
-    static std::string name() { return "Indirect Data Analysis"; }
+    static std::string name() { return "Data Analysis"; }
     // This interface's categories.
     static QString categoryInfo() { return "Indirect"; }
     /// Default Constructor
@@ -74,12 +75,16 @@ namespace IDA
     void handleDirectoryChange(Mantid::Kernel::ConfigValChangeNotification_ptr pNf);
 
   private slots:
+    /// Called when the user clicks the Py button
+    void exportTabPython();
     /// Called when the Run button is pressed.  Runs current tab.
     void run();
     /// Opens a directory dialog.
     void openDirectoryDialog();
     /// Opens the Mantid Wiki web page of the current tab.
     void help();
+    /// Slot showing a message box to the user
+    void showMessageBox(const QString& message);
 
   private:
     /// UI form containing all Qt elements.
@@ -99,6 +104,7 @@ namespace IDA
 
     /// Map of unsigned int (TabChoice enum values) to tabs.
     std::map<unsigned int, IDATab*> m_tabs;
+
   };
 } // namespace IDA
 } // namespace CustomInterfaces

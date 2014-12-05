@@ -22,7 +22,7 @@ namespace Algorithms
   @author Peter G Parker, ISIS, RAL
   @date 2011-09-13
 
-  Copyright &copy; 2011 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+  Copyright &copy; 2011 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
   This file is part of Mantid.
 
@@ -64,12 +64,6 @@ protected:
   void init();
   /// Run the algorithm
   void exec();
-  /// Generate the line of script corresponding to the given AlgorithmHistory
-  std::string genAlgString(const API::AlgorithmHistory&);
-  /// Generate the parameter string (of format "[name]='[value]'") for the given PropertyHistory.
-  std::string genParamString(Mantid::Kernel::PropertyHistory_const_sptr, const API::IAlgorithm_sptr, const std::string algHistName);
-  // "Sanitize" property name.
-  std::string sanitizePropertyName(const std::string&);
 };
 
 

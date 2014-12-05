@@ -9,7 +9,7 @@
     @author Freddie Akeroyd, STFC ISIS Facility
     @date 31/07/2008
 
-    Copyright &copy; 2007-8 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+    Copyright &copy; 2007-8 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
     This file is part of ISIS Instrument control program.
     you can redistribute it and/or modify it under the terms of the 
@@ -17,6 +17,10 @@
 */
 
 ///@cond nodoc
+
+
+#include "isisds_command.h"
+
 /** 
 * holds information about the DAE connection - defined fully in idc.c
 */
@@ -33,7 +37,7 @@ extern "C" {
 #endif
 
 /** Open a DAE connection on host*/
-int IDCopen(const char* host, int mode, int options, idc_handle_t* fh);
+int IDCopen(const char* host, int mode, int options, idc_handle_t* fh, uint16_t port = ISISDS_PORT);
 
 /** Close a DAE connection */
 int IDCclose(idc_handle_t* fh);

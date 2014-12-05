@@ -19,7 +19,7 @@ namespace CurveFitting
 
     @author Roman Tolchenov, Tessella plc
 
-    Copyright &copy; 2009 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+    Copyright &copy; 2009 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
     This file is part of Mantid.
 
@@ -49,13 +49,13 @@ public:
   ~DerivMinimizer();
 
   /// Do one iteration.
-  bool iterate();
+  bool iterate(size_t);
   /// Return current value of the cost function
   double costFunctionVal();
   /// Calculate the covariance matrix.
   void calCovarianceMatrix(gsl_matrix * covar, double epsrel = 0.0001);
   /// Initialize minimizer, i.e. pass a function to minimize.
-  virtual void initialize(API::ICostFunction_sptr function);
+  virtual void initialize(API::ICostFunction_sptr function,size_t maxIterations = 0);
   /// Set maximum value of the gradient at which iterations can stop
   void setStopGradient(const double value);
 

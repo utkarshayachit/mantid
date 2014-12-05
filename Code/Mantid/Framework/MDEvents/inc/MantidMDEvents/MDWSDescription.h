@@ -32,7 +32,7 @@ namespace MDEvents
         
     @date 2011-28-12
 
-    Copyright &copy; 2011 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+    Copyright &copy; 2011 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
     This file is part of Mantid.
 
@@ -134,6 +134,8 @@ public:  // for the time being
     void setCoordinateSystem(const Mantid::API::SpecialCoordinateSystem system);
     /// @return the special coordinate system if any.
     Mantid::API::SpecialCoordinateSystem getCoordinateSystem() const;
+    /// sets number of bins each dimension is split
+    void setNumBins(const std::vector<int> &nBins);
 protected: // until MDWSDesctiptionDepricatedExist
     /// the variable which describes the number of the dimensions, in the target workspace. 
     /// Calculated from number of input properties and the operations, performed on input workspace;

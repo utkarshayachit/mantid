@@ -31,7 +31,7 @@ namespace Mantid
     written W=cos(theta/2), a=u*sin(theta/2), b=v*sin(theta/2), c=w*sin(theta/2)
     This class support all arithmetic operations for quaternions
 
-    Copyright &copy; 2007 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+    Copyright &copy; 2007 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
     This file is part of Mantid.
 
@@ -76,6 +76,7 @@ namespace Mantid
       void set(const double ww, const double aa, const double bb, const double cc);
       void setAngleAxis(const double _deg, const V3D& _axis);
       void getAngleAxis(double& _deg,double& _axis1,double& _axis2,double& axis3) const;
+      std::vector<double> getEulerAngles(const std::string& convention) const;
       /// Set the rotation (both don't change rotation axis)
       void setRotation(const double deg);
       //! Norm of a quaternion

@@ -17,6 +17,7 @@ namespace Mantid
     class FunctionDomain;
     class FunctionValues;
     class Workspace;
+    class IFuncMinimizer;
   }
 
   namespace CurveFitting
@@ -63,7 +64,7 @@ namespace Mantid
     @author Roman Tolchenov, Tessella plc
     @date 06/12/2011
 
-    Copyright &copy; 2007-8 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+    Copyright &copy; 2007-8 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
     This file is part of Mantid.
 
@@ -111,6 +112,7 @@ namespace Mantid
       void addWorkspaces();
       /// Read domain type property and cache the value
       void setDomainType();
+      void copyMinimizerOutput(const API::IFuncMinimizer& minimizer);
 
       /// Pointer to the fitting function
       API::IFunction_sptr m_function;

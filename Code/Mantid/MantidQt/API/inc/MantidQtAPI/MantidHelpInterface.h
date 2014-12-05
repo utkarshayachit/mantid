@@ -18,7 +18,7 @@ namespace API
   This class is an interface for the central widget for handling VATES visualization
   operations. Its main use is for the plugin mode operation of the viewer.
 
-  Copyright &copy; 2014 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+  Copyright &copy; 2014 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
   This file is part of Mantid.
 
@@ -53,6 +53,8 @@ public:
   virtual void showWikiPage(const std::string &page=std::string());
   virtual void showAlgorithm(const std::string &name=std::string(), const int version=-1);
   virtual void showAlgorithm(const QString &name, const int version=-1);
+  virtual void showConcept(const std::string &name);
+  virtual void showConcept(const QString &name);
   virtual void showFitFunction(const std::string &name=std::string());
 
 public slots:

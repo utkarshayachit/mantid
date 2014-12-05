@@ -18,7 +18,7 @@
 // Time we'll wait on a receive call (in seconds)
 const long RECV_TIMEOUT = 30;
 // Sleep time in case we need to wait for the data to become available (in milliseconds)
-const long RECV_WAIT = 100;
+const long RECV_WAIT = 1;
 
 //----------------------------------------------------------------------
 // Forward declarations
@@ -34,7 +34,7 @@ namespace Mantid
     /** ILiveListener is the interface implemented by classes which connect directly to
         instrument data acquisition systems (DAS) for retrieval of 'live' data into Mantid.
 
-        Copyright &copy; 2012 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+        Copyright &copy; 2012 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
         This file is part of Mantid.
 

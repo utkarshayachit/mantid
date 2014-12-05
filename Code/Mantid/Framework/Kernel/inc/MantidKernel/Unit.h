@@ -26,7 +26,7 @@ namespace Kernel
     @author Russell Taylor, Tessella Support Services plc
     @date 25/02/2008
 
-    Copyright &copy; 2008-2011 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+    Copyright &copy; 2008-2011 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
     This file is part of Mantid.
 
@@ -74,6 +74,10 @@ public:
   /// A label for the unit to be printed on axes, @see UnitLabel
   /// @return The unit label
   virtual const UnitLabel label() const = 0;
+
+  //Equality operators based on the value returned by unitID();
+  bool operator==(const Unit& u) const;
+  bool operator!=(const Unit& u) const;
 
   // Check whether the unit can be converted to another via a simple factor
   bool quickConversion(const Unit& destination, double& factor, double& power) const;

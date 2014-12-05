@@ -6,13 +6,14 @@
 //----------------------------------------------------------------------
 #include "MantidKernel/DllConfig.h"
 #include <iosfwd>
+#include <string>
 
 #ifdef _WIN32
 #include <time.h>
 #else
 #include <sys/time.h>
 #endif
-
+#include <string>
 
 namespace Mantid
 {
@@ -23,7 +24,7 @@ namespace Kernel
     @author Russell Taylor, Tessella plc
     @date 29/04/2010
 
-    Copyright &copy; 2007-9 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+    Copyright &copy; 2007-9 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
     This file is part of Mantid.
 

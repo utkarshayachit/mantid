@@ -2,6 +2,7 @@
 #include "MantidAPI/WorkspaceValidators.h"
 #include "MantidKernel/ListValidator.h"
 #include "MantidKernel/ArrayProperty.h"
+#include "MantidKernel/EnabledWhenProperty.h"
 #include "MantidKernel/BoundedValidator.h"
 #include "MantidKernel/RebinParamsValidator.h"
 #include <boost/optional.hpp>
@@ -44,15 +45,14 @@ namespace Mantid
     const std::string ReflectometryReductionOneAuto::category() const { return "Reflectometry\\ISIS";}
 
     /// Algorithm's summary for use in the GUI and help. @see Algorithm::summary
-    const std::string ReflectometryReductionOneAuto::summary() const { return "Reduces a single TOF reflectometry run into a mod Q vs I/I0 workspace. Performs transmission corrections.";};
+    const std::string ReflectometryReductionOneAuto::summary() const { return "Reduces a single TOF/Lambda reflectometry run into a mod Q vs I/I0 workspace. Performs transmission corrections.";};
 
     //----------------------------------------------------------------------------------------------
     /** Initialize the algorithm's properties.
     */
     void ReflectometryReductionOneAuto::init()
     {
-      auto input_validator = boost::make_shared<WorkspaceUnitValidator>("TOF");
-      declareProperty(new WorkspaceProperty<MatrixWorkspace>("InputWorkspace", "", Direction::Input, PropertyMode::Mandatory, input_validator), "Input run in TOF");
+      declareProperty(new WorkspaceProperty<MatrixWorkspace>("InputWorkspace", "", Direction::Input, PropertyMode::Mandatory), "Input run in TOF or Lambda");
 
       std::vector<std::string> analysis_modes;
       analysis_modes.push_back("PointDetectorAnalysis");
@@ -64,7 +64,9 @@ namespace Mantid
       declareProperty("AnalysisMode", analysis_modes[0], analysis_mode_validator, "Analysis Mode to Choose", Direction::Input);
 
       declareProperty(new WorkspaceProperty<MatrixWorkspace>("FirstTransmissionRun", "", Direction::Input, PropertyMode::Optional), "First transmission run workspace in TOF or Wavelength");
-      declareProperty(new WorkspaceProperty<MatrixWorkspace>("SecondTransmissionRun", "", Direction::Input, PropertyMode::Optional, input_validator), "Second transmission run workspace in TOF");
+
+      auto tof_validator = boost::make_shared<WorkspaceUnitValidator>("TOF");
+      declareProperty(new WorkspaceProperty<MatrixWorkspace>("SecondTransmissionRun", "", Direction::Input, PropertyMode::Optional, tof_validator), "Second transmission run workspace in TOF");
       declareProperty(new WorkspaceProperty<MatrixWorkspace>("OutputWorkspace", "", Direction::Output), "Output workspace in wavelength q");
       declareProperty(new WorkspaceProperty<MatrixWorkspace>("OutputWorkspaceWavelength", "", Direction::Output), "Output workspace in wavelength");
 
@@ -99,6 +101,42 @@ namespace Mantid
 
       declareProperty("StrictSpectrumChecking", true, "Strict checking between spectrum numbers in input workspaces and transmission workspaces.");
 
+      //Polarization correction inputs --------------
+      std::vector<std::string> propOptions;
+      propOptions.push_back(noPolarizationCorrectionMode());
+      propOptions.push_back(pALabel());
+      propOptions.push_back(pNRLabel());
+
+      declareProperty("PolarizationAnalysis", noPolarizationCorrectionMode(),
+          boost::make_shared<StringListValidator>(propOptions), "What Polarization mode will be used?\n"
+          "None: No correction\n"
+          "PNR: Polarized Neutron Reflectivity mode\n"
+          "PA: Full Polarization Analysis PNR-PA");
+      declareProperty(new ArrayProperty<double>(cppLabel(), Direction::Input),
+          "Effective polarizing power of the polarizing system. Expressed as a ratio 0 < Pp < 1");
+      declareProperty(new ArrayProperty<double>(cApLabel(), Direction::Input),
+          "Effective polarizing power of the analyzing system. Expressed as a ratio 0 < Ap < 1");
+      declareProperty(new ArrayProperty<double>(crhoLabel(), Direction::Input),
+          "Ratio of efficiencies of polarizer spin-down to polarizer spin-up. This is characteristic of the polarizer flipper. Values are constants for each term in a polynomial expression.");
+      declareProperty(new ArrayProperty<double>(cAlphaLabel(), Direction::Input),
+          "Ratio of efficiencies of analyzer spin-down to analyzer spin-up. This is characteristic of the analyzer flipper. Values are factors for each term in a polynomial expression.");
+      setPropertyGroup("PolarizationAnalysis", "Polarization Corrections");
+      setPropertyGroup(cppLabel(), "Polarization Corrections");
+      setPropertyGroup(cApLabel(), "Polarization Corrections");
+      setPropertyGroup(crhoLabel(), "Polarization Corrections");
+      setPropertyGroup(cAlphaLabel(), "Polarization Corrections");
+      setPropertySettings(cppLabel(),
+          new Kernel::EnabledWhenProperty("PolarizationAnalysis", IS_NOT_EQUAL_TO,
+            noPolarizationCorrectionMode()));
+      setPropertySettings(cApLabel(),
+          new Kernel::EnabledWhenProperty("PolarizationAnalysis", IS_NOT_EQUAL_TO,
+            noPolarizationCorrectionMode()));
+      setPropertySettings(crhoLabel(),
+          new Kernel::EnabledWhenProperty("PolarizationAnalysis", IS_NOT_EQUAL_TO,
+            noPolarizationCorrectionMode()));
+      setPropertySettings(cAlphaLabel(),
+          new Kernel::EnabledWhenProperty("PolarizationAnalysis", IS_NOT_EQUAL_TO,
+            noPolarizationCorrectionMode()));
     }
 
     //----------------------------------------------------------------------------------------------
@@ -126,13 +164,43 @@ namespace Mantid
       {
         if (analysis_mode == "PointDetectorAnalysis")
         {
-          processing_commands = boost::lexical_cast<std::string>(static_cast<int>(instrument->getNumberParameter("PointDetectorStart")[0]))
-            + "," + boost::lexical_cast<std::string>(static_cast<int>(instrument->getNumberParameter("PointDetectorStop")[0]));
+          std::vector<double> pointStart = instrument->getNumberParameter("PointDetectorStart");
+          std::vector<double> pointStop  = instrument->getNumberParameter("PointDetectorStop");
+
+          if(pointStart.empty() || pointStop.empty())
+            throw std::runtime_error(
+                "If ProcessingInstructions is not specified, BOTH PointDetectorStart "
+                "and PointDetectorStop must exist as instrument parameters.\n"
+                "Please check if you meant to enter ProcessingInstructions or "
+                "if your instrument parameter file is correct."
+                );
+
+          const int detStart = static_cast<int>(pointStart[0]);
+          const int detStop  = static_cast<int>(pointStop[0]);
+
+          if(detStart == detStop)
+          {
+            //If the range given only specifies one detector, we pass along just that one detector
+            processing_commands = boost::lexical_cast<std::string>(detStart);
+          }
+          else
+          {
+            //Otherwise, we create a range.
+            processing_commands = boost::lexical_cast<std::string>(detStart) + ":" + boost::lexical_cast<std::string>(detStop);
+          }
         }
         else
         {
-          processing_commands = boost::lexical_cast<std::string>(static_cast<int>(instrument->getNumberParameter("MultiDetectorStart")[0]))
-            + "," + boost::lexical_cast<std::string>(in_ws->getNumberHistograms() - 1);
+          std::vector<double> multiStart = instrument->getNumberParameter("MultiDetectorStart");
+          if(multiStart.empty())
+            throw std::runtime_error(
+                "If ProcessingInstructions is not specified, MultiDetectorStart"
+                "must exist as an instrument parameter.\n"
+                "Please check if you meant to enter ProcessingInstructions or "
+                "if your instrument parameter file is correct."
+                );
+          processing_commands = boost::lexical_cast<std::string>(static_cast<int>(multiStart[0]))
+            + ":" + boost::lexical_cast<std::string>(in_ws->getNumberHistograms() - 1);
         }
       }
       else
@@ -284,5 +352,155 @@ namespace Mantid
       }
     }
 
+    bool ReflectometryReductionOneAuto::checkGroups()
+    {
+      std::string wsName = getPropertyValue("InputWorkspace");
+
+      try
+      {
+        auto ws = AnalysisDataService::Instance().retrieveWS<WorkspaceGroup>(wsName);
+        if(ws)
+          return true;
+      } catch(...) {}
+      return false;
+    }
+
+    bool ReflectometryReductionOneAuto::processGroups()
+    {
+      auto group = AnalysisDataService::Instance().retrieveWS<WorkspaceGroup>(getPropertyValue("InputWorkspace"));
+      const std::string outputIvsQ = this->getPropertyValue("OutputWorkspace");
+      const std::string outputIvsLam = this->getPropertyValue("OutputWorkspaceWavelength");
+
+      //Create a copy of ourselves
+      Algorithm_sptr alg = this->createChildAlgorithm(this->name(),-1,-1,this->isLogging(),this->version());
+      alg->setChild(false);
+      alg->setRethrows(true);
+
+      //Copy all the non-workspace properties over
+      std::vector<Property*> props = this->getProperties();
+      for(auto prop = props.begin(); prop != props.end(); ++prop)
+      {
+        if(*prop)
+        {
+          IWorkspaceProperty* wsProp = dynamic_cast<IWorkspaceProperty*>(*prop);
+          if(!wsProp)
+            alg->setPropertyValue((*prop)->name(), (*prop)->value());
+        }
+      }
+
+      //Check if the transmission runs are groups or not
+      const std::string firstTrans = this->getPropertyValue("FirstTransmissionRun");
+      WorkspaceGroup_sptr firstTransG;
+      if(!firstTrans.empty())
+      {
+        auto firstTransWS = AnalysisDataService::Instance().retrieveWS<Workspace>(firstTrans);
+        firstTransG = boost::dynamic_pointer_cast<WorkspaceGroup>(firstTransWS);
+
+        if(!firstTransG)
+          alg->setProperty("FirstTransmissionRun", firstTrans);
+        else if(group->size() != firstTransG->size())
+            throw std::runtime_error("FirstTransmissionRun WorkspaceGroup must be the same size as the InputWorkspace WorkspaceGroup");
+      }
+
+      const std::string secondTrans = this->getPropertyValue("SecondTransmissionRun");
+      WorkspaceGroup_sptr secondTransG;
+      if(!secondTrans.empty())
+      {
+        auto secondTransWS = AnalysisDataService::Instance().retrieveWS<Workspace>(secondTrans);
+        secondTransG = boost::dynamic_pointer_cast<WorkspaceGroup>(secondTransWS);
+
+        if(!secondTransG)
+          alg->setProperty("SecondTransmissionRun", secondTrans);
+        else if(group->size() != secondTransG->size())
+            throw std::runtime_error("SecondTransmissionRun WorkspaceGroup must be the same size as the InputWorkspace WorkspaceGroup");
+      }
+
+      std::vector<std::string> IvsQGroup, IvsLamGroup;
+
+      //Execute algorithm over each group member (or period, if this is multiperiod)
+      size_t numMembers = group->size();
+      for(size_t i = 0; i < numMembers; ++i)
+      {
+        const std::string IvsQName = outputIvsQ + "_" + boost::lexical_cast<std::string>(i+1);
+        const std::string IvsLamName = outputIvsLam + "_" + boost::lexical_cast<std::string>(i+1);
+
+        alg->setProperty("InputWorkspace", group->getItem(i)->name());
+        alg->setProperty("OutputWorkspace", IvsQName);
+        alg->setProperty("OutputWorkspaceWavelength", IvsLamName);
+
+        //Handle transmission runs
+        if(firstTransG)
+          alg->setProperty("FirstTransmissionRun", firstTransG->getItem(i)->name());
+        if(secondTransG)
+          alg->setProperty("SecondTransmissionRun", secondTransG->getItem(i)->name());
+
+        alg->execute();
+
+        IvsQGroup.push_back(IvsQName);
+        IvsLamGroup.push_back(IvsLamName);
+
+        //We use the first group member for our thetaout value
+        if(i == 0)
+          this->setPropertyValue("ThetaOut", alg->getPropertyValue("ThetaOut"));
+      }
+
+      //Group the IvsQ and IvsLam workspaces
+      Algorithm_sptr groupAlg = this->createChildAlgorithm("GroupWorkspaces");
+      groupAlg->setChild(false);
+      groupAlg->setRethrows(true);
+
+      groupAlg->setProperty("InputWorkspaces", IvsLamGroup);
+      groupAlg->setProperty("OutputWorkspace", outputIvsLam);
+      groupAlg->execute();
+
+      groupAlg->setProperty("InputWorkspaces", IvsQGroup);
+      groupAlg->setProperty("OutputWorkspace", outputIvsQ);
+      groupAlg->execute();
+
+      //If this is a multiperiod workspace and we have polarization corrections enabled
+      if(this->getPropertyValue("PolarizationAnalysis") != noPolarizationCorrectionMode())
+      {
+        if(group->isMultiperiod())
+        {
+          //Perform polarization correction over the IvsLam group
+          Algorithm_sptr polAlg = this->createChildAlgorithm("PolarizationCorrection");
+          polAlg->setChild(false);
+          polAlg->setRethrows(true);
+
+          polAlg->setProperty("InputWorkspace", outputIvsLam);
+          polAlg->setProperty("OutputWorkspace", outputIvsLam);
+          polAlg->setProperty("PolarizationAnalysis", this->getPropertyValue("PolarizationAnalysis"));
+          polAlg->setProperty(   "CPp", this->getPropertyValue(   cppLabel()));
+          polAlg->setProperty(  "CRho", this->getPropertyValue(  crhoLabel()));
+          polAlg->setProperty(   "CAp", this->getPropertyValue(   cApLabel()));
+          polAlg->setProperty("CAlpha", this->getPropertyValue(cAlphaLabel()));
+          polAlg->execute();
+
+          //Now we've overwritten the IvsLam workspaces, we'll need to recalculate the IvsQ ones
+          alg->setProperty("FirstTransmissionRun", "");
+          alg->setProperty("SecondTransmissionRun", "");
+          for(size_t i = 0; i < numMembers; ++i)
+          {
+            const std::string IvsQName = outputIvsQ + "_" + boost::lexical_cast<std::string>(i+1);
+            const std::string IvsLamName = outputIvsLam + "_" + boost::lexical_cast<std::string>(i+1);
+            alg->setProperty("InputWorkspace", IvsLamName);
+            alg->setProperty("OutputWorkspace", IvsQName);
+            alg->setProperty("OutputWorkspaceWavelength", IvsLamName);
+            alg->execute();
+          }
+        }
+        else
+        {
+          g_log.warning("Polarization corrections can only be performed on multiperiod workspaces.");
+        }
+      }
+
+      //We finished successfully
+      this->setPropertyValue("OutputWorkspace", outputIvsQ);
+      this->setPropertyValue("OutputWorkspaceWavelength", outputIvsLam);
+      setExecuted(true);
+      notificationCenter().postNotification(new FinishedNotification(this,isExecuted()));
+      return true;
+    }
   } // namespace Algorithms
 } // namespace Mantid

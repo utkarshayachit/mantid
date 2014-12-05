@@ -174,6 +174,8 @@ namespace Kernel
     m_start = start;
     m_end = end;
     m_i = 0;
+    m_last_reported = 0;
+    m_timeElapsed->reset();
     setNumSteps(nsteps);
   }
 
@@ -189,7 +191,7 @@ namespace Kernel
   {
     m_notifyStepPct = notifyStepPct;
     m_notifyStep = (static_cast<int64_t>(double(m_numSteps)*m_notifyStepPct/100/(m_end-m_start)));
-    if (m_notifyStep <= 0) m_notifyStep = 1;
+    if (m_notifyStep < 0) m_notifyStep = 1;
     m_notifyStepPrecision = 0;
     if (m_notifyStepPct < 1.0) m_notifyStepPrecision = 1;
     if (m_notifyStepPct < 0.09) m_notifyStepPrecision = 2;

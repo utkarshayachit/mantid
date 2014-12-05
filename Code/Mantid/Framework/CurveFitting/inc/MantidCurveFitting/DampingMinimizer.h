@@ -20,7 +20,7 @@ class CostFuncLeastSquares;
 
     @author Roman Tolchenov, Tessella plc
 
-    Copyright &copy; 2009 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+    Copyright &copy; 2009 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
     This file is part of Mantid.
 
@@ -44,14 +44,14 @@ class DLLExport DampingMinimizer : public API::IFuncMinimizer
 {
 public:
   /// Constructor
-  DampingMinimizer();
+  DampingMinimizer(double relTol = 0.0001);
   /// Name of the minimizer.
   std::string name() const {return "DampingMinimizer";}
 
   /// Initialize minimizer, i.e. pass a function to minimize.
-  virtual void initialize(API::ICostFunction_sptr function);
+  virtual void initialize(API::ICostFunction_sptr function,size_t maxIterations = 0);
   /// Do one iteration.
-  virtual bool iterate();
+  virtual bool iterate(size_t);
   /// Return current value of the cost function
   virtual double costFunctionVal();
 

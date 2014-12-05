@@ -42,6 +42,7 @@ set ( EXPORT_FILES
   src/Exports/IEventWorkspace.cpp
   src/Exports/IEventWorkspaceProperty.cpp
   src/Exports/IPeaksWorkspace.cpp
+  src/Exports/IPeaksWorkspaceProperty.cpp
   src/Exports/BinaryOperations.cpp
   src/Exports/WorkspaceGroup.cpp
   src/Exports/WorkspaceGroupProperty.cpp
@@ -114,8 +115,8 @@ if(CMAKE_GENERATOR STREQUAL Xcode)
   set ( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PYTHON_PKG_ROOT}/api )
 endif()
 
-copy_python_files_to_dir ( "${PY_FILES}" ${CMAKE_CURRENT_SOURCE_DIR} ${OUTPUT_DIR} 
-                           PYTHON_INSTALL_FILES )
+copy_files_to_dir ( "${PY_FILES}" ${CMAKE_CURRENT_SOURCE_DIR} ${OUTPUT_DIR} 
+                     PYTHON_INSTALL_FILES )
 
 #############################################################################################
 # Create the target for this directory

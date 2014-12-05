@@ -10,7 +10,7 @@ namespace Crystal
 
   /** DisjointElement : Cluster item used in a disjoint-set data structure.
     
-    Copyright &copy; 2014 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+    Copyright &copy; 2014 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
     This file is part of Mantid.
 
@@ -41,6 +41,8 @@ namespace Crystal
     virtual ~DisjointElement();
     /// Get Id
     int getId() const;
+    /// Set the id
+    void setId(int id);
     /// Get parent element
     DisjointElement * getParent() const;
     /// Get root id

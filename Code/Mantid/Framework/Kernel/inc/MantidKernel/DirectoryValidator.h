@@ -19,7 +19,7 @@ namespace Kernel
     @author Janik Zikovsky, SNS
     @date Nov 12, 2010
 
-    Copyright &copy; 2008-9 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+    Copyright &copy; 2008-9 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
     This file is part of Mantid.
 
@@ -44,7 +44,7 @@ class MANTID_KERNEL_DLL DirectoryValidator : public FileValidator
 public:
   explicit DirectoryValidator(bool testDirectoryExists = true);
   virtual ~DirectoryValidator();
-  virtual std::set<std::string> allowedValues() const;
+  virtual std::vector<std::string> allowedValues() const;
   IValidator_sptr clone() const;
 
 private:

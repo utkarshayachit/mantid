@@ -26,7 +26,7 @@ namespace API
       and not the entire workspace, or you want to store some mapping that related to spectra
       that are not yet, or no longer, contained in the workspace.
 
-      Copyright &copy; 2013 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+      Copyright &copy; 2013 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
       This file is part of Mantid.
 
@@ -54,6 +54,7 @@ namespace API
     SpectrumDetectorMapping(const std::vector<specid_t>& spectrumNumbers, const std::vector<detid_t>& detectorIDs,
                             const std::vector<detid_t>& ignoreDetIDs = std::vector<detid_t>());
     SpectrumDetectorMapping(const specid_t* const spectrumNumbers, const detid_t* const detectorIDs, size_t arrayLengths);
+    SpectrumDetectorMapping();
     virtual ~SpectrumDetectorMapping();
 
     std::set<specid_t> getSpectrumNumbers() const;

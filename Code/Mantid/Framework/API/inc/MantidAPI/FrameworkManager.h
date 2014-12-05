@@ -31,7 +31,7 @@ namespace Mantid
         @author Russell Taylor, Tessella Support Services plc
         @date 05/10/2007
 
-        Copyright &copy; 2007-2011 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+        Copyright &copy; 2007-2011 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
         This file is part of Mantid.
 
@@ -54,6 +54,9 @@ namespace Mantid
     class MANTID_API_DLL FrameworkManagerImpl
     {
     public:
+      /// Load a set of plugins using a key from the ConfigService
+      void loadPluginsUsingKey(const std::string & key);
+
       /// Set the number of OpenMP threads to use based on the config value
       void setNumOMPThreadsToConfigValue();
       /// Set the number of OpenMP threads to the given value
@@ -108,12 +111,10 @@ namespace Mantid
       
       /// Set up the global locale
       void setGlobalLocaleToAscii();
-      /// Load the plugins
-      void loadAllPlugins();
-      /// Load a set of plugins
-      void loadPluginsUsingKey(const std::string & key);
       /// Silence NeXus output
       void disableNexusOutput();
+      /// Update instrument definitions from github
+      void UpdateInstrumentDefinitions();
 
       #ifdef MPI_BUILD
       /** Member variable that initialises the MPI environment on construction (in the

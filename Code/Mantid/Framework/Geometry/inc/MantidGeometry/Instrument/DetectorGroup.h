@@ -25,7 +25,7 @@ namespace Mantid
     @author Russell Taylor, Tessella Support Services plc
     @date 08/04/2008
 
-    Copyright &copy; 2008-2011 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+    Copyright &copy; 2008-2011 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
     This file is part of Mantid.
 
@@ -85,6 +85,8 @@ namespace Mantid
       // one for each type, luckily there won't be too many
       /// Return the parameter names
       virtual std::set<std::string> getParameterNames(bool recursive = true) const;
+      ///return the parameter names and the component they are from
+      virtual std::map<std::string,ComponentID > getParameterNamesByComponent() const;
       /// Returns a boolean indicating whether the parameter exists or not
       bool hasParameter(const std::string & name, bool recursive = true) const;
       // Hack used untill Geomertry can not exprot different types parematers properly
@@ -134,6 +136,14 @@ namespace Mantid
       * @returns A list of size 0 as this is not a parameterized component
       */
       std::vector<bool> getBoolParameter(const std::string& pname, bool recursive = true) const;
+
+     /**
+      * Get a string representation of a parameter
+      * @param pname :: The name of the parameter
+      * @param recursive :: If true the search will walk up through the parent components
+      * @returns A empty string as this is not a parameterized component
+      */
+      std::string getParameterAsString(const std::string& pname, bool recursive = true) const;
 
       /** returns the detector's group topology if it has been calculated before or invokes the procedure of
       calculating such topology if it was not */

@@ -29,15 +29,14 @@ DECLARE_FUNCMINIMIZER(DampingMinimizer,Damping)
 
 
 /// Constructor
-DampingMinimizer::DampingMinimizer():
-IFuncMinimizer(),
-m_relTol(1e-6)
+DampingMinimizer::DampingMinimizer(double relTol):
+IFuncMinimizer(), m_relTol(relTol)
 {
   declareProperty("Damping",0.0,"The damping parameter.");
 }
 
 /// Initialize minimizer, i.e. pass a function to minimize.
-void DampingMinimizer::initialize(API::ICostFunction_sptr function)
+void DampingMinimizer::initialize(API::ICostFunction_sptr function,size_t)
 {
   m_leastSquares = boost::dynamic_pointer_cast<CostFuncLeastSquares>(function);
   if ( !m_leastSquares )
@@ -47,7 +46,7 @@ void DampingMinimizer::initialize(API::ICostFunction_sptr function)
 }
 
 /// Do one iteration.
-bool DampingMinimizer::iterate()
+bool DampingMinimizer::iterate(size_t)
 {
   const bool debug = false;
 
@@ -114,8 +113,7 @@ bool DampingMinimizer::iterate()
   GSLVector p(n);
   m_leastSquares->getParameters(p);
   double dx_norm = gsl_blas_dnrm2(dx.gsl());
-  //double p_norm = gsl_blas_dnrm2(p.gsl());
-  if (dx_norm < 0.0001)
+  if (dx_norm < m_relTol)
   {
     return false;
   }

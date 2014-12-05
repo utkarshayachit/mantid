@@ -38,7 +38,7 @@ namespace Algorithms
     
     @date 2012-04-09
 
-    Copyright &copy; 2012 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+    Copyright &copy; 2012 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
     This file is part of Mantid.
 
@@ -94,9 +94,9 @@ namespace Algorithms
     void processMultipleValueFilters(double minvalue, double valueinterval, double maxvalue,
                                      bool filterincrease, bool filterdecrease);
 
-    void makeFilterByValue(Kernel::TimeSplitterType& split, double min, double max, double TimeTolerance, bool centre,
-        bool filterIncrease, bool filterDecrease, Kernel::DateAndTime startTime, Kernel::DateAndTime stopTime,
-        int wsindex);
+    void makeFilterBySingleValue(double min, double max, double TimeTolerance, bool centre,
+                                 bool filterIncrease, bool filterDecrease, Kernel::DateAndTime startTime, Kernel::DateAndTime stopTime,
+                                 int wsindex);
 
     /// Make multiple-log-value filters in serial
     void makeMultipleFiltersByValues(std::map<size_t, int> indexwsindexmap, std::vector<double> logvalueranges, bool centre,
@@ -142,6 +142,17 @@ namespace Algorithms
     /// Generate a SplittersWorkspace for filtering by log values
     void generateSplittersInSplitterWS();
 
+    /// Identify the a sample log entry is within intended value and time region
+    bool identifyLogEntry(const int &index, const Kernel::DateAndTime &currT, const bool &lastgood,
+                          const double &minvalue, const double &maxvalue,
+                          const Kernel::DateAndTime &startT, const Kernel::DateAndTime &stopT, const bool &filterIncrease, const bool &filterDecrease);
+
+    /// Determine the chaning direction of log value
+    int determineChangingDirection(int startindex);
+
+    /// Find the end of the run
+    Kernel::DateAndTime findRunEnd();
+
     DataObjects::EventWorkspace_const_sptr m_dataWS;
 
     /// SplitterWorkspace
@@ -153,6 +164,9 @@ namespace Algorithms
 
     Kernel::DateAndTime m_startTime;
     Kernel::DateAndTime m_stopTime;
+
+    /// Run end time
+    Kernel::DateAndTime m_runEndTime;
 
     double m_timeUnitConvertFactorToNS;
 

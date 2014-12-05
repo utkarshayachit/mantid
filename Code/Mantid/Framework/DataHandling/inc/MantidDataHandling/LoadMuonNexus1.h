@@ -47,7 +47,7 @@ namespace Mantid
     <LI> auto_group - Determines whether the spectra are automatically grouped together based on the groupings in the NeXus file. </LI>
     </UL>
     
-    Copyright &copy; 2007-2010 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+    Copyright &copy; 2007-2010 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
     This file is part of Mantid.
 
@@ -90,12 +90,8 @@ namespace Mantid
     protected:
       /// Overwrites Algorithm method
       void exec();
-      /// Implement the base class method
-      void runLoadInstrumentFromNexus(DataObjects::Workspace2D_sptr);
       
-    private:
-      
-      
+    private:   
       void loadData(const MantidVecPtr::ptr_type& tcbs,size_t hist, specid_t& i,
         MuonNexusReader& nxload, const int64_t lengthIn, DataObjects::Workspace2D_sptr localWorkspace);
       void runLoadMappingTable(DataObjects::Workspace2D_sptr);

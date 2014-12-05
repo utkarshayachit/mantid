@@ -16,7 +16,7 @@ namespace API
     @author Martyn Gigg, Tessella plc
     @date 13/08/2010
 
-    Copyright &copy; 2010 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+    Copyright &copy; 2010 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
     This file is part of Mantid.
 
@@ -46,6 +46,8 @@ namespace API
     virtual double getTofMax() const = 0;
     virtual Mantid::Kernel::DateAndTime getPulseTimeMax() const = 0;
     virtual Mantid::Kernel::DateAndTime getPulseTimeMin() const = 0;
+    virtual Mantid::Kernel::DateAndTime getTimeAtSampleMax(double tofOffset = 0) const = 0;
+    virtual Mantid::Kernel::DateAndTime getTimeAtSampleMin(double tofOffset = 0) const = 0;
     virtual EventType getEventType() const = 0;
     virtual IEventList * getEventListPtr(const std::size_t workspace_index) = 0;
     virtual void generateHistogram(const std::size_t index, 

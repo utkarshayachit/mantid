@@ -109,8 +109,12 @@ public:
    */
   void test_genTimeMultipleInterval()
   {
-    // 1. Create input Workspace
+    // Create input Workspace
     DataObjects::EventWorkspace_sptr eventWS = createEventWorkspace();
+    for (size_t i = 0; i < eventWS->getNumberHistograms(); ++i)
+      std::cout << "Spectrum " << i << ": max pulse time = " << eventWS->getEventList(i).getPulseTimeMax()
+                << " = " << eventWS->getEventList(i).getPulseTimeMin().totalNanoseconds() << "\n";
+
     int64_t timeinterval_ns = 15000;
 
     // 2. Init and set property
@@ -133,7 +137,7 @@ public:
 
     TS_ASSERT(splittersws);
 
-    size_t numintervals = 67;
+    size_t numintervals = 74;
     TS_ASSERT_EQUALS(splittersws->getNumberSplitters(), numintervals);
 
     std::string runstarttimestr = eventWS->run().getProperty("run_start")->value();
@@ -142,7 +146,7 @@ public:
 
     Kernel::TimeSeriesProperty<double> *protonchargelog =
         dynamic_cast<Kernel::TimeSeriesProperty<double>* >(eventWS->run().getProperty("proton_charge"));
-    Kernel::DateAndTime runstoptime = protonchargelog->lastTime();
+    Kernel::DateAndTime runstoptime = Kernel::DateAndTime(protonchargelog->lastTime().totalNanoseconds() + 100000);
 
     // b) First interval
     Kernel::SplittingInterval splitter0 = splittersws->getSplitter(0);
@@ -173,14 +177,14 @@ public:
   //----------------------------------------------------------------------------------------------
   /** Generate filter by log value in simple way
    * (1) No time tolerance
-   * (2) Just one
+   * (2) Just one region
    */
   void test_genSimpleLogValueFilter()
   {
-    // 1. Create input
+    // Create input
     DataObjects::EventWorkspace_sptr eventWS = createEventWorkspace();
 
-    // 2. Init and set property
+    // Init and set property
     GenerateEventsFilter alg;
     alg.initialize();
 
@@ -212,7 +216,7 @@ public:
      TS_ASSERT_EQUALS(splittersws->getNumberSplitters(), numsplitters);
 
      Kernel::SplittingInterval s0 = splittersws->getSplitter(0);
-     TS_ASSERT_EQUALS(s0.start().totalNanoseconds(), 3000025000-static_cast<int64_t>(1.0E-8*1.0E9));
+     TS_ASSERT_EQUALS(s0.start().totalNanoseconds(), 3000000000-static_cast<int64_t>(1.0E-8*1.0E9));
      TS_ASSERT_EQUALS(s0.stop().totalNanoseconds(), 3000050000-static_cast<int64_t>(1.0E-8*1.0E9));
 
      Kernel::SplittingInterval s1 = splittersws->getSplitter(1);
@@ -235,12 +239,10 @@ public:
    */
   void test_genMultipleLogValuesFilter()
   {
-    std::cout << "\n==== Test Multiple Log Value Filter ====\n" << std::endl;
-
-    // 1. Create input
+    // Create input
     DataObjects::EventWorkspace_sptr eventWS = createEventWorkspace();
 
-    // 2. Init and set property
+    // Init and set property
     GenerateEventsFilter alg;
     alg.initialize();
 
@@ -256,11 +258,11 @@ public:
     TS_ASSERT_THROWS_NOTHING(alg.setProperty("TimeTolerance", 1.0E-8));
     TS_ASSERT_THROWS_NOTHING(alg.setProperty("LogBoundary",  "Centre"));
 
-    // 3. Running and get result
+    // Running and get result
     TS_ASSERT_THROWS_NOTHING(alg.execute());
     TS_ASSERT(alg.isExecuted());
 
-    // 4. Check output
+    // Check output
      DataObjects::SplittersWorkspace_sptr splittersws =
          boost::dynamic_pointer_cast<DataObjects::SplittersWorkspace>(AnalysisDataService::Instance().retrieve("Splitters04"));
      TS_ASSERT(splittersws);
@@ -269,20 +271,20 @@ public:
          boost::dynamic_pointer_cast<DataObjects::TableWorkspace>(AnalysisDataService::Instance().retrieve("Information"));
      TS_ASSERT(infows);
 
-     // 5. Check
-     size_t numsplitters = 15;
+     // Check
+     size_t numsplitters = 16;
      TS_ASSERT_EQUALS(splittersws->getNumberSplitters(), numsplitters);
      size_t numoutputs = 11;
      TS_ASSERT_EQUALS(infows->rowCount(), numoutputs);
 
      Kernel::SplittingInterval s0 = splittersws->getSplitter(0);
-     TS_ASSERT_EQUALS(s0.start(), 3000024990);
-     TS_ASSERT_EQUALS(s0.index(), 6);
+     TS_ASSERT_EQUALS(s0.start(), 3000000000-static_cast<int>(1.0E-8*1.0E9));
+     TS_ASSERT_EQUALS(s0.index(), 5);
 
-     Kernel::SplittingInterval s14 = splittersws->getSplitter(14);
-     TS_ASSERT_EQUALS(s14.start(), 3000924990);
-     TS_ASSERT_EQUALS(s14.stop(),  3000974990);
-     TS_ASSERT_EQUALS(s14.index(), 9);
+     Kernel::SplittingInterval s15 = splittersws->getSplitter(15);
+     TS_ASSERT_EQUALS(s15.start(), 3000924990);
+     TS_ASSERT_EQUALS(s15.stop(),  3000974990);
+     TS_ASSERT_EQUALS(s15.index(), 9);
 
   }
 
@@ -347,6 +349,61 @@ public:
      AnalysisDataService::Instance().remove("IntLogInformation");
   }
 
+  //----------------------------------------------------------------------------------------------
+  /** Test to generate a set of filters against an integer log by using the single value mode
+    */
+  void test_genFilterByIntegerLog2()
+  {
+    // Create input
+    DataObjects::EventWorkspace_sptr eventWS = createEventWorkspaceIntLog();
+    AnalysisDataService::Instance().addOrReplace("TestEventData2", eventWS);
+
+    // Initialize and set property
+    GenerateEventsFilter alg;
+    alg.initialize();
+
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("InputWorkspace", "TestEventData2"));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("OutputWorkspace", "IntLogSplitter"));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("InformationWorkspace", "IntLogInformation"));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("LogName", "DummyIntLog"));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("MinimumLogValue", static_cast<double>(1)));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("MaximumLogValue", static_cast<double>(2)));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("UnitOfTime", "Seconds"));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("FilterLogValueByChangingDirection", "Both"));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("TimeTolerance", 0.05));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("LogBoundary",  "Centre"));
+
+    // Running and get result
+    TS_ASSERT_THROWS_NOTHING(alg.execute());
+    TS_ASSERT(alg.isExecuted());
+
+    // Retrieve output workspaces
+    SplittersWorkspace_sptr splittersws = boost::dynamic_pointer_cast<SplittersWorkspace>(
+          AnalysisDataService::Instance().retrieve("IntLogSplitter"));
+    TS_ASSERT(splittersws);
+
+    TableWorkspace_const_sptr infows = boost::dynamic_pointer_cast<TableWorkspace>(
+          AnalysisDataService::Instance().retrieve("IntLogInformation"));
+    TS_ASSERT(infows);
+
+     // Check output workspace
+     size_t numsplitters = 1;
+     TS_ASSERT_EQUALS(splittersws->getNumberSplitters(), numsplitters);
+     size_t numoutputs = 1;
+     TS_ASSERT_EQUALS(infows->rowCount(), numoutputs);
+
+     int64_t factor = static_cast<int64_t>(1.0E9+0.5);
+
+     Kernel::SplittingInterval s0 = splittersws->getSplitter(0);
+     TS_ASSERT_EQUALS(s0.start().totalNanoseconds(), 11*factor-5*factor/100);
+     TS_ASSERT_EQUALS(s0.index(), 0);
+
+     // Clean
+     AnalysisDataService::Instance().remove("TestEventData2");
+     AnalysisDataService::Instance().remove("IntLogSplitter");
+     AnalysisDataService::Instance().remove("IntLogInformation");
+  }
+
 
   //----------------------------------------------------------------------------------------------
   /** Create an EventWorkspace including
@@ -358,12 +415,11 @@ public:
     using namespace WorkspaceCreationHelper;
     double PI = 3.14159265;
 
-    // 1. Empty workspace
+    // Empty workspace
     DataObjects::EventWorkspace_sptr eventws =
         WorkspaceCreationHelper::createEventWorkspaceWithFullInstrument(2, 2, true);
-    //eventws->setName("TestWorkspace");
 
-    // 2. Run star time
+    // Run star time
     int64_t runstarttime_ns = 3000000000;
     int64_t runstoptime_ns  = 3001000000;
     int64_t pulsetime_ns    =     100000;
@@ -371,7 +427,7 @@ public:
     Kernel::DateAndTime runstarttime(runstarttime_ns);
     eventws->mutableRun().addProperty("run_start", runstarttime.toISO8601String());
 
-    // 3. Proton charge log
+    // Proton charge log
     Kernel::TimeSeriesProperty<double> *protonchargelog =
         new Kernel::TimeSeriesProperty<double>("proton_charge");
     int64_t curtime_ns = runstarttime_ns;
@@ -382,6 +438,7 @@ public:
       curtime_ns += pulsetime_ns;
     }
     eventws->mutableRun().addProperty(protonchargelog, true);
+    std::cout << "Proton charge log from " << runstarttime_ns << " to " << runstoptime_ns << "\n";
 
     // 4. Sine value log (value record 1/4 of pulse time.  it is FAST)
     Kernel::TimeSeriesProperty<double> *sinlog = new Kernel::TimeSeriesProperty<double>("FastSineLog");
@@ -408,6 +465,8 @@ public:
       curtime_ns += pulsetime_ns*2;
     }
     eventws->mutableRun().addProperty(coslog, true);
+
+    std::cout << "<----------- Number of events = " << eventws->getNumberEvents() << "\n";
 
     return eventws;
   }
@@ -554,7 +613,7 @@ public:
     TS_ASSERT(splittersws);
 
     // Check values of output workspace
-    size_t numintervals = 67;
+    size_t numintervals = 74;
     TS_ASSERT_EQUALS(splittersws->readY(0).size(), numintervals);
 
     std::string runstarttimestr = eventWS->run().getProperty("run_start")->value();
@@ -563,7 +622,7 @@ public:
 
     Kernel::TimeSeriesProperty<double> *protonchargelog =
         dynamic_cast<Kernel::TimeSeriesProperty<double>* >(eventWS->run().getProperty("proton_charge"));
-    Kernel::DateAndTime runstoptime = protonchargelog->lastTime();
+    Kernel::DateAndTime runstoptime = Kernel::DateAndTime(protonchargelog->lastTime().totalNanoseconds() + 100000);
 
     // First interval
     TS_ASSERT_EQUALS(static_cast<int64_t>(splittersws->readX(0)[0]), runstarttime_ns);
@@ -683,10 +742,9 @@ public:
     AnalysisDataService::Instance().remove("InfoWS04B");
     AnalysisDataService::Instance().remove("Splitters04C");
     AnalysisDataService::Instance().remove("InfoWS04C");
-
-    // TS_ASSERT_EQUALS(1, 100);
-
   }
+
+
 
   //----------------------------------------------------------------------------------------------
   /** Generate filter by log values in increasing
@@ -695,8 +753,6 @@ public:
    */
   void test_genMultipleLogValuesFilterMatrixSplitterParallel()
   {
-    std::cout << "\n==== Test Multiple Log Value Filter (Matrix Splitter Parallel) ====\n" << std::endl;
-
     // Create input
     DataObjects::EventWorkspace_sptr eventWS = createEventWorkspace();
     AnalysisDataService::Instance().addOrReplace("TestEventWS04B", eventWS);
@@ -782,6 +838,110 @@ public:
     AnalysisDataService::Instance().remove("InfoWS04C");
 
   }
+
+  //----------------------------------------------------------------------------------------------
+  /** Generate filter by log values in 'FastLog' mode only 1 interval
+   */
+  void test_genSingleleLogValuesFilterMatrixSplitter()
+  {
+    std::cout << "\n==== Test Single Log Value Filter (Matrix Splitter) ====\n" << "\n";
+
+    // Create input
+    DataObjects::EventWorkspace_sptr eventWS = createEventWorkspace();
+    AnalysisDataService::Instance().addOrReplace("TestEventWS09", eventWS);
+
+    // Init and set property
+    GenerateEventsFilter alg;
+    alg.initialize();
+
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("InputWorkspace", "TestEventWS09"));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("OutputWorkspace", "Splitters09"));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("InformationWorkspace", "InfoWS09"));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("FastLog", true));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("LogName", "FastSineLog"));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("MinimumLogValue", "-1.0"));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("MaximumLogValue",  "1.0"));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("LogValueTolerance", 0.05));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("FilterLogValueByChangingDirection", "Both"));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("TimeTolerance", 1.0E-8));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("LogBoundary",  "Centre"));
+
+    // Running and get result
+    TS_ASSERT_THROWS_NOTHING(alg.execute());
+    TS_ASSERT(alg.isExecuted());
+
+    // Check output workspace
+    MatrixWorkspace_sptr splittersws =
+        boost::dynamic_pointer_cast<MatrixWorkspace>(AnalysisDataService::Instance().retrieve("Splitters09"));
+    TS_ASSERT(splittersws);
+    if (splittersws)
+      TS_ASSERT(splittersws->readX(0).size() >= 2);
+
+    DataObjects::TableWorkspace_const_sptr infows =
+        boost::dynamic_pointer_cast<DataObjects::TableWorkspace>(AnalysisDataService::Instance().retrieve("InfoWS09"));
+    TS_ASSERT(infows);
+
+
+    // Clean
+    AnalysisDataService::Instance().remove("TestEventWS09");
+    AnalysisDataService::Instance().remove("Splitters09");
+    AnalysisDataService::Instance().remove("InfoWS09");
+  }
+
+
+  //----------------------------------------------------------------------------------------------
+  /** Generate filter by integer log values in increasing in matrix workspace
+   * (1) No time tolerance
+   * (2) Just one
+   */
+  void test_genMultipleIntLogValuesFilterMatrixSplitter()
+  {
+    // Create input
+    DataObjects::EventWorkspace_sptr eventWS = createEventWorkspaceIntLog();
+    AnalysisDataService::Instance().addOrReplace("TestEventWS09", eventWS);
+
+    // Init and set property
+    GenerateEventsFilter alg;
+    alg.initialize();
+
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("InputWorkspace", "TestEventWS09"));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("OutputWorkspace", "Splitters09"));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("InformationWorkspace", "InfoWS09"));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("FastLog", true));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("LogName", "DummyIntLog"));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("MinimumLogValue", static_cast<double>(1)));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("MaximumLogValue", static_cast<double>(10)));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("LogValueInterval", static_cast<double>(1)));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("UnitOfTime", "Seconds"));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("FilterLogValueByChangingDirection", "Both"));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("TimeTolerance", 0.05));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("LogBoundary",  "Centre"));
+
+    // Running and get result
+    TS_ASSERT_THROWS_NOTHING(alg.execute());
+    TS_ASSERT(alg.isExecuted());
+
+    // Check output workspace
+    MatrixWorkspace_sptr splittersws =
+        boost::dynamic_pointer_cast<MatrixWorkspace>(AnalysisDataService::Instance().retrieve("Splitters09"));
+    TS_ASSERT(splittersws);
+
+    DataObjects::TableWorkspace_const_sptr infows =
+        boost::dynamic_pointer_cast<DataObjects::TableWorkspace>(AnalysisDataService::Instance().retrieve("InfoWS09"));
+    TS_ASSERT(infows);
+
+    if (!splittersws || !infows)
+      return;
+
+    TS_ASSERT_EQUALS(splittersws->readY(0).size(), 10);
+
+    int64_t factor = static_cast<int64_t>(1.0E9+0.5);
+    TS_ASSERT_DELTA(splittersws->readX(0)[0], static_cast<double>(11*factor-5*factor/100), 0.000001);
+
+    TS_ASSERT_DELTA(splittersws->readY(0)[0], 0.0, 0.00001);
+    TS_ASSERT_DELTA(splittersws->readY(0)[1], 1.0, 0.00001);
+  }
+
 
   //----------------------------------------------------------------------------------------------
   /** Convert the splitters stored in a matrix workspace to a vector of SplittingInterval objects

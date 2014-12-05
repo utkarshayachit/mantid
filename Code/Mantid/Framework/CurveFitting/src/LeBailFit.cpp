@@ -26,12 +26,10 @@ const int CALDATAINDEX(1);
 const int DATADIFFINDEX(2);
 const int CALPUREPEAKINDEX(3);
 const int CALBKGDINDEX(4); // Output workspace background at ws index 4
-const int INPUTCALDATAINDEX(5);
 const int INPUTBKGDINDEX(6);  // Input background
 const int INPUTPUREPEAKINDEX(7);  // Output workspace:  pure peak (data with background removed)
 const int SMOOTHEDBKGDINDEX(8); //  Smoothed background
 
-const double NEG_DBL_MAX(-1.*DBL_MAX);
 const double NOBOUNDARYLIMIT(1.0E10);
 const double EPSILON(1.0E-10);
 
@@ -856,7 +854,7 @@ namespace CurveFitting
     m_dampingFactor = getProperty("Damping");
 
     tempindex = getProperty("NumberMinimizeSteps");
-    if (tempindex >= 0)
+    if (tempindex > 0)
       m_numMinimizeSteps = static_cast<size_t>(tempindex);
     else
     {
@@ -2535,9 +2533,11 @@ namespace CurveFitting
 
     // 2. Set up peak density
     vector<double> peakdensity(vecRawX.size(), 1.0);
-    for (size_t ipk = 0; ipk < m_lebailFunction->getNumberOfPeaks(); ++ipk)
-    {
-      throw runtime_error("Need to figure out how to deal with this part!");
+    throw runtime_error("Need to figure out how to deal with this part!");
+
+  //  for (size_t ipk = 0; ipk < m_lebailFunction->getNumberOfPeaks(); ++ipk)
+  //  {
+
       /* Below are original code for modifying from
       ThermalNeutronBk2BkExpConvPVoigt_sptr thispeak = m_dspPeaks[ipk].second;
       double height = thispeak->height();
@@ -2562,10 +2562,10 @@ namespace CurveFitting
         for (int i = ileft; i <= iright; ++i)
         {
           peakdensity[i] += 1.0;
-        }
-      }
-      */
-    }
+        }*/
+ //     }
+
+    /*}
 
     // FIXME : What is bk_prm2???
     double bk_prm2 = 1.0;
@@ -2585,7 +2585,7 @@ namespace CurveFitting
         background[i] = 0.0;
     }
 
-    return;
+    return;*/
   }
 
   //----------------------------------------------------------------------------------------------

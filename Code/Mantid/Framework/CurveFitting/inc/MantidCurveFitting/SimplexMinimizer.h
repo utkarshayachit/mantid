@@ -18,7 +18,7 @@ namespace CurveFitting
     @author Anders Markvardsen, ISIS, RAL
     @date 8/1/2010
 
-    Copyright &copy; 2009 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+    Copyright &copy; 2009 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
     This file is part of Mantid.
 
@@ -49,11 +49,11 @@ public:
   /// Overloading base class methods
   std::string name()const{return "Simplex";}
   /// Do one iteration
-  bool iterate();
+  bool iterate(size_t);
   /// Return current value of the cost function
   double costFunctionVal();
   /// Initialize minimizer, i.e. pass a function to minimize.
-  virtual void initialize(API::ICostFunction_sptr function);
+  virtual void initialize(API::ICostFunction_sptr function, size_t maxIterations = 0);
 
 protected:
 

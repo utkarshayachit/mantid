@@ -24,7 +24,7 @@ namespace API
     @author Samuel Jackson, ISIS, RAL
     @date 21/01/2008
 
-    Copyright &copy; 2007-8 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+    Copyright &copy; 2007-8 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
     This file is part of Mantid.
 
@@ -49,7 +49,7 @@ namespace API
 class MANTID_API_DLL ScriptBuilder
 {
 public:
-  ScriptBuilder(boost::shared_ptr<HistoryView> view);
+  ScriptBuilder(boost::shared_ptr<HistoryView> view, std::string versionSpecificity = "old");
   virtual ~ScriptBuilder() {};
 
   /// build a python script from the history view
@@ -63,6 +63,7 @@ private:
 
   const std::vector<HistoryItem> m_historyItems;
   std::string m_output;
+  std::string m_versionSpecificity;
 };
 
 } // namespace API

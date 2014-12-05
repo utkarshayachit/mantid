@@ -19,7 +19,7 @@ bool has_ending(const std::string &value, const std::string & ending);
     @author Matt Clarke, ISIS.
     @date 25/06/2008
 
-    Copyright &copy; 2008-9 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+    Copyright &copy; 2008-9 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
     This file is part of Mantid.
 
@@ -44,12 +44,12 @@ class MANTID_KERNEL_DLL FileValidator : public TypedValidator<std::string>
 public:
   explicit FileValidator(const std::vector<std::string>& extensions=std::vector<std::string>(), bool testFileExists = true, bool testCanWrite=false);
   virtual ~FileValidator();
-  virtual std::set<std::string> allowedValues() const;
+  virtual std::vector<std::string> allowedValues() const;
   IValidator_sptr clone() const;
 
 protected:
   /// The list of permitted extensions
-  const std::set<std::string> m_extensions;
+  std::vector<std::string> m_extensions;
   /// Flag indicating whether to test for existence of filename
   bool m_testExist;
   /// Flag indicating whether to test for the file being writable

@@ -15,7 +15,7 @@ namespace Mantid
 
     /** ReflectometryReductionOne : Reflectometry reduction of a single input TOF workspace to an IvsQ workspace.
 
-     Copyright &copy; 2013 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+     Copyright &copy; 2013 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
      This file is part of Mantid.
 
@@ -46,7 +46,7 @@ namespace Mantid
 
       virtual const std::string name() const;
     ///Summary of algorithms purpose
-    virtual const std::string summary() const {return "Reduces a single TOF reflectometry run into a mod Q vs I/I0 workspace. Performs transmission corrections.";}
+    virtual const std::string summary() const {return "Reduces a single TOF/Lambda reflectometry run into a mod Q vs I/I0 workspace. Performs transmission corrections.";}
 
       virtual int version() const;
       virtual const std::string category() const;

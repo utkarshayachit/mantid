@@ -45,12 +45,7 @@ namespace CurveFitting
   // Register the class into the algorithm factory
   DECLARE_ALGORITHM(Fit)
 
-    using API::IDomainCreator;
-
-  namespace
-  {
-    bool isStringEmpty(const std::string& str){return str.empty();}
-  }
+  using API::IDomainCreator;
   
   /**
    * Examine "Function" and "InputWorkspace" properties to decide which domain creator to use.
@@ -107,6 +102,23 @@ namespace CurveFitting
       minimizerOptions.erase( it );
     }
     minimizerProperty->replaceValidator( Kernel::IValidator_sptr(new Kernel::StartsWithValidator(minimizerOptions)) );
+  }
+
+  /**
+    * Copy all output workspace properties from the minimizer to Fit algorithm.
+    * @param minimizer :: The minimizer to copy from.
+    */
+  void Fit::copyMinimizerOutput(const API::IFuncMinimizer &minimizer)
+  {
+      auto &properties = minimizer.getProperties();
+      for(auto prop = properties.begin(); prop != properties.end(); ++prop)
+      {
+          if ( (**prop).direction() == Kernel::Direction::Output && (**prop).isValid() == "" )
+          {
+              Kernel::Property* property = (**prop).clone();
+              declareProperty( property );
+          }
+      }
   }
 
   void Fit::setFunction()
@@ -318,7 +330,7 @@ namespace CurveFitting
 
     declareProperty("Minimizer","Levenberg-Marquardt",
       Kernel::IValidator_sptr(new Kernel::StartsWithValidator(minimizerOptions)),
-      "Minimizer to use for fitting. Minimizers available are \"Levenberg-Marquardt\", \"Simplex\", \"Conjugate gradient (Fletcher-Reeves imp.)\", \"Conjugate gradient (Polak-Ribiere imp.)\", \"BFGS\", and \"Levenberg-MarquardtMD\"");
+      "Minimizer to use for fitting. Minimizers available are \"Levenberg-Marquardt\", \"Simplex\", \"FABADA\", \"Conjugate gradient (Fletcher-Reeves imp.)\", \"Conjugate gradient (Polak-Ribiere imp.)\", \"BFGS\", and \"Levenberg-MarquardtMD\"");
 
     std::vector<std::string> costFuncOptions = API::CostFunctionFactory::Instance().getKeys();
     // select only CostFuncFitting variety
@@ -393,7 +405,8 @@ namespace CurveFitting
     API::IFuncMinimizer_sptr minimizer = API::FuncMinimizerFactory::Instance().createMinimizer(minimizerName);
 
     // Try to retrieve optional properties
-    const int maxIterations = getProperty("MaxIterations");
+    int intMaxIterations = getProperty("MaxIterations");
+    const size_t maxIterations = static_cast<size_t>( intMaxIterations );
 
     // get the cost function which must be a CostFuncFitting
     boost::shared_ptr<CostFuncFitting> costFunc = boost::dynamic_pointer_cast<CostFuncFitting>(
@@ -401,7 +414,7 @@ namespace CurveFitting
       );
 
     costFunc->setFittingFunction(m_function,domain,values);
-    minimizer->initialize(costFunc);
+    minimizer->initialize(costFunc,maxIterations);
 
     const int64_t nsteps = maxIterations*m_function->estimateNoProgressCalls();
     API::Progress prog(this,0.0,1.0,nsteps);
@@ -412,12 +425,11 @@ namespace CurveFitting
     bool success = false;
     std::string errorString;
     g_log.debug("Starting minimizer iteration\n");
-    while (static_cast<int>(iter) < maxIterations)
+    while ( iter < maxIterations )
     {
-      iter++;
       g_log.debug() << "Starting iteration " << iter << "\n";
       m_function->iterationStarting();
-      if ( !minimizer->iterate() )
+      if ( !minimizer->iterate(iter) )
       {
         errorString = minimizer->getError();
         g_log.debug() << "Iteration stopped. Minimizer status string=" << errorString << "\n";
@@ -435,10 +447,11 @@ namespace CurveFitting
       {
         g_log.debug() << "Iteration " << iter << ", cost function = " << minimizer->costFunctionVal() << "\n";
       }
+      ++iter;
     }
     g_log.debug() << "Number of minimizer iterations=" << iter << "\n";
 
-    if (static_cast<int>(iter) >= maxIterations)
+    if ( iter >= maxIterations)
     {
       if ( !errorString.empty() )
       {
@@ -489,6 +502,8 @@ namespace CurveFitting
 
     if (doCreateOutput)
     {
+      copyMinimizerOutput(*minimizer);
+
       if (baseName.empty())
       {
         baseName = ws->name();

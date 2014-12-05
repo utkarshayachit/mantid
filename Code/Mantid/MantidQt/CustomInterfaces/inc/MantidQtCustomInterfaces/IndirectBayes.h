@@ -21,7 +21,7 @@ namespace MantidQt
 
     @author Samuel Jackson, STFC
 
-    Copyright &copy; 2010 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+    Copyright &copy; 2010 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
     This file is part of Mantid.
 
@@ -63,7 +63,7 @@ namespace MantidQt
       ///Destructor
       ~IndirectBayes();
       /// Interface name
-      static std::string name() { return "Indirect Bayes"; }
+      static std::string name() { return "Bayes"; }
       // This interface's categories.
       static QString categoryInfo() { return "Indirect"; }
       virtual void initLayout();

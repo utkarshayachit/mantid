@@ -25,7 +25,7 @@ namespace Mantid
     @author 
     @date 6/23/2011
 
-    Copyright &copy; 2008 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+    Copyright &copy; 2008 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
     This file is part of Mantid.
 
@@ -55,7 +55,7 @@ namespace Mantid
       /// Algorithm's name for identification overriding a virtual method
       virtual const std::string name() const { return "ScaleX";}
     ///Summary of algorithms purpose
-    virtual const std::string summary() const {return "Scales an input workspace by the given factor, which can be either multiplicative or additive.";}
+    virtual const std::string summary() const {return "Scales the X-axis of an input workspace by the given factor, which can be either multiplicative or additive.";}
 
       /// Algorithm's version for identification overriding a virtual method
       virtual int version() const { return 1;}

@@ -20,7 +20,7 @@ namespace Mantid
     @author Laurent C Chapon, ISIS, RAL
     @date 09/10/2007
 
-    Copyright &copy; 2007-8 ISIS Rutherford Appleton Laboratory & NScD Oak Ridge National Laboratory
+    Copyright &copy; 2007-8 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge National Laboratory & European Spallation Source
 
     This file is part of Mantid.
 
@@ -109,16 +109,18 @@ namespace Mantid
       double norm2() const;
       /// transform vector into form, used to describe directions in crystallogaphical coodinate system
       double   toMillerIndexes(double eps=1.e-3);
-      // Scalar product
+      /// Scalar product
       double scalar_prod(const V3D&) const;
-      // Cross product
+      /// Cross product
       V3D cross_prod(const V3D&) const;
-      // Distance (R) between two points defined as vectors
+      /// Distance (R) between two points defined as vectors
       double distance(const V3D&) const;
-      // Zenith (theta) angle between this and another vector
+      /// Zenith (theta) angle between this and another vector
       double zenith(const V3D&) const;
-      // Angle between this and another vector
+      /// Angle between this and another vector
       double angle(const V3D&) const;
+      /// Direction angles
+      V3D directionAngles(bool inDegrees=true) const;
 
       // Make 2 vectors into 3 orthogonal vectors
       static std::vector<V3D> makeVectorsOrthogonal(std::vector<V3D> & vectors);

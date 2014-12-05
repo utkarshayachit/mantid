@@ -73,6 +73,8 @@ namespace Mantid
 
       declareProperty("ColumnHeader", true, "If true, put column headers into file. ");
 
+      declareProperty("ICEFormat", false, "If true, special column headers for ICE in file. ");
+
     }
 
     /** 
@@ -114,6 +116,20 @@ namespace Mantid
           sep = " , ";
         }
         std::string comment = getPropertyValue("CommentIndicator");
+        std::string errstr = "E";
+        std::string errstr2 = "";
+        std::string comstr = " , ";
+        bool ice = getProperty("ICEFormat");
+        if (ice)
+        {
+          // overwrite properties so file can be read by ICE
+          errstr = "Y";
+          errstr2 = "_error";
+          comstr = ", ";
+          writeHeader = true;
+          write_dx = false;
+          comment = "#features:";
+        }
 
         // Create an spectra index list for output
         std::set<int> idx;
@@ -121,19 +137,23 @@ namespace Mantid
         // Add spectra interval into the index list
         if (spec_max != EMPTY_INT() && spec_min != EMPTY_INT())
         {
-            if (spec_min >= nSpectra || spec_max >= nSpectra || spec_min > spec_max)
-                throw std::invalid_argument("Inconsistent spectra interval");
-            for(int spec=spec_min;spec<=spec_max;spec++)
-                    idx.insert(spec);
+          if (spec_min >= nSpectra || spec_max >= nSpectra || spec_min > spec_max)
+            throw std::invalid_argument("Inconsistent spectra interval");
+          for(int spec=spec_min;spec<=spec_max;spec++)
+            idx.insert(spec);
         }
 
         // Add spectra list into the index list
         if (!spec_list.empty())
-            for(size_t i=0;i<spec_list.size();i++)
-                if (spec_list[i] >= nSpectra) throw std::invalid_argument("Inconsistent spectra list");
-                else
-                    idx.insert(spec_list[i]);
-
+        {
+          for(size_t i=0;i<spec_list.size();i++)
+          {
+            if (spec_list[i] >= nSpectra)
+              throw std::invalid_argument("Inconsistent spectra list");
+            else
+              idx.insert(spec_list[i]);
+          }
+        }
         if (!idx.empty()) nSpectra = static_cast<int>(idx.size());
 
         if (nBins == 0 || nSpectra == 0) throw std::runtime_error("Trying to save an empty workspace");
@@ -153,13 +173,13 @@ namespace Mantid
           if (idx.empty())
             for(int spec=0;spec<nSpectra;spec++)
             {
-              file << " , Y" << spec << " , E" << spec;
+              file << comstr << "Y" << spec << comstr << errstr << spec << errstr2;
               if (write_dx) file << " , DX" << spec;
             }
           else
             for(std::set<int>::const_iterator spec=idx.begin();spec!=idx.end();++spec)
             {
-              file << " , Y" << *spec << " , E" << *spec;
+              file << comstr << "Y" << *spec << comstr << errstr << *spec << errstr2;
               if (write_dx) file << " , DX" << *spec;
             }
             file << std::endl;
