@@ -379,7 +379,6 @@ class DirectPropertyManager(DirectReductionProperties):
         #
         # define private properties served the class
         private_properties = {'descriptors':[],'subst_dict':{},'prop_allowed_values':{},'changed_properties':set(),
-        'advanced_properties':set(),
         'file_properties':[],'abs_norm_file_properties':[]};
         # place these properties to __dict__  with proper decoration
         self._set_private_properties(private_properties);
@@ -499,8 +498,6 @@ class DirectPropertyManager(DirectReductionProperties):
 
         # record changes in the property
         self.__changed_properties.add(name);
-        if self.record_advanced_properties:
-           self.__advanced_properties.add(name);
 
    # ----------------------------
     def __getattr__(self,name):
@@ -547,14 +544,7 @@ class DirectPropertyManager(DirectReductionProperties):
     def getChangedProperties(self):
         """ method returns set of the properties changed from defaults """
         return self.__dict__[self._class_wrapper+'changed_properties'];
-    def getChangedAdvancedProperties(self):
-        """ method returns advanced properties, changed from defaults 
-          and recorded when record_advanced_properties was set to True
-
-          TODO: deal with this recording better. 
-          """ 
-        return self.__dict__[self._class_wrapper+'advanced_properties'];
-
+ 
     @property
     def relocate_dets(self) :
         if self.det_cal_file != None:
@@ -730,42 +720,6 @@ class DirectPropertyManager(DirectReductionProperties):
       if  self.map_file == None:
             self.log('*** one2one map selected',log_level)
       self.log("****************************************************************",log_level);
-
-    def export_changed_values(self,FileName='reduce_vars.py'):
-        """ Method to write changed simple and advanced properties into dictionary, to process by 
-            web reduction interface
-        """
-        changed_Keys= self.getChangedProperties();
-        advancedKeys= self.getChangedAdvancedProperties();
-       
-        f=open(FileName,'w')
-        f.write("standard_vars = {\n")
-        str_wrapper = '         '
-        for key in changed_Keys:
-            if not key in advancedKeys:
-                  val = getattr(self,key);
-                  if isinstance(val,str):
-                      row = "{0}\'{1}\':\'{2}\'".format(str_wrapper,key,val)
-                  else:
-                      row = "{0}\'{1}\':{2}".format(str_wrapper,key,val)
-                  f.write(row);
-                  str_wrapper=',\n         '
-        f.write("}\nadvanced_vars={\n")
-
-        str_wrapper='         '
-        for key in advancedKeys:
-                  val = getattr(self,key);
-                  if isinstance(val,str):
-                      row = "{0}\'{1}\':\'{2}\'".format(str_wrapper,key,val)
-                  else:
-                      row = "{0}\'{1}\':{2}".format(str_wrapper,key,val)
-                  f.write(row);
-                  str_wrapper=',\n        '
-        f.write("}\n")
-        f.close();
-
-
-
 
 
     #def help(self,keyword=None) :
