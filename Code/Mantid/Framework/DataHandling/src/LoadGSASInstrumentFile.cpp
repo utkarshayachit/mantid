@@ -188,7 +188,7 @@ namespace DataHandling
       else
       {
         // Else, use all available banks
-        for(map<size_t,map<string,double> >::iterator it=bankparammap.begin(); it!=bankparammap.end(); it++)
+        for(map<size_t,map<string,double> >::iterator it=bankparammap.begin(); it!=bankparammap.end(); ++it)
         {
           bankIds.push_back(static_cast<int>(it->first));
         }
