@@ -7,6 +7,7 @@
 #include "MantidAPI/InstrumentDataService.h"
 #include "MantidGeometry/Instrument/InstrumentDefinitionParser.h"
 #include "MantidDataHandling/LoadParameterFile.h"
+#include "MantidDataHandling/LoadFullprofResolution.h"
 
 #include <Poco/DOM/DOMWriter.h>
 #include <Poco/DOM/Element.h>
@@ -39,6 +40,7 @@ namespace DataHandling
 
   DECLARE_ALGORITHM(LoadGSASInstrumentFile)
 
+
   //----------------------------------------------------------------------------------------------
   /** Constructor
    */
@@ -67,6 +69,29 @@ namespace DataHandling
     // Output table workspace
     auto wsprop = new WorkspaceProperty<API::ITableWorkspace>("OutputTableWorkspace", "", Direction::Output, PropertyMode::Optional);
     declareProperty(wsprop, "Name of the output TableWorkspace containing instrument parameter information read from file. ");
+
+    // Use bank numbers as given in file
+    declareProperty(
+        new PropertyWithValue<bool>("UseBankIDsInFile", true, Direction::Input),
+        "Use bank IDs as given in file rather than ordinal number of bank. "
+        "If the bank IDs in the file are not unique, it is advised to set this to false." );
+
+    // Bank to import
+    declareProperty(new ArrayProperty<int>("Banks"), "ID(s) of specified bank(s) to load, "
+                    "The IDs are as specified by UseBankIDsInFile. " 
+                    "Default is all banks contained in input .prm file.");
+
+    // Workspace to put parameters into. It must be a workspace group with one worskpace per bank from the prm file
+    declareProperty(new WorkspaceProperty<WorkspaceGroup>("Workspace","",Direction::InOut, PropertyMode::Optional),
+        "A workspace group with the instrument to which we add the parameters from the GSAS instrument file, with one workspace for each bank of the .prm file");
+
+   // Workspaces for each bank
+    declareProperty(new ArrayProperty<int>("WorkspacesForBanks"), "For each bank,"
+                    " the ID of the corresponding workspace in same order as the banks are specified. "
+                    "ID=1 refers to the first workspace in the workspace group, "
+                    "ID=2 refers to the second workspace and so on. "
+                    "Default is all workspaces in numerical order. "
+                    "If default banks are specified, they too are taken to be in numerical order" );
 
     return;
   }
@@ -98,7 +123,7 @@ namespace DataHandling
 
     // Get function type
     // Initially we assume Ikeda Carpenter PV
-    int nProf = 9;
+    int nProf = 2;
 
     size_t numBanks = getNumberOfBanks( lines );
     g_log.debug() << numBanks << "banks in file \n";
@@ -131,19 +156,64 @@ namespace DataHandling
       g_log.debug() << "Bank starts at line" << bankStartIndex[i] + 1 << "\n";
     }
 
+    // Get Workspace property
+    WorkspaceGroup_sptr wsg = getProperty("Workspace");
     // Generate output table workspace
     API::ITableWorkspace_sptr outTabWs = genTableWorkspace(bankparammap);
-
     if( getPropertyValue("OutputTableWorkspace") != "")
     {
       // Output the output table workspace
        setProperty("OutputTableWorkspace", outTabWs);
     }
-
-    if( getPropertyValue("OutputTableWorkspace") == "")
+    if ( wsg )
     {
-      // We don't know where to output
-      throw std::runtime_error("OutputTableWorkspace must be set.");
+      vector<int> bankIds = getProperty("Banks");
+      vector<int> workspaceIds = getProperty("WorkspacesForBanks");
+      map < int, size_t > workspaceOfBank;
+
+      // Deal with bankIds
+      if ( bankIds.size() )
+      {
+        // If user provided a list of banks, check that they exist in the .prm file
+        for (size_t i=0; i<bankIds.size(); i++)
+        {
+          if ( !bankparammap.count(bankIds[i]) )
+          {
+            std::stringstream errorString;
+            errorString << "Bank " << bankIds[i] << " not found in .prm file";
+            throw runtime_error(errorString.str());
+          }
+        }
+      }
+      else
+      {
+        // Else, use all available banks
+        for(map<size_t,map<string,double> >::iterator it=bankparammap.begin(); it!=bankparammap.end(); it++)
+        {
+          bankIds.push_back(static_cast<int>(it->first));
+        }
+      }
+
+      // Generate workspaceOfBank
+      LoadFullprofResolution::createBankToWorkspaceMap ( bankIds, workspaceIds, workspaceOfBank);
+      // Put parameters into workspace group
+      LoadFullprofResolution::getTableRowNumbers( outTabWs, LoadFullprofResolution::m_rowNumbers);
+      for (size_t i=0; i < bankIds.size(); ++i)
+      {
+        int bankId = bankIds[i];
+        size_t wsId = workspaceOfBank[bankId];
+        Workspace_sptr wsi = wsg->getItem(wsId-1); 
+        auto workspace = boost::dynamic_pointer_cast<MatrixWorkspace>(wsi);
+        // Get column from table workspace
+        API::Column_const_sptr OutTabColumn = outTabWs->getColumn( i+1 );
+        std::string parameterXMLString;
+        LoadFullprofResolution::putParametersIntoWorkspace( OutTabColumn, workspace, static_cast<int>(bankparammap[i]["NPROF"]), parameterXMLString );  
+        // Load the string into the workspace
+        Algorithm_sptr loadParamAlg = createChildAlgorithm("LoadParameterFile");
+        loadParamAlg->setProperty("ParameterXML", parameterXMLString);
+        loadParamAlg->setProperty("Workspace", workspace);
+        loadParamAlg->execute();
+      }
     }
 
 
