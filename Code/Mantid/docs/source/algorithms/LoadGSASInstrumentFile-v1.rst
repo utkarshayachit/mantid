@@ -9,14 +9,13 @@
 Description
 -----------
 
-Load parameters from a GSAS instrument file into a table workspace
+Load parameters from a GSAS instrument file into a table workspace. Additionally, 
+Ikeda-Carpender pseudo-Voigt parameters translated to :ref:`IkedaCarpenterPV <func-IkedaCarpenterPV>` 
+can be put into the instrument of a workspace.
 
-Later developments of this algorithm will enable these parameters to be
-put into the instrument of a wotrkspace for either Ikeda-Carpender
-pseudo-Voigt translated into :ref:`IkedaCarpenterPV <func-IkedaCarpenterPV>` or
-back-to-back-exponential pseudo-Voigt translated into
+Later developments of this algorithm will enable to load 
+back-to-back-exponential pseudo-Voigt parameters translated into
 :ref:`BackToBackExponential <func-BackToBackExponential>`.
-
 
 Usage
 -----
