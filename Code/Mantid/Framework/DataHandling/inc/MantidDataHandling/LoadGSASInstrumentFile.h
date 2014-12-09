@@ -1,5 +1,5 @@
-#ifndef MANTID_DATAHANDLING_LOADFULLPROFRESOLUTION_H_
-#define MANTID_DATAHANDLING_LOADFULLPROFRESOLUTION_H_
+#ifndef MANTID_DATAHANDLING_LOADGSASINSTRUMENTFILE_H_
+#define MANTID_DATAHANDLING_LOADGSASINSTRUMENTFILE_H_
 
 #include "MantidKernel/System.h"
 #include "MantidAPI/Algorithm.h"
@@ -83,11 +83,10 @@ namespace DataHandling
     /// Generate output workspace
     DataObjects::TableWorkspace_sptr genTableWorkspace(std::map<size_t, std::map<std::string, double> > bankparammap);
 
-
   };
 
 
 } // namespace DataHandling
 } // namespace Mantid
 
-#endif  /* MANTID_DATAHANDLING_LOADFULLPROFRESOLUTION_H_ */
+#endif  /* MANTID_DATAHANDLING_LOADGSASINSTRUMENTFILE_H_ */
