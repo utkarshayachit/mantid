@@ -36,9 +36,10 @@ from mantid.simpleapi import *
 from mantid import api
 from mantid import geometry
 from mantid import config
+from mantid.kernel import funcreturns
 import DirectReductionHelpers as prop_helpers
 from DirectReductionProperties import DirectReductionProperties
-
+from collections import OrderedDict
 import CommonFunctions as common
 import os
 
@@ -59,27 +60,20 @@ class VanadiumRMM(object):
 #
 class DetCalFile(object):
     """ property describes various sources for the detector calibration file """
-    def __set__(self,instance,owner):
+    def __get__(self,instance,owner):
           return prop_helpers.gen_getter(instance.__dict__,'det_cal_file');
 
     def __set__(self,instance,val):
-
-       if isinstance(val,api.Workspace):
-         # workspace provided
-          prop_helpers.gen_setter(instance.__dict__,'det_cal_file',val);
-          return;
-
-        # workspace name
-       if str(val) in mtd:
-          ws = mtd[str(val)];
-          prop_helpers.gen_setter(instance.__dict__,'det_cal_file',val);
-          return;
-
-       # file name probably provided
-       if isinstance(val,str):
-          prop_helpers.gen_setter(instance.__dict__,'det_cal_file',val);
-          return;
-
+       """ set detector calibration file using various formats """ 
+       
+       if val is None or isinstance(val,api.Workspace) or isinstance(val,str):
+       # nothing provided or workspace provided or filename probably provided
+          if str(val) in mtd:
+                # workspace name provided
+                val = mtd[str(val)];
+          prop_helpers.gen_setter(instance.__dict__,'det_cal_file',val)
+          return
+  
 
        if isinstance(val,int):
           file_name= common.find_file(val);
@@ -182,7 +176,11 @@ class MonovanIntegrationRange(object):
 
     def __set__(self,instance,value):
         if value is None:
-            prop_helpers.gen_setter(instance.__dict__,'monovan_integr_range',None);
+            if not ('monovan_integr_range' in instance.__dict__):
+                del instance.__dict__['_monovan_integr_range']
+                instance.__dict__.update({'monovan_integr_range':None})
+            else:
+                prop_helpers.gen_setter(instance.__dict__,'monovan_integr_range',None);
         else:
             if isinstance(value,str):
                 values = value.split(',');
@@ -194,6 +192,11 @@ class MonovanIntegrationRange(object):
                 raise KeyError("monovan_integr_range has to be list of two values, defining min/max values of integration range or None to use relative to incident energy limits")
             prop_helpers.gen_setter(instance.__dict__,'monovan_lo_value',value[0]);
             prop_helpers.gen_setter(instance.__dict__,'monovan_hi_value',value[1]);
+            if not ('_monovan_integr_range' in instance.__dict__):
+                #new_range = {'_monovan_integr_range':prop_helpers.ComplexProperty(['monovan_lo_value','monovan_hi_value'])
+                #del instance.__dict__['monovan_integr_range']
+                #instance.__dict__.update(new_range)
+                pass
 #end MonovanIntegrationRange
 
 
@@ -331,7 +334,7 @@ class BackbgroundTestRange(object):
     """ The TOF range used in diagnostics to reject high background spectra. 
 
         Usually it is the same range as the TOF range used to remove 
-        background (in powders) though it may be set up separately.        
+        background (usually in powders) though it may be set up separately.        
     """
     def __get__(self,instance,type=None):
        range = prop_helpers.gen_getter(instance.__dict__,'_background_test_range');
@@ -391,17 +394,42 @@ class DirectPropertyManager(DirectReductionProperties):
         # retrieve the dictionary of property-values described in IDF
         param_list = prop_helpers.get_default_idf_param_list(self.instrument);
 
+        param_list = self._convert_params_to_properties(param_list);
+        #
+        self.__dict__.update(param_list)
 
-        # build and use substitution dictionary
+
+        # file properties -- the properties described files which should exist for reduction to work.
+        self.__file_properties = ['det_cal_file','map_file','hard_mask_file']
+        self.__abs_norm_file_properties = ['monovan_mapfile']
+
+        # properties with allowed values
+        self.__prop_allowed_values['normalise_method']=[None,'monitor-1','monitor-2','current']  # 'uamph', peak -- disabled/unknown at the moment
+        self.__prop_allowed_values['deltaE_mode']=['direct'] # I do not think we should try other modes here
+
+
+        # properties with special(overloaded and non-standard) setters/getters: Properties name dictionary returning tuple(getter,setter)
+        # if some is None, standard one is used. 
+        #self.__special_properties['monovan_integr_range']=(self._get_monovan_integr_range,lambda val : self._set_monovan_integr_range(val));
+        # list of the parameters which should always be taken from IDF unless explicitly set from elsewhere. These parameters MUST have setters and getters
+  
+    def _convert_params_to_properties(self,param_list,detine_subst_dict=True):
+        """ method processes parameters obtained from IDF and modifies the IDF properties
+            to the form allowing them be assigned as python class properties.            
+        """ 
+            # build and use substitution dictionary
         if 'synonims' in param_list:
             synonyms_string  = param_list['synonims'];
-            self.__subst_dict = prop_helpers.build_subst_dictionary(synonyms_string);
+            if detine_subst_dict:
+                self.__subst_dict = prop_helpers.build_subst_dictionary(synonyms_string);
+            #end
             # this dictionary will not be needed any more
             del param_list['synonims']
         #end
 
 
-        # build and initiate  properties with default descriptors (TODO: consider complex automatic descriptors)
+        # build and initiate  properties with default descriptors 
+        #(TODO: consider complex automatic descriptors -- almost done differently through complex properties in dictionary)
         param_list =  prop_helpers.build_properties_dict(param_list,self.__subst_dict)
 
         #--------------------------------------------------------------------------------------
@@ -420,23 +448,7 @@ class DirectPropertyManager(DirectReductionProperties):
         #end
         # End modify. 
         #----------------------------------------------------------------------------------------
-        self.__dict__.update(param_list)
-
-
-        # file properties -- the properties described files which should exist for reduction to work.
-        self.__file_properties = ['det_cal_file','map_file','hard_mask_file']
-        self.__abs_norm_file_properties = ['monovan_mapfile']
-
-        # properties with allowed values
-        self.__prop_allowed_values['normalise_method']=[None,'monitor-1','monitor-2','current']  # 'uamph', peak -- disabled/unknown at the moment
-        self.__prop_allowed_values['deltaE_mode']=['direct'] # I do not think we should try other modes here
-
-
-        # properties with special(overloaded and non-standard) setters/getters: Properties name dictionary returning tuple(getter,setter)
-        # if some is None, standard one is used. 
-        #self.__special_properties['monovan_integr_range']=(self._get_monovan_integr_range,lambda val : self._set_monovan_integr_range(val));
-        # list of the parameters which should always be taken from IDF unless explicitly set from elsewhere. These parameters MUST have setters and getters
-  
+        return param_list
 
     def _set_private_properties(self,prop_dict):
 
@@ -472,13 +484,19 @@ class DirectPropertyManager(DirectReductionProperties):
             name =name0;
         #end
 
-        # replace common substitutions for None
+        # replace common substitutions for string value
         if type(val) is str :
            val1 = val.lower()
            if (val1 == 'none' or len(val1) == 0):
               val = None;
            if val1 == 'default':
               val = self.getDefaultParameterValue(name0);
+           # boolean property?
+           if val1 in ['true','yes']:
+               val = True
+           if val1 in ['false','no']:
+               val = False
+
 
         if type(val) is list and len(val) == 0:
             val = None;
@@ -493,9 +511,15 @@ class DirectPropertyManager(DirectReductionProperties):
 
         # set property value:
         if name in self.__descriptors:
-            super(DirectPropertyManager,self).__setattr__(name,val)
+            try:
+                super(DirectPropertyManager,self).__setattr__(name,val)
+            except AttributeError:
+                raise AttributeError(" Can not set property {0} to value {1}".format(name,val));
         else:
-            prop_helpers.gen_setter(self.__dict__,name,val);
+            other_prop=prop_helpers.gen_setter(self.__dict__,name,val);
+            #if other_prop:
+            #    for prop_name in other_prop:
+            #        self.__changed_properties.add(prop_name);
 
         # record changes in the property
         self.__changed_properties.add(name);
@@ -546,7 +570,13 @@ class DirectPropertyManager(DirectReductionProperties):
     def getChangedProperties(self):
         """ method returns set of the properties changed from defaults """
         return self.__dict__[self._class_wrapper+'changed_properties'];
- 
+    def setChangedProperties(self,value=set()):
+        """ Method to clear changed properties list""" 
+        if isinstance(value,set):
+            self.__dict__[self._class_wrapper+'changed_properties'] =value;
+        else:
+            raise KeyError("Changed properties can be initialized by appropriate properties set only")
+
     @property
     def relocate_dets(self) :
         if self.det_cal_file != None:
@@ -607,24 +637,105 @@ class DirectPropertyManager(DirectReductionProperties):
   
         return result;
 
-    def update_defaults_from_instrument(self,pInstrument):
-        """ Method used to update default parameters from the same instrument.
+    def update_defaults_from_instrument(self,pInstrument,ignore_changes=False):
+        """ Method used to update default parameters from the same instrument (with different parameters).
 
             Used if initial parameters correspond to instrument with one validity dates and 
             current instrument has different validity dates and different default values for 
             these dates.
 
-            List of synonims is not modified
+            List of synonims is not modified and new properties are not added assuming that 
+            recent dictionary and properties are most comprehensive one
+
+            ignore_changes==True when changes, caused by setting properties from instrument are not recorded
+            ignore_changes==False -- getChangedProperties properties after applied this method would return set 
+                            of all properties changed when applying this method
+
         """ 
         if self.instr_name != pInstrument.getName():
-            raise AttributeError("Can not change instrument parameters ")
+            self.log("*** WARNING: Setting reduction properties of the instrument {0} from the instrument {1}.\n"
+                     "*** This only works if both instruments have the same reduction properties!"\
+                      .format(self.instr_name,pInstrument.getName()),'warning')
+
+        old_changes  = self.getChangedProperties()
+        self.setChangedProperties(set())
+
+        param_list = prop_helpers.get_default_idf_param_list(pInstrument)
+        param_list =  self._convert_params_to_properties(param_list,False)
+
+        #sort parameters to have complex properties (with underscore _) first    
+        sorted_param =  OrderedDict(sorted(param_list.items(),key=lambda x : ord((x[0][0]).lower())))
+  
+
+        for key,val in sorted_param.iteritems():
+            # set new values to old values and record this
+            if key[0] == '_':
+               public_name = key[1:]
+            else:
+               public_name = key
+            # complex properties were modified to start with _
+            if not(key in self.__dict__):
+                 name = '_'+key
+            else:
+                 name = key
+
+            try: # this is reliability check, and except ideally should never be hit. May occur if old IDF contains 
+                    # properties, not present in recent IDF.
+                  cur_val = self.__dict__[name]
+            except:
+                  self.log("property {0} or its derivatives have not been found in existing IDF. Ignoring this property"\
+                       .format(key),'warning')
+                  continue
+
+            # complex properties may be set up through their members so no need to set up one
+            if isinstance(cur_val,prop_helpers.ComplexProperty):
+               # is complex property changed through its dependent properties?
+               dependent_prop = val.dependencies()
+               replace_old_value = True
+               if public_name in old_changes:
+                   replace_old_value = False
+
+               if replace_old_value: # may be property have changed through its dependencies
+                    for prop_name in dependent_prop:
+                        if  prop_name in old_changes:
+                            replace_old_value =False
+                            break
+               #
+               if replace_old_value:
+                   old_val = cur_val.__get__(self.__dict__)
+                   new_val = val.__get__(param_list)
+                   if old_val != new_val:
+                      setattr(self,public_name,new_val)
+               # remove dependent values from list of changed properties not to assign them later one-by one
+               for prop_name in dependent_prop:
+                   try:
+                      del sorted_param[prop_name]
+                   except:
+                       pass
+            # simple property
+            else: 
+                if public_name in old_changes:
+                    continue
+                else: 
+                   old_val = getattr(self,name);
+                   if not(val == old_val or val == cur_val):
+                     setattr(self,name,val)
+        #End_if
+
+        # Clear changed properties list (is this wise?, may be we want to know that some defaults changed?)
+        if ignore_changes:
+            self.setChangedProperties(old_changes)
+            all_changes = old_changes
         else:
-            changed_properties = self.getChangedProperties()
-            param_list = prop_helpers.get_default_idf_param_list(pInstrument);
-            for key,val in param_list.iteritems():
-                if not (key in changed_properties):
-                    setattr(self,key,val)
-        pass
+            new_changes = self.getChangedProperties()
+            all_changes = old_changes.union(new_changes)
+            self.setChangedProperties(all_changes)
+
+        n=funcreturns.lhs_info('nreturns')
+        if n>0:
+            return all_changes
+        else:
+            return None;
     #end
 
     # TODO: finish refactoring this. 
@@ -700,36 +811,45 @@ class DirectPropertyManager(DirectReductionProperties):
         return non_changed;
 
     #
-    def log_changed_values(self,log_level='notice'):
+    def log_changed_values(self,log_level='notice',display_header=True,already_changed=set()):
       """ inform user about changed parameters and about the parameters that should be changed but have not
       
         This method is abstract method of DirectReductionProperties but is fully defined in 
         DirectPropertyManager
+
+        display_header==True prints nice additional information about run. If False, only 
+        list of changed properties displayed.
       """
+      if display_header:
+        # we may want to run absolute units normalization and this function has been called with monovan run or helper procedure
+        if self.monovan_run != None :
+            # check if mono-vanadium is provided as multiple files list or just put in brackets occasionally
+            self.log("****************************************************************",'notice');
+            self.log('*** Output will be in absolute units of mb/str/mev/fu','notice')
+            non_changed = self._check_monovan_par_changed();
+            if len(non_changed) > 0:
+                for prop in non_changed:
+                    value = getattr(self,prop)
+                    message = "\n***WARNING!: Absolute units reduction parameter : {0} has its default value: {1}"\
+                              "\n             This may need to change for correct absolute units reduction\n"
 
-      # we may want to run absolute units normalization and this function has been called with monovan run or helper procedure
-      if self.monovan_run != None :
-         # check if mono-vanadium is provided as multiple files list or just put in brackets occasionally
-          self.log("****************************************************************",'notice');
-          self.log('*** Output will be in absolute units of mb/str/mev/fu','notice')
-          non_changed = self._check_monovan_par_changed();
-          if len(non_changed) > 0:
-              for prop in non_changed:
-                 value = getattr(self,prop)
-                 message = '\n***WARNING!: Absolute units reduction parameter : {0} has its default value: {1}'+\
-                           '\n             This may need to change for correct absolute units reduction\n'
-
-                 self.log(message.format(prop,value),'warning')
+                    self.log(message.format(prop,value),'warning')
 
 
-      # now let's report on normal run.
-      self.log("*** Provisional Incident energy: {0:>12.3f} mEv".format(self.incident_energy),log_level)
+          # now let's report on normal run.
+        self.log("*** Provisional Incident energy: {0:>12.3f} mEv".format(self.incident_energy),log_level)
+      #end display_header
+
       self.log("****************************************************************",log_level);
       changed_Keys= self.getChangedProperties();
       for key in changed_Keys:
+          if key in already_changed:
+              continue
           val = getattr(self,key);
           self.log("  Value of : {0:<25} is set to : {1:<20} ".format(key,val),log_level)
 
+      if not display_header:
+          return
 
       save_dir = config.getString('defaultsave.directory')
       self.log("****************************************************************",log_level);
