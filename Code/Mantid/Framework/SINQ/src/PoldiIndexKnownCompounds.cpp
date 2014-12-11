@@ -696,6 +696,7 @@ void PoldiIndexKnownCompounds::exec()
 
     g_log.information() << "  Unindexed peaks: " << m_unindexedPeaks->peakCount() << std::endl;
 
+    std::string inputWorkspaceName = getPropertyValue("InputWorkspace");
     /* Finally, the peaks are put into separate workspaces, determined by
      * the phase they have been attributed to, plus unindexed peaks.
      */
@@ -704,14 +705,13 @@ void PoldiIndexKnownCompounds::exec()
     for(size_t i = 0; i < m_indexedPeaks.size(); ++i) {
         PoldiPeakCollection_sptr intensitySorted = getIntensitySortedPeakCollection(m_indexedPeaks[i]);
         ITableWorkspace_sptr tableWs = intensitySorted->asTableWorkspace();
-        AnalysisDataService::Instance().addOrReplace("Indexed_" + m_phaseNames[i], tableWs);
+        AnalysisDataService::Instance().addOrReplace("Indexed_" + m_phaseNames[i] + "_" + inputWorkspaceName, tableWs);
 
         outputWorkspaces->addWorkspace(tableWs);
     }
 
     ITableWorkspace_sptr unindexedTableWs = m_unindexedPeaks->asTableWorkspace();
 
-    std::string inputWorkspaceName = getPropertyValue("InputWorkspace");
     AnalysisDataService::Instance().addOrReplace("Unindexed_" + inputWorkspaceName, unindexedTableWs);
     outputWorkspaces->addWorkspace(unindexedTableWs);
 
