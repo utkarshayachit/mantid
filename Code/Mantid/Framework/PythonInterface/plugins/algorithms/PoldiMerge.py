@@ -119,10 +119,15 @@ class PoldiMerge(PythonAlgorithm):
 
     def propertiesMatch(self, leftRun, rightRun):
         for propertyName in self.comparedPropertyNames:
-            if abs(self.getPropertyValue(leftRun.getProperty(propertyName)) - self.getPropertyValue(rightRun.getProperty(propertyName))) > 5e-3:
-                raise RuntimeError("Property '%s' does not match" % (propertyName))
+            # If property does not exist, don't compare.
+            if self.hasProperty(leftRun, rightRun, propertyName):
+                if abs(self.getPropertyValue(leftRun.getProperty(propertyName)) - self.getPropertyValue(rightRun.getProperty(propertyName))) > 5e-3:
+                    raise RuntimeError("Property '%s' does not match" % (propertyName))
 
         return True
+
+    def hasProperty(self, leftRun, rightRun, propertyName):
+      return leftRun.hasProperty(propertyName) and rightRun.hasProperty(propertyName)
 
     def getPropertyValue(self, runProperty):
         try:
